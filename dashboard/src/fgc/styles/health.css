@@ -1,0 +1,280 @@
+/* 檢查分頁：Go/No-Go 燈牆（#28）、關閉路徑三格（#37）、備份徽章（#38）。
+   看的人站著、距離一公尺以上、而且很急 —— 所以一次看完不捲動。 */
+
+.hw-page {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 1.5);
+  padding: calc(var(--u) * 2);
+  box-sizing: border-box;
+  overflow: auto;
+}
+
+.hw {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 1.5);
+}
+
+/* ── 頂部橫幅 ───────────────────────────────────────────────────────── */
+
+.hw-banner {
+  flex: 0 0 auto;
+  border: 2px solid var(--border-c);
+  border-radius: 6px;
+  padding: calc(var(--u) * 1.5) calc(var(--u) * 2);
+  text-align: center;
+  background: var(--surface-2);
+}
+.hw-banner.go {
+  border-color: var(--ok);
+  background: color-mix(in srgb, var(--ok) 10%, var(--surface-2));
+}
+.hw-banner.nogo {
+  border-color: var(--err);
+  background: color-mix(in srgb, var(--err) 12%, var(--surface-2));
+}
+.hw-banner.hold {
+  border-color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 8%, var(--surface-2));
+}
+
+.hw-banner-text {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  font-family: var(--mono);
+}
+.hw-banner.go .hw-banner-text { color: var(--ok); }
+.hw-banner.nogo .hw-banner-text { color: var(--err); }
+.hw-banner.hold .hw-banner-text { color: var(--warn); }
+
+.hw-banner-sub {
+  margin-top: 4px;
+  color: var(--text-dim);
+  font-size: var(--fs-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--u) * 1.5);
+  flex-wrap: wrap;
+}
+.hw-banner-sub code {
+  font-family: var(--mono);
+  color: var(--text);
+}
+.hw-copied { color: var(--ok); font-size: var(--fs-xs); }
+
+/* ── 5 x 3 燈牆 ────────────────────────────────────────────────────── */
+
+.hw-grid {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-auto-rows: minmax(72px, 1fr);
+  gap: 1px;
+  background: var(--border-c);
+  border: 1px solid var(--border-c);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.hw-cell {
+  background: var(--surface-2);
+  padding: calc(var(--u) * 1.25) calc(var(--u) * 1.5);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  overflow: hidden;
+}
+.hw-cell.err { background: color-mix(in srgb, var(--err) 10%, var(--surface-2)); }
+.hw-cell.warn { background: color-mix(in srgb, var(--warn) 7%, var(--surface-2)); }
+.hw-cell.stale { background: var(--surface-2); }
+
+.hw-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-sm);
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hw-fp {
+  margin-left: auto;
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+  border: 1px solid var(--border-c);
+  border-radius: 3px;
+  padding: 0 4px;
+  flex: 0 0 auto;
+}
+
+/* 1.25x：這一頁是站著、隔一公尺以上、而且很急的時候看的。
+   格子本來就有空間，字太小是浪費它。長字串換行而不是切掉——
+   「Build 不一致」那一格的內容被 ellipsis 吃掉等於這一格白做。 */
+.hw-detail {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: calc(var(--fs-md) * 1.25);
+  line-height: 1.35;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+.hw-cell.stale .hw-detail { color: var(--stale); }
+
+/* 沒過才顯示處置提示 —— 把隊內 know-how 寫進 UI */
+.hw-hint {
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+  color: var(--warn);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+.hw-cell.err .hw-hint { color: var(--err); }
+.hw-cell.stale .hw-hint { color: var(--text-dim); }
+
+/* ── 關閉路徑三格 ──────────────────────────────────────────────────── */
+
+.hw-shutdown {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: minmax(150px, 0.8fr) repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--border-c);
+  border: 1px solid var(--border-c);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.hw-shutdown-label {
+  background: var(--surface-3);
+  padding: calc(var(--u) * 1.25) calc(var(--u) * 1.5);
+  font-size: var(--fs-sm);
+  color: var(--text);
+}
+.hw-shutdown-label .sub {
+  display: block;
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+  margin-top: 2px;
+}
+
+.hw-sd-cell {
+  background: var(--surface-2);
+  padding: calc(var(--u) * 1.25) calc(var(--u) * 1.5);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.hw-sd-cell.on {
+  background: color-mix(in srgb, var(--danger) 14%, var(--surface-2));
+}
+.hw-sd-cell .row1 {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: var(--fs-sm);
+}
+.hw-sd-cell .box {
+  font-family: var(--mono);
+  color: var(--stale);
+}
+.hw-sd-cell.on .box { color: var(--danger); }
+.hw-sd-cell .n { color: var(--text-dim); font-family: var(--mono); font-size: var(--fs-xs); }
+.hw-sd-cell .name { color: var(--text); }
+.hw-sd-cell.on .name { color: var(--danger); font-weight: 600; }
+.hw-sd-cell .basis {
+  font-family: var(--mono);
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hw-sd-cell .how {
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+  opacity: 0.75;
+  line-height: 1.4;
+}
+
+.hw-foot {
+  flex: 0 0 auto;
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+  line-height: 1.6;
+}
+.hw-foot code { font-family: var(--mono); color: var(--text); }
+
+/* ── 按鈕（PIT 專用；MATCH 這一整頁都不存在）───────────────────────── */
+
+.hw-btn {
+  font: inherit;
+  font-size: var(--fs-xs);
+  color: var(--text);
+  background: var(--surface-3);
+  border: 1px solid var(--border-c);
+  border-radius: 4px;
+  padding: calc(var(--u) * 0.5) calc(var(--u) * 1.25);
+  min-height: calc(var(--u) * 4);
+  cursor: pointer;
+}
+.hw-btn:hover:not(:disabled) { border-color: var(--focus-ring); }
+.hw-btn:disabled { opacity: 0.45; cursor: default; }
+.hw-btn.ghost { background: transparent; }
+.hw-btn:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
+
+/* ── 備份徽章 ──────────────────────────────────────────────────────── */
+
+.hw-backup {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 1.5);
+  border: 1px solid var(--border-c);
+  border-left: 3px solid var(--stale);
+  border-radius: 6px;
+  background: var(--surface-2);
+  padding: var(--u) calc(var(--u) * 1.5);
+}
+.hw-backup.warn { border-left-color: var(--warn); }
+.hw-backup.err { border-left-color: var(--err); }
+.hw-backup .text { min-width: 0; }
+.hw-backup .head { font-size: var(--fs-sm); color: var(--text); }
+.hw-backup.warn .head { color: var(--warn); }
+.hw-backup.err .head { color: var(--err); }
+.hw-backup .next { color: var(--text-dim); }
+.hw-backup .sub { font-size: var(--fs-xs); color: var(--text-dim); }
+.hw-backup .sub code { font-family: var(--mono); }
+.hw-backup > :nth-child(2) { flex: 1 1 auto; }
+.hw-backup-input {
+  font: inherit;
+  font-size: var(--fs-xs);
+  font-family: var(--mono);
+  width: 160px;
+  color: var(--text);
+  background: var(--surface-1);
+  border: 1px solid var(--warn);
+  border-radius: 4px;
+  padding: calc(var(--u) * 0.5) var(--u);
+}
+
+/* ── 降級（§4.7）：1024–1199 的舊筆電把燈牆折成 3 欄 ─────────────── */
+
+@media (max-width: 1199px) {
+  .hw-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .hw-shutdown { grid-template-columns: 1fr; }
+}
+@media (max-width: 719px) {
+  .hw-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

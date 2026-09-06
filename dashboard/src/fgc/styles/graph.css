@@ -1,0 +1,531 @@
+/* 圖表核心的樣式：LineGraph / DiscreteBand / TimeBar / Inspector / SignalTree。
+   由 GraphDemoPage（以及之後的射手、參數、REPLAY 分頁）import。
+
+   零硬編碼顏色——Canvas 那一半走 theme.ts，DOM 這一半走 CSS 變數，
+   兩邊讀的是同一組 token，換主題時圖與框一起換。 */
+
+/* ═══ LineGraph ═════════════════════════════════════════════════════ */
+
+.lg-wrap {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+}
+.lg-plot {
+  width: 100%;
+}
+
+/* uPlot 的預設樣式吃不到我們的 token，這幾條把它拉回來 */
+.lg-wrap .uplot,
+.lg-wrap .u-wrap {
+  font-family: inherit;
+}
+.lg-wrap .u-legend {
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+  padding: 2px 0 0;
+  text-align: left;
+}
+.lg-wrap .u-legend .u-marker {
+  width: 10px;
+  height: 10px;
+}
+.lg-wrap .u-legend .u-series > * {
+  padding: 1px 5px;
+}
+.lg-wrap .u-legend .u-series.u-off {
+  opacity: 0.4;
+}
+.lg-wrap .u-select {
+  background: color-mix(in srgb, var(--focus-ring) 14%, transparent);
+  border: 1px solid var(--focus-ring);
+}
+.lg-wrap .u-cursor-x,
+.lg-wrap .u-cursor-y {
+  border-color: var(--text-dim);
+}
+
+.lg-empty {
+  position: absolute;
+  inset: 22% 12% auto 12%;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: var(--fs-sm);
+  pointer-events: none;
+}
+
+/* 三個 drop zone 的其中兩個（第三個是離散區，長在 DiscreteBand 上）。
+   平常完全透明不擋滑鼠，只有真的在拖東西時才亮起來。 */
+.lg-zones {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  pointer-events: none;
+}
+.lg-zone {
+  flex: 1 1 50%;
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: calc(var(--u) * 1.5);
+  font-size: var(--fs-xs);
+  color: transparent;
+  border: 1px dashed transparent;
+  border-radius: 4px;
+}
+.lg-zone.over {
+  background: color-mix(in srgb, var(--focus-ring) 12%, transparent);
+  border-color: var(--focus-ring);
+  color: var(--focus-ring);
+}
+/* 圖上一條線都沒有的時候把兩個 drop zone 顯出來：
+   「看不見的互動」等於不存在的互動，而這一頁的第一件事就是要人把訊號拖進來。 */
+.lg-wrap.empty .lg-zone {
+  color: var(--text-dim);
+  border-color: color-mix(in srgb, var(--border-c) 80%, transparent);
+}
+
+/* ═══ DiscreteBand ══════════════════════════════════════════════════ */
+
+.db-wrap {
+  position: relative;
+  flex: 0 0 auto;
+  width: 100%;
+  cursor: crosshair;
+}
+.db-wrap canvas {
+  display: block;
+}
+
+/* ═══ TimeBar ═══════════════════════════════════════════════════════ */
+
+.tb-wrap {
+  flex: 0 0 auto;
+  border-top: 1px solid var(--border-c);
+  background: var(--surface-2);
+  padding-bottom: 2px;
+}
+.tb-wrap canvas {
+  display: block;
+  cursor: crosshair;
+}
+.tb-controls {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 0.75);
+  padding: calc(var(--u) * 0.5) calc(var(--u) * 1.5) calc(var(--u) * 0.5) 0;
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+  flex-wrap: wrap;
+}
+.tb-controls .spacer {
+  flex: 1 1 auto;
+}
+.tb-btn {
+  min-width: 26px;
+  min-height: calc(var(--u) * 4);
+  padding: 2px calc(var(--u));
+  border: 1px solid var(--border-c);
+  border-radius: 4px;
+  background: var(--surface-3);
+  color: var(--text);
+  font-family: inherit;
+  font-size: var(--fs-xs);
+  cursor: pointer;
+}
+.tb-btn:hover {
+  border-color: var(--focus-ring);
+}
+.tb-btn.on {
+  background: var(--focus-ring);
+  border-color: var(--focus-ring);
+  color: var(--surface-1);
+  font-weight: 600;
+}
+.tb-rates {
+  display: inline-flex;
+  gap: 2px;
+  margin-left: calc(var(--u));
+}
+.tb-btn.rate {
+  min-width: 30px;
+}
+.tb-read {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  white-space: nowrap;
+}
+.tb-read .k {
+  color: var(--text-dim);
+}
+.tb-read .fgc-num {
+  color: var(--text);
+  min-width: 3ch;
+}
+.tb-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px calc(var(--u));
+  min-height: calc(var(--u) * 4);
+  border: 1px solid var(--border-c);
+  border-radius: 4px;
+  background: var(--surface-3);
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: var(--fs-xs);
+  cursor: pointer;
+}
+.tb-live.on {
+  color: var(--ok);
+  border-color: var(--ok);
+}
+
+/* ═══ Inspector ═════════════════════════════════════════════════════ */
+
+.insp {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  outline: none;
+}
+.insp:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+.insp-head {
+  display: flex;
+  align-items: center;
+  gap: var(--u);
+  padding: calc(var(--u) * 0.5) var(--u);
+  border-bottom: 1px solid var(--border-c);
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+  flex: 0 0 auto;
+}
+.insp-head .at {
+  color: var(--text);
+}
+.insp-head .hov {
+  color: var(--text-dim);
+  font-family: var(--mono);
+}
+.insp-head .tb-btn {
+  margin-left: auto;
+}
+.insp-toast {
+  padding: 2px var(--u);
+  font-size: var(--fs-xs);
+  color: var(--ok);
+  background: color-mix(in srgb, var(--ok) 12%, transparent);
+}
+.insp-rows {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+.insp-empty {
+  padding: calc(var(--u) * 2);
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+  line-height: 1.6;
+}
+.insp-row {
+  display: grid;
+  /* 固定四欄：欄位 / 游標值（含年齡）/ 懸停值 / 移除。
+     年齡若自成一欄，過期時整列會被擠到換行。 */
+  grid-template-columns: minmax(0, 1fr) minmax(8ch, auto) 9ch 14px;
+  align-items: center;
+  gap: 4px;
+  padding: 1px var(--u);
+  font-size: var(--fs-xs);
+  border-bottom: 1px solid color-mix(in srgb, var(--border-c) 45%, transparent);
+}
+.insp-row:hover {
+  background: var(--surface-3);
+}
+.insp-row .nm {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.insp-row .nm .grp {
+  color: var(--text-dim);
+  margin-right: 5px;
+}
+.insp-row .cur {
+  color: var(--text);
+}
+.insp-row .hv {
+  color: var(--text-dim);
+}
+/* 過期：灰色 + 年齡，永遠不顯示空白 */
+.insp-row.stale .cur {
+  color: var(--stale);
+}
+.insp-row.missing .cur {
+  color: var(--stale);
+  font-style: italic;
+}
+.insp-row .age {
+  color: var(--stale);
+  font-family: var(--mono);
+  font-size: 0.85em;
+  margin-left: 5px;
+}
+.insp-x {
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 0 3px;
+}
+.insp-x:hover {
+  color: var(--err);
+}
+
+/* ═══ SignalTree ════════════════════════════════════════════════════ */
+
+.st {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+.st-tools {
+  display: flex;
+  gap: 3px;
+  padding: calc(var(--u) * 0.5) calc(var(--u) * 0.5) 0;
+  flex: 0 0 auto;
+}
+.st-search {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 3px 6px;
+  background: var(--surface-3);
+  color: var(--text);
+  border: 1px solid var(--border-c);
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: var(--fs-xs);
+}
+.st-search:focus {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -1px;
+}
+.st-seg {
+  padding: 2px 5px;
+  border: 1px solid var(--border-c);
+  border-radius: 4px;
+  background: var(--surface-3);
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: var(--fs-xs);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.st-seg.on {
+  color: var(--text);
+  border-color: var(--focus-ring);
+}
+.st-ro {
+  padding: calc(var(--u) * 0.5) var(--u);
+  font-size: var(--fs-xs);
+  color: var(--stale);
+}
+.st-count {
+  padding: 2px var(--u) 3px;
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+  flex: 0 0 auto;
+}
+.st-count .pinned {
+  margin-left: 4px;
+  color: var(--focus-ring);
+}
+.st-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+.st-empty {
+  padding: calc(var(--u) * 2);
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+}
+.st-ghead {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: 2px calc(var(--u) * 0.5);
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.st-ghead:hover {
+  color: var(--text);
+  background: var(--surface-3);
+}
+.st-ghead .tri {
+  width: 10px;
+}
+.st-ghead .n {
+  margin-left: auto;
+  color: var(--stale);
+  font-weight: 400;
+}
+.st-row {
+  display: grid;
+  grid-template-columns: 14px 1fr auto 10px auto;
+  align-items: center;
+  gap: 4px;
+  padding: 0 calc(var(--u) * 0.5) 0 calc(var(--u) * 1.5);
+  font-size: var(--fs-xs);
+  cursor: grab;
+  line-height: 1.55;
+}
+.st-row:hover {
+  background: var(--surface-3);
+}
+.st-row.pinned .st-name {
+  color: var(--text);
+}
+.st-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-dim);
+}
+/* 唯讀渲染：純文字，無邊框無背景（不是 disabled input） */
+.st-val {
+  color: var(--text);
+  max-width: 11ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.st-pin {
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  border: 1px solid var(--border-c);
+  border-radius: 50%;
+  background: transparent;
+  color: transparent;
+  font-size: 1px;
+  cursor: pointer;
+  line-height: 0;
+}
+.st-pin.slot {
+  border-color: transparent;
+}
+.st-kind {
+  color: var(--stale);
+  font-family: var(--mono);
+  text-align: center;
+}
+.st-tune {
+  color: var(--danger);
+  font-family: var(--mono);
+  font-size: 0.9em;
+}
+
+/* ═══ GraphDemoPage 版面 ════════════════════════════════════════════ */
+
+.gd {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.gd-tools {
+  display: flex;
+  align-items: center;
+  gap: var(--u);
+  padding: calc(var(--u) * 0.5) calc(var(--u) * 1.5);
+  border-bottom: 1px solid var(--border-c);
+  background: var(--surface-2);
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+}
+.gd-tools .spacer {
+  flex: 1 1 auto;
+}
+.gd-main {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 216px minmax(0, 1fr) 320px;
+  /* 這一行是必須的：格線列預設是 auto（吃內容高度），而訊號樹有 121 列 ≈ 2,200 px，
+     那會把整列撐開、把離散色帶推到畫面外兩千像素的地方。minmax(0,1fr) 把列高鎖回
+     容器高度，樹與 Inspector 才會各自內捲。 */
+  grid-template-rows: minmax(0, 1fr);
+  gap: var(--u);
+  padding: var(--u);
+}
+.gd-main > * {
+  min-width: 0;
+  min-height: 0;
+}
+.gd-side {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.gd-side > .panel-shell {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.gd-center {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  gap: 0;
+}
+.gd-center > .panel-shell {
+  flex: 1 1 auto;
+}
+.gd-center .panel-shell > .body {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.gd-note {
+  padding: 2px calc(var(--u) * 1.5);
+  font-size: var(--fs-xs);
+  color: var(--stale);
+  background: var(--surface-1);
+  border-top: 1px solid var(--border-c);
+}
+
+/* §4.7 降級：1200 以下訊號樹變窄、Inspector 收窄；1024 以下訊號樹收起 */
+@media (max-width: 1439px) {
+  .gd-main {
+    grid-template-columns: 200px minmax(0, 1fr) 264px;
+  }
+}
+@media (max-width: 1199px) {
+  .gd-main {
+    grid-template-columns: 176px minmax(0, 1fr) 236px;
+  }
+}
+@media (max-width: 1023px) {
+  .gd-main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .gd-side {
+    display: none;
+  }
+}

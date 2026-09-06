@@ -1,0 +1,300 @@
+/* DRIVE 分頁（§4.1 線框）。
+   左 62% 全給「現在能不能射」，右 38% 給時間 / 車頭 / 爬升 / 警報。
+
+   外層是 CSS Grid（62/38 兩欄），欄內是 flex column——因為降級時會真的把元件
+   unmount 掉，grid-template-rows 的固定列數對不上，flex 才不會留下一排空洞。
+
+   密度：駕駛用 --u: 6px（styles.css 的預設）。所有 padding/gap 一律
+   calc(var(--u) * n)，換密度時整頁一起呼吸。 */
+
+.drive {
+  height: 100%;
+  min-height: 0;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 62fr 38fr;
+  gap: calc(var(--u) * 1.5);
+  padding: calc(var(--u) * 1.5);
+}
+
+.drive-left,
+.drive-right {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 1.5);
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Canvas 面板：body 不捲動，canvas 撐滿 */
+.drive .panel-shell > .body {
+  overflow: hidden;
+}
+.drive-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── 左欄配額 ──
+   巨燈拿最大的一塊：駕駛的眼睛在場上，餘光只解析得了「一大塊是什麼顏色」。
+
+   選擇器一律帶 .drive 前綴（0,2,0）而不是裸類別（0,1,0）：styles.css 的
+   .panel-shell { min-height: 0 } 與這裡同特異性，而 CSS 的載入順序取決於
+   import 順序——裸類別會在窄視窗下被它蓋掉，巨燈直接塌成 0 高。 */
+.drive .drive-hero { flex: 1.5 1 0; min-height: 168px; }
+.drive .drive-gauge { flex: 1 1 0; min-height: 132px; }
+.drive .drive-ribbon { flex: 0 0 auto; }
+.drive .drive-rhythm { flex: 0 0 auto; }
+.drive .drive-pad { flex: 0 0 auto; }
+.drive .drive-pad > .body { height: 84px; }
+
+/* ── 右欄配額 ── */
+.drive .drive-clock { flex: 0 0 auto; }
+.drive .drive-heading { flex: 0 0 auto; }
+.drive .drive-climb { flex: 1.25 1 0; min-height: 190px; }
+.drive .drive-alerts { flex: 1 1 0; min-height: 118px; }
+.drive .drive-hopper { flex: 0 0 auto; }
+
+/* 巨燈最大化（F）：填滿頁面區，刻意不蓋掉頂欄——
+   ws age 必須一直看得到，否則一個凍住的畫面看起來跟一個健康的畫面一模一樣。 */
+.drive-full {
+  height: 100%;
+  min-height: 0;
+  box-sizing: border-box;
+  display: flex;
+  padding: calc(var(--u) * 1.5);
+}
+.drive-full .panel-shell {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* ── #10 StateRibbon：按鈕的樣子，但不可點、無 hover、無 active ──
+   G13 要求前端沒有任何射擊控制路徑，所以它連 cursor: pointer 都沒有。 */
+.ribbon-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: calc(var(--u) * 1.25);
+  padding: calc(var(--u) * 1.25);
+}
+.ribbon-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: calc(var(--u) * 0.75) 0;
+  border: 1px solid var(--border-c);
+  border-radius: 5px;
+  background: var(--surface-3);
+  opacity: 0.3;
+  user-select: none;
+}
+.ribbon-cell.on { opacity: 1; }
+.ribbon-cell .rc-main {
+  font-family: var(--mono);
+  font-size: var(--fs-lg);
+  line-height: 1.05;
+  letter-spacing: 0.04em;
+}
+.ribbon-cell.on .rc-main { font-weight: 700; }
+.ribbon-cell .rc-sub { font-size: var(--fs-xs); color: var(--text-dim); }
+.ribbon-cell.collect.on {
+  background: var(--state-collect);
+  border-color: var(--state-collect);
+  color: var(--gray-900);
+}
+.ribbon-cell.shoot.on {
+  background: var(--state-shoot);
+  border-color: var(--state-shoot);
+  color: var(--gray-900);
+}
+.ribbon-cell.eject.on {
+  background: var(--state-eject);
+  border-color: var(--state-eject);
+  color: var(--gray-900);
+}
+.ribbon-cell.on .rc-sub { color: var(--gray-900); opacity: 0.75; }
+
+/* ── #11 HeadingChip ── */
+.head-box {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 1.5);
+  padding: calc(var(--u) * 1.25) calc(var(--u) * 1.5);
+  border-left: 4px solid var(--text-dim);
+}
+.head-box.intake { border-left-color: var(--state-collect); }
+.head-box.shooter { border-left-color: var(--state-shoot); }
+.head-arrow {
+  font-size: 44px;
+  line-height: 1;
+  font-family: var(--mono);
+  color: var(--text);
+}
+.head-box.intake .head-arrow { color: var(--state-collect); }
+.head-box.shooter .head-arrow { color: var(--state-shoot); }
+.head-word {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+.head-sub {
+  margin-left: auto;
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+  text-align: right;
+  white-space: nowrap;
+}
+/* 全 App 只有三處動態之一（§6.7）：車頭切換是「你按了 □ 而且它生效了」的唯一回饋 */
+.head-box.flash { animation: head-flash 300ms steps(1, end) 1; }
+@keyframes head-flash {
+  0% { background: var(--text); color: var(--surface-1); }
+  100% { background: transparent; }
+}
+
+/* ── #13 MatchClock ── */
+.clock-box {
+  padding: calc(var(--u) * 1.25) calc(var(--u) * 1.5);
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u));
+}
+.clock-row { display: flex; align-items: baseline; gap: calc(var(--u) * 1.25); }
+.clock-glyph { font-size: var(--fs-md); color: var(--text-dim); }
+.clock-big {
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  line-height: 1;
+  min-width: 4.5ch;
+}
+.clock-sub { font-size: var(--fs-xs); color: var(--text-dim); margin-left: auto; }
+.clock-track {
+  height: 8px;
+  background: var(--surface-3);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.clock-fill { height: 100%; background: var(--text-dim); }
+.clock-box.z-early .clock-big { color: var(--series-7); }
+.clock-box.z-early .clock-fill { background: var(--series-7); }
+.clock-box.z-mid .clock-big { color: var(--ok); }
+.clock-box.z-mid .clock-fill { background: var(--ok); }
+.clock-box.z-climb .clock-big { color: var(--warn); }
+.clock-box.z-climb .clock-fill { background: var(--warn); }
+.clock-box.z-last .clock-big { color: var(--err); }
+.clock-box.z-last .clock-fill { background: var(--err); }
+.clock-box.z-over .clock-big { color: var(--stale); }
+.clock-box.z-over .clock-fill { background: var(--stale); }
+.clock-box.z-none .clock-big { color: var(--stale); }
+
+/* ── #14 BallRhythm ── */
+.rhythm-box {
+  padding: calc(var(--u)) calc(var(--u) * 1.5);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.rhythm-line {
+  display: flex;
+  align-items: baseline;
+  gap: calc(var(--u));
+  white-space: nowrap;
+}
+.rhythm-line.dim { color: var(--text-dim); font-size: var(--fs-sm); }
+.rl-label { color: var(--text-dim); font-size: var(--fs-xs); min-width: 4.5em; }
+.rl-dots { font-family: var(--mono); letter-spacing: 0.16em; font-size: 17px; color: var(--band-off); }
+.rl-dots .dot.on { color: var(--state-shoot); }
+.rl-count { font-size: var(--fs-lg); font-weight: 700; min-width: 2ch; }
+.rl-gap { margin-left: auto; font-size: var(--fs-sm); color: var(--text-dim); }
+.rl-gap b { color: var(--text); font-size: var(--fs-md); }
+.rl-stat { margin-left: auto; font-size: var(--fs-xs); }
+.rhythm-line.dim b { color: var(--text); font-size: var(--fs-md); }
+
+/* ── #16 HopperCmdStrip：灰底、無圖示，刻意與有回授的爬升柱區隔 ── */
+.hopper-box {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 1.25);
+  padding: calc(var(--u)) calc(var(--u) * 1.5);
+  background: var(--surface-3);
+  color: var(--text-dim);
+}
+.hop-bar {
+  width: 5px;
+  height: 20px;
+  background: var(--text-dim);
+  display: inline-block;
+}
+.hop-cmd { font-size: var(--fs-lg); font-weight: 700; color: var(--text); }
+.hop-raw { font-size: var(--fs-xs); margin-left: auto; }
+
+/* ── #17 AlertRail ── */
+.alert-rail {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u));
+  padding: calc(var(--u));
+  height: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+.alert-empty,
+.alert-more { font-size: var(--fs-xs); color: var(--text-dim); padding: 2px calc(var(--u) * 0.5); }
+.alert-card {
+  display: flex;
+  align-items: flex-start;
+  gap: calc(var(--u));
+  padding: calc(var(--u) * 0.75) calc(var(--u));
+  border: 1px solid var(--border-c);
+  border-left-width: 4px;
+  border-radius: 4px;
+  background: var(--surface-3);
+  animation: alert-in 150ms ease-out 1;
+}
+@keyframes alert-in {
+  from { transform: translateX(8px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+.alert-card.error { border-left-color: var(--err); }
+.alert-card.warn { border-left-color: var(--warn); }
+.alert-card.info { border-left-color: var(--series-7); }
+.ac-glyph { font-family: var(--mono); line-height: 1.35; }
+.alert-card.error .ac-glyph { color: var(--err); }
+.alert-card.warn .ac-glyph { color: var(--warn); }
+.alert-card.info .ac-glyph { color: var(--series-7); }
+.ac-body { display: flex; flex-direction: column; min-width: 0; }
+.ac-title { font-size: var(--fs-sm); font-weight: 600; }
+.ac-desc {
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+  font-family: var(--mono);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ac-age { margin-left: auto; font-size: var(--fs-xs); color: var(--text-dim); white-space: nowrap; }
+
+/* ── 降級（§4.7）。元件的增減由 DrivePage 用 matchMedia 決定，
+       這裡只調比例——隱藏的 canvas 一樣會跑 rAF，所以不用 display:none。 ── */
+@media (max-width: 1439px) {
+  .drive { grid-template-columns: 68fr 32fr; }
+}
+@media (max-width: 1199px) {
+  .drive .drive-hero { min-height: 150px; }
+  .drive .drive-climb { min-height: 168px; }
+  .head-arrow { font-size: 34px; }
+}
+@media (max-width: 1023px) {
+  /* 單欄垂直堆疊。列高由內容決定，所以兩個 canvas 面板改成固定高——
+     flex-basis 0 在 min-content 的列裡會收成 0，畫面上就只剩兩張標題列。 */
+  .drive {
+    grid-template-columns: 1fr;
+    grid-auto-rows: min-content;
+    overflow: auto;
+  }
+  .drive .drive-hero { flex: 0 0 auto; height: 240px; }
+  .drive .drive-climb { flex: 0 0 auto; height: 300px; }
+}

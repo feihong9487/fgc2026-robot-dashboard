@@ -1,0 +1,130 @@
+/* 錄影瀏覽（#30）。表格 + 兩條取檔路徑。 */
+
+.rec-page {
+  height: 100%;
+  padding: calc(var(--u) * 2);
+  box-sizing: border-box;
+  overflow: auto;
+}
+
+.rec {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 1.5);
+  max-width: 1100px;
+}
+
+.rec-head {
+  display: flex;
+  align-items: baseline;
+  gap: calc(var(--u) * 1.5);
+  flex-wrap: wrap;
+}
+.rec-head .spacer { flex: 1 1 auto; }
+.rec-title { font-size: var(--fs-lg); color: var(--text); }
+.rec-src {
+  font-family: var(--mono);
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+}
+
+.rec-msg {
+  border: 1px solid var(--border-c);
+  border-radius: 6px;
+  background: var(--surface-2);
+  padding: calc(var(--u) * 1.5);
+  font-size: var(--fs-sm);
+  line-height: 1.8;
+  color: var(--text-dim);
+}
+.rec-msg code { font-family: var(--mono); color: var(--text); }
+.rec-msg b { color: var(--text); }
+.rec-msg.warn { border-left: 3px solid var(--warn); }
+.rec-msg.err { border-left: 3px solid var(--err); }
+
+.rec-dir {
+  display: flex;
+  align-items: baseline;
+  gap: calc(var(--u) * 1.5);
+  flex-wrap: wrap;
+  font-size: var(--fs-sm);
+}
+.rec-dir .k { color: var(--text-dim); font-size: var(--fs-xs); }
+.rec-dir code { font-family: var(--mono); color: var(--text); }
+
+.rec-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+}
+.rec-table th {
+  text-align: left;
+  font-weight: 500;
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+  padding: calc(var(--u) * 0.75) var(--u);
+  border-bottom: 1px solid var(--border-c);
+}
+.rec-table th.num,
+.rec-table td.num {
+  text-align: right;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.rec-table td {
+  padding: calc(var(--u) * 0.75) var(--u);
+  border-bottom: 1px solid var(--surface-3);
+  color: var(--text);
+}
+.rec-table tr.current td { background: color-mix(in srgb, var(--warn) 8%, transparent); }
+.rec-table td.name code { font-family: var(--mono); }
+.rec-table td.act { text-align: right; white-space: nowrap; }
+.rec-table td.act .ro { color: var(--text-dim); font-size: var(--fs-xs); }
+.rec-table .tag {
+  margin-left: 8px;
+  font-size: var(--fs-xs);
+  color: var(--warn);
+  border: 1px solid var(--warn);
+  border-radius: 3px;
+  padding: 0 4px;
+}
+
+.rec-paths {
+  display: flex;
+  flex-direction: column;
+  gap: var(--u);
+  border-top: 1px solid var(--border-c);
+  padding-top: calc(var(--u) * 1.5);
+}
+.rec-path {
+  display: flex;
+  align-items: baseline;
+  gap: var(--u);
+  flex-wrap: wrap;
+  font-size: var(--fs-sm);
+}
+.rec-path .n {
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+  border: 1px solid var(--border-c);
+  border-radius: 3px;
+  padding: 0 4px;
+}
+.rec-path b { color: var(--text); }
+.rec-path code { font-family: var(--mono); color: var(--text); }
+.rec-path .why { color: var(--text-dim); font-size: var(--fs-xs); }
+.rec-path .why code { color: var(--text-dim); }
+.rec-note {
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+  line-height: 1.7;
+}
+.rec-note code { font-family: var(--mono); color: var(--text); }
+.rec-note b { color: var(--danger); }
+
+/* 清單列得到、8080 拉不下來的檔（safeName 只收 rec-*.jsonl） */
+.rec-table .tag.bad {
+  color: var(--err);
+  border-color: var(--err);
+}

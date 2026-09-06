@@ -4,8 +4,8 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  gap: calc(var(--u) * 2);
-  padding: calc(var(--u) * 3);
+  gap: calc(var(--u) * 1.5);
+  padding: calc(var(--u) * 2);
   overflow: auto;
   background: var(--surface-1);
 }
@@ -15,7 +15,8 @@
   flex-direction: column;
   align-items: center;
   gap: calc(var(--u) * 1.5);
-  padding: calc(var(--u) * 4) calc(var(--u) * 2);
+  /* 1440x900 上整頁要不捲動就看完：巨徽章夠大就好，不需要再撐開留白 */
+  padding: calc(var(--u) * 2) calc(var(--u) * 2);
 }
 
 .lockdown-slab {
@@ -43,7 +44,7 @@
 .lockdown-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: calc(var(--u) * 2);
+  gap: calc(var(--u) * 1.5);
   align-content: start;
 }
 
@@ -109,7 +110,7 @@
   text-align: center;
   color: var(--text-dim);
   font-size: var(--fs-sm);
-  padding-top: calc(var(--u) * 2);
+  padding-top: var(--u);
   border-top: 1px solid var(--border-c);
 }
 
@@ -129,3 +130,50 @@
   font-size: var(--fs-sm);
   line-height: 2;
 }
+
+/* ── 第二階段 A 追加：頂列、細字、寬卡 ───────────────────────────── */
+
+.lockdown-top {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 2);
+  padding-bottom: var(--u);
+  border-bottom: 1px solid var(--border-c);
+  font-size: var(--fs-sm);
+  color: var(--text-dim);
+}
+.lockdown-top .brand {
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--text);
+}
+.lockdown-top .badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  border-radius: 4px;
+  padding: 2px calc(var(--u) * 1.5);
+  letter-spacing: 0.08em;
+}
+.lockdown-top .spacer { flex: 1 1 auto; }
+.lockdown-top .mono {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.lockdown-rule .warnline { color: var(--danger); }
+
+.lockdown-card.wide { grid-column: 1 / -1; }
+
+.lockdown-fine {
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+  line-height: 1.8;
+  margin-top: var(--u);
+}
+.lockdown-fine code { font-family: var(--mono); color: var(--text); }
+.lockdown-fine b { color: var(--text); }
+
+.rec-line .v.up { color: var(--ok); }
