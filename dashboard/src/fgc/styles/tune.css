@@ -636,7 +636,7 @@
   font-weight: var(--fw-normal);
   margin-left: 4px;
 }
-/* σ 是調參真正要看的那一個（射手一致性的物理量），所以只有它的標籤是亮的。
+/* σ 是調參真正要看的那一個（shooter 一致性的物理量），所以只有它的標籤是亮的。
    不用 --series-1 上色：那是 SL 的專屬色，拿來標一個純量會讓人以為它屬於 SL。 */
 .rs-nums .sigma {
   color: var(--text);

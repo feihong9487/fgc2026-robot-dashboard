@@ -19,7 +19,7 @@ html, body, #root {
   height: 100%;
   background: var(--bg);
   color: var(--fg);
-  /* Noto Sans TC 打頭：拉丁與漢字出自同一家族，VEL_SL 與「射手」的筆畫
+  /* Noto Sans TC 打頭：拉丁與漢字出自同一家族，VEL_SL 與「shooter」的筆畫
      粗細才一致。這裡寫成字面值而不是 var(--font-ui)：data-profile 是
      initTheme 才掛上去的，開機第一幀讀不到那個變數。 */
   font-family: "Noto Sans TC", "Microsoft JhengHei", "PingFang TC",

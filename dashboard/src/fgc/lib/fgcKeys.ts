@@ -180,18 +180,18 @@ export const TUNABLES: readonly Tunable[] = [
   { name: "DEADZONE",       kind: "num",  min: 0, max: 0.4,  step: 0.01,  unit: "",    group: "底盤", coachRisk: false, def: 0.06 },
   { name: "TURN_SCALE",     kind: "num",  min: 0, max: 1,    step: 0.05,  unit: "",    group: "底盤", coachRisk: false, def: 0.8 },
 
-  { name: "VEL_SL",         kind: "num",  min: 0, max: 3000, step: 10,    unit: "tps", group: "射手", coachRisk: false, def: 1900, uiMax: VEL_UI_MAX, uiMaxWhy: VEL_UI_WHY },
-  { name: "VEL_SR",         kind: "num",  min: 0, max: 3000, step: 10,    unit: "tps", group: "射手", coachRisk: false, def: 1900, uiMax: VEL_UI_MAX, uiMaxWhy: VEL_UI_WHY },
-  { name: "IDLE_TPS",       kind: "num",  min: 0, max: 3000, step: 10,    unit: "tps", group: "射手", coachRisk: false, def: 0 },
-  { name: "EJECT_VEL",      kind: "num",  min: 0, max: 3000, step: 10,    unit: "tps", group: "射手", coachRisk: false, def: 1600 },
-  { name: "WAIT_SPINUP",    kind: "bool", min: 0, max: 1,    step: 1,     unit: "",    group: "射手", coachRisk: false, def: 1 },
-  { name: "FEED_THRESHOLD", kind: "num",  min: 0, max: 3000, step: 10,    unit: "tps", group: "射手", coachRisk: false, def: 1200 },
+  { name: "VEL_SL",         kind: "num",  min: 0, max: 3000, step: 10,    unit: "tps", group: "shooter", coachRisk: false, def: 1900, uiMax: VEL_UI_MAX, uiMaxWhy: VEL_UI_WHY },
+  { name: "VEL_SR",         kind: "num",  min: 0, max: 3000, step: 10,    unit: "tps", group: "shooter", coachRisk: false, def: 1900, uiMax: VEL_UI_MAX, uiMaxWhy: VEL_UI_WHY },
+  { name: "IDLE_TPS",       kind: "num",  min: 0, max: 3000, step: 10,    unit: "tps", group: "shooter", coachRisk: false, def: 0 },
+  { name: "EJECT_VEL",      kind: "num",  min: 0, max: 3000, step: 10,    unit: "tps", group: "shooter", coachRisk: false, def: 1600 },
+  { name: "WAIT_SPINUP",    kind: "bool", min: 0, max: 1,    step: 1,     unit: "",    group: "shooter", coachRisk: false, def: 1 },
+  { name: "FEED_THRESHOLD", kind: "num",  min: 0, max: 3000, step: 10,    unit: "tps", group: "shooter", coachRisk: false, def: 1200 },
 
   { name: "WAY_TPS",        kind: "num",  min: 0, max: 3000, step: 10,    unit: "tps", group: "送料", coachRisk: false, def: 1800 },
   { name: "WAY_IDLE_TPS",   kind: "num",  min: 0, max: 3000, step: 10,    unit: "tps", group: "送料", coachRisk: false, def: 400 },
 
-  { name: "INTAKE_COLLECT", kind: "num",  min: 0, max: 1,    step: 0.05,  unit: "",    group: "吸取", coachRisk: false, def: 1 },
-  { name: "INTAKE_SHOOT",   kind: "num",  min: 0, max: 1,    step: 0.05,  unit: "",    group: "吸取", coachRisk: false, def: 1 },
+  { name: "INTAKE_COLLECT", kind: "num",  min: 0, max: 1,    step: 0.05,  unit: "",    group: "intake", coachRisk: false, def: 1 },
+  { name: "INTAKE_SHOOT",   kind: "num",  min: 0, max: 1,    step: 0.05,  unit: "",    group: "intake", coachRisk: false, def: 1 },
 
   { name: "CLIMB",          kind: "num",  min: 0, max: 1,    step: 0.05,  unit: "",    group: "爬升", coachRisk: false, def: 1 },
   { name: "HOLD",           kind: "num",  min: 0, max: 1,    step: 0.05,  unit: "",    group: "爬升", coachRisk: false, def: 0.6 },
@@ -211,9 +211,9 @@ const BY_NAME = new Map<string, Tunable>(TUNABLES.map((t) => [t.name, t]));
 
 /** 白名單分組後的顯示順序（保持 DashParams.NAMES 的相對順序）。 */
 export const TUNE_GROUPS: readonly string[] = [
-  "射手",
+  "shooter",
   "送料",
-  "吸取",
+  "intake",
   "爬升",
   "球倉",
   "底盤",

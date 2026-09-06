@@ -1,7 +1,7 @@
 // #11 HeadingChip —— 車頭方向。
 //
 // reversed 開局預設 true（FGC2026_TeleOp_Match.java:225 `boolean reversed = true`，
-// 註解明寫「reversed=true 表示吸取端為前」），而 □ 只反前後、不反轉向
+// 註解明寫「reversed=true 表示 intake 端為前」），而 □ 只反前後、不反轉向
 // （:257 `if (reversed) forward = -forward;`）。這是新駕駛撞牆的頭號原因，
 // 但在 Driver Hub 上它只是一行小字 `front: INTAKE`。
 //
@@ -46,7 +46,7 @@ export function HeadingChip() {
     <PanelShell title="車頭" flush className="drive-heading">
       <div className={`head-box${flash ? " flash" : ""}${reversed ? " intake" : " shooter"}`}>
         <span className="head-arrow" aria-hidden>{reversed ? "◀◀" : "▶▶"}</span>
-        <span className="head-word">{reversed ? "吸取端為前" : "射手端為前"}</span>
+        <span className="head-word">{reversed ? "intake 端為前" : "shooter 端為前"}</span>
         {/* 兩段獨立的讀值，不是一句話：用間距分開，不用中點串起來。 */}
         <span className="head-sub fgc-num">
           <span className="hs-item">前後 <span ref={fwdRef}>0.00</span></span>

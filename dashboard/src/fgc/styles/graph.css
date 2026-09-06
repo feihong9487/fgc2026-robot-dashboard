@@ -1,5 +1,5 @@
 /* 圖表核心的樣式：LineGraph / DiscreteBand / TimeBar / Inspector / SignalTree。
-   由 GraphDemoPage（以及之後的射手、參數、REPLAY 分頁）import。
+   由 GraphDemoPage（以及之後的 shooter、參數、REPLAY 分頁）import。
 
    零硬編碼顏色——Canvas 那一半走 theme.ts，DOM 這一半走 CSS 變數，
    兩邊讀的是同一組 token，換主題時圖與框一起換。 */
@@ -154,7 +154,7 @@
   border-color: var(--border-hi);
   color: var(--text);
 }
-/* 已選 = 橘框 + 亮字，不是橘底（§5.2）。這顆按鈕在圖表 / 回放 / 射手 /
+/* 已選 = 橘框 + 亮字，不是橘底（§5.2）。這顆按鈕在圖表 / 回放 / shooter /
    參數四頁都用，橘底乘以四頁就直接吃掉「全頁橘色像素預算 < 2%」。 */
 .tb-btn.on {
   background: var(--surface-3);

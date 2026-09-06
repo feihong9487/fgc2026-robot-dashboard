@@ -1,6 +1,6 @@
 // RangeStats（§3.3 #21）：區間統計。五個數字 + σ + 直方圖。
 //
-// σ 不可砍。調參的正確問題不是「轉速多少」而是「轉速多穩」——σ 直接量化射手
+// σ 不可砍。調參的正確問題不是「轉速多少」而是「轉速多穩」——σ 直接量化 shooter
 // 一致性，那是決定命中率的物理量；曲線圖只給模糊印象，而 mean 在兩份設定之間
 // 常常只差 3 tps，看不出差別的其實是 σ 從 42 降到 18。
 //
@@ -37,7 +37,7 @@ const BIN_CHOICES = [10, 20, 40];
 
 /**
  * 直方圖的顏色跟著被統計的 key 走（§6.5 固定綁定：SL 青、SR 琥珀、Way 冷紫）。
- * 以前不論統計誰都畫 --series-1 的青色——選了 SR 之後，同一個量在射手頁是琥珀、
+ * 以前不論統計誰都畫 --series-1 的青色——選了 SR 之後，同一個量在 shooter 頁是琥珀、
  * 在這裡是青，那條「一個訊號一個顏色」的保證就在這一格默默失效。
  * 沒有綁定的 key 用中性灰：分布圖不屬於任何一條時間序列，硬給它一個 series 色是說謊。
  */
@@ -91,7 +91,7 @@ export function RangeStats({ log = liveLog, allowInputs }: Props) {
   useCursor();
   const [key, setKey] = useState<string>(K.sl);
   // 預設「最近 10 s」而不是「可見視窗」：參數頁上沒有時間軸，view 的視窗可能還停在
-  // 開機值 0–20 s（那一段通常一個樣本都沒有）。跨頁的正解是在射手頁框選再切過來，
+  // 開機值 0–20 s（那一段通常一個樣本都沒有）。跨頁的正解是在 shooter 頁框選再切過來，
   // 但那要使用者先做一件事；預設值必須是「打開就有數字」的那一個。
   // 刻意不叫 mode / setMode：store 的模式是 §8 M01 的核心（「這一行寫錯，其他全部
   // 是裝飾」），grep "setMode(" 的結果不該包含一個統計區間的區域 state。
@@ -162,14 +162,14 @@ export function RangeStats({ log = liveLog, allowInputs }: Props) {
           <span>
             mean <b>{fmt(s.mean)}</b>
           </span>
-          <span className="sigma" title="母體標準差：射手一致性的物理量">
+          <span className="sigma" title="母體標準差：shooter 一致性的物理量">
             σ <b>{fmt(s.sigma, 2)}</b>
           </span>
         </div>
 
         <div className="rs-hist" title="直方圖">
           {s.count === 0 ? (
-            <span className="rs-empty">這個範圍內沒有樣本。換一個區間，或到射手頁框選一段再切回來。</span>
+            <span className="rs-empty">這個範圍內沒有樣本。換一個區間，或到 shooter 頁框選一段再切回來。</span>
           ) : (
             Array.from(hist.counts).map((c, i) => (
               <span

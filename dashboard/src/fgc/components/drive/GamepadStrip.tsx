@@ -25,7 +25,7 @@ interface Cell {
 
 const CELLS: Cell[] = [
   { label: "RT", key: K.gpRT, analog: true, hint: "射擊" },
-  { label: "LT", key: K.gpLT, analog: true, hint: "吸取" },
+  { label: "LT", key: K.gpLT, analog: true, hint: "intake" },
   { label: "✕", key: K.gpCross, hint: "排出" },
   { label: "○", key: K.gpCircle, hint: "瞄準" },
   { label: "□", key: K.gpSquare, hint: "車頭" },

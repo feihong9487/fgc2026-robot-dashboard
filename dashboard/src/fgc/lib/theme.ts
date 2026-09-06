@@ -182,7 +182,7 @@ export function palette(): Palette {
 
 /**
  * 序列固定綁定：SL = series-1（青）、SR = series-2（橙）、Way = series-4（紫）。
- * 射手三軌在每一張圖、每一次回放、每一份匯出都是同一組顏色，不因面板而異。
+ * shooter 三軌在每一張圖、每一次回放、每一份匯出都是同一組顏色，不因面板而異。
  */
 export function seriesColor(i: number): string {
   const s = cache.series;

@@ -41,7 +41,7 @@ export interface PageDef {
  */
 export const PIT_PAGES: PageDef[] = [
   DrivePage, //   ① 駕駛 D —— 練習跑最常打開的一頁，所以它排第一（也是預設分頁）
-  ShooterPage, // ② 射手 S
+  ShooterPage, // ② Shooter S
   TunePage, //    ③ 參數 T
   HealthPage, //  ④ 檢查 C
   // ⑤ 視覺 V —— 條件項（§9 第一刀），v1 不做

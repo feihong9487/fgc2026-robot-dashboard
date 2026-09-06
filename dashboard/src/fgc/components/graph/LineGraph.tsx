@@ -258,7 +258,7 @@ export function LineGraph({
 
   // uPlot 的線色/軸色是**建立時就烤進去的**，而主題在開機時必然會翻一次：
   // App 在 mode 還是 UNKNOWN 的那幾百毫秒是 lockdown（預設鎖住），收到 hello 才翻回
-  // dark。任何在那個瞬間掛載的圖會永遠停在 lockdown 的灰階 series 色（實測：射手頁
+  // dark。任何在那個瞬間掛載的圖會永遠停在 lockdown 的灰階 series 色（實測：shooter 頁
   // 三條線全部畫成 #8a8d93）。Canvas 面板每一幀重讀 palette() 所以沒事，只有 uPlot 要重建。
   const [themeV, setThemeV] = useState(0);
   useEffect(() => subscribeTheme(() => setThemeV((n) => n + 1)), []);

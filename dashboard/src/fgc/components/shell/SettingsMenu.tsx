@@ -25,7 +25,7 @@ const THEMES: { id: ThemeName; label: string; why: string }[] = [
 ];
 
 const DENSITIES: { id: Density; label: string; why: string }[] = [
-  { id: "compact", label: "緊湊", why: "參數／射手：資訊密集" },
+  { id: "compact", label: "緊湊", why: "參數／shooter：資訊密集" },
   { id: "normal", label: "標準", why: "駕駛" },
   { id: "loose", label: "寬鬆", why: "賽場、觸控：命中區 ≥ 44 px" },
 ];

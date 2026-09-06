@@ -1,4 +1,4 @@
-// PIT · 射手工作台（§4.2）。
+// PIT · shooter 工作台（§4.2）。
 //
 // 版面的主張：上下分割，連續訊號畫曲線、離散訊號畫色帶，共用同一條 x 軸與同一個
 // 游標。診斷「射不出去」的第一步永遠是分辨『沒到速 / way 沒開 / way 方向反了』，
@@ -42,7 +42,7 @@ const PK_LEFT = "shooter.left";
 const PK_RIGHT = "shooter.right";
 const PK_SPAN = "shooter.span";
 
-/** 射手三軌。顏色在 LineGraph 裡固定綁定：SL 青 / SR 橙 / Way 紫。 */
+/** shooter 三軌。顏色在 LineGraph 裡固定綁定：SL 青 / SR 橙 / Way 紫。 */
 const DEFAULT_LEFT = [K.sl, K.sr, K.way];
 const SPARSE_KEYS = new Set<string>([K.currentL, K.currentR, K.currentWay, K.climbCurrent]);
 
@@ -194,7 +194,7 @@ function Shooter() {
 
   return (
     <div className="sp">
-      <div className="sp-narrow">射手工作台需要 1200 px 以上的視窗。把視窗拉寬，或改用「訊號」分頁。</div>
+      <div className="sp-narrow">shooter 工作台需要 1200 px 以上的視窗。把視窗拉寬，或改用「訊號」分頁。</div>
 
       <div className="gd-tools sp-tools">
         <span>窗</span>
@@ -259,7 +259,7 @@ function Shooter() {
 
         <div className="sp-center">
           <PanelShell
-            title="射手三軌 + 階梯目標"
+            title="shooter 三軌 + 階梯目標"
             note="離散六列彼此沒有互鎖：「按了 RT 但 hopper 還關著」只有在這裡看得出錯開。"
             rate={series.some((s) => s.points) ? "含 ~2 Hz 散點" : undefined}
             flush
@@ -298,7 +298,7 @@ function Shooter() {
 
 export const ShooterPage: PageDef = {
   id: "shooter",
-  label: "射手",
+  label: "shooter",
   hotkey: "S",
   hint: "調 VEL / FEED_THRESHOLD / IDLE_TPS：三軌曲線 + 離散色帶 + 每球 dip + 失衡 + loop 分佈",
   minWidth: 1200,

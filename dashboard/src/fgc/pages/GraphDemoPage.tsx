@@ -1,7 +1,7 @@
 // 圖表核心的組裝頁（第二階段 C 的驗收頁）。
 //
 // 這一頁本身不是規格裡的分頁——它是把 #18 LineGraph、#19 DiscreteBand、#31 TimeBar、
-// #32 Inspector、#35 SignalTree 五個元件放在同一條 x 軸上的證明。§4.2 射手工作台與
+// #32 Inspector、#35 SignalTree 五個元件放在同一條 x 軸上的證明。§4.2 shooter 工作台與
 // §4.6 REPLAY 分析頁都會直接沿用這個組裝方式（同一組元件、換一組預設序列），
 // 所以先在這裡把「五者共用同一個 viewWindow 與同一個 cursorStore」跑通。
 //
@@ -31,7 +31,7 @@ const PK_RIGHT = "graph.right";
 const PK_BAND = "graph.band";
 const PK_SPAN = "graph.span";
 
-/** 預設左軸：射手三軌。SL/SR/Way 的顏色在 LineGraph 裡是固定綁定的。 */
+/** 預設左軸：shooter 三軌。SL/SR/Way 的顏色在 LineGraph 裡是固定綁定的。 */
 const DEFAULT_LEFT = [K.sl, K.sr, K.way];
 
 /** 取樣率 < 10 Hz 的量：畫散點、掛 chip，不畫平滑曲線（§3.3 #22）。 */
@@ -258,7 +258,7 @@ function GraphDemo() {
 
         <div className="gd-center">
           <PanelShell
-            title="射手三軌 + 階梯目標"
+            title="shooter 三軌 + 階梯目標"
             note="目標與實測同色（虛線）· FEED_THRESHOLD 讀 /FGC/Param 回讀值"
             rate={series.some((s) => s.points) ? "含 ~2 Hz 散點" : undefined}
             flush

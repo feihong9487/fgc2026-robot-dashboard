@@ -10,7 +10,7 @@
 // 而且可以按 D/S/T/C/A 直接切到另一頁繼續用。
 //
 // 卡片上一定要有 Build tag 與原始錯誤訊息：賽場上回報「儀表板壞了」沒有用，
-// 「B7f3a2 的射手頁在 dip 表 toFixed of undefined」才修得動。
+// 「B7f3a2 的 shooter 頁在 dip 表 toFixed of undefined」才修得動。
 
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { liveLog } from "../../lib/LogStore";

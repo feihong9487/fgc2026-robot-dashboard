@@ -163,14 +163,14 @@ MATCH 進來時自動套 `lockdown` 主題（灰階 + 一個橘徽章）。它**
 | 鍵 | 分頁 | 誰在看 · 何時看 |
 |---|---|---|
 | `D` | **駕駛** | 駕駛、教練 · 練習跑（最常打開的一頁） |
-| `S` | **射手** | 程式 · 調 VEL / FEED_THRESHOLD / IDLE_TPS |
+| `S` | **shooter** | 程式 · 調 VEL / FEED_THRESHOLD / IDLE_TPS |
 | `T` | **參數** | 程式 · 寫回對帳、複製 Constants 片段 |
 | `C` | **檢查** | 全隊 · 上場前 30 秒、檢錄 |
 | `A` | **訊號** | 程式 · 新埋點驗證、找沒想到的那個 key |
 | `R` | 錄影選檔 | 賽後取檔 → 進 REPLAY（**不在分頁列上**） |
 | `G` | 圖表驗收頁 | 開發用（**不在分頁列上**，`?tab=graphdemo`） |
 
-分頁列上的分頁若標了 `⌐`，代表目前視窗寬度不足以完整顯示那一頁（例如射手頁需要 ≥ 1200）。
+分頁列上的分頁若標了 `⌐`，代表目前視窗寬度不足以完整顯示那一頁（例如 shooter 頁需要 ≥ 1200）。
 
 ### 快捷鍵
 
@@ -327,7 +327,7 @@ npm run tauri build                 # 產生 src-tauri/target/release/bundle/ �
 
 | 項目 | 值 | 理由 |
 |---|---|---|
-| 視窗 | 1600×900，`minWidth: 1200` | 射手頁需要 ≥ 1200 才不降級（§4.7） |
+| 視窗 | 1600×900，`minWidth: 1200` | shooter 頁需要 ≥ 1200 才不降級（§4.7） |
 | `security.csp` | `null` | 要連 `http://<hub>:8080` 的 MJPEG 與 `ws://<hub>:8081`，而 Hub IP 會變。收緊必須明列 `img-src` / `connect-src`，做之前先想清楚 IP 怎麼填 |
 | 權限 | 只有 `core:default`（**無 fs / dialog**） | 匯出走三層 fallback：`navigator.clipboard` → Tauri `plugin-dialog/fs` → `Blob + a.click()` |
 
@@ -417,7 +417,7 @@ src/
       shell/                    ConnectionBar · PanelShell · SettingsMenu · ErrorBoundary · Glyph
       drive/                    巨燈 · 雙環 · 膠囊 · 車頭 · 爬升柱 · 計時 · 節奏 · 按鍵 · 警報
       graph/                    LineGraph · DiscreteBand · TimeBar · Inspector · SignalTree
-      shooter/                  dipDetect · DipAnalyzer · BalanceBar · LoopHistogram · CurrentStrip
+     shooter/                  dipDetect · DipAnalyzer · BalanceBar · LoopHistogram · CurrentStrip
       tune/                     TuneTable · SetLedger · ParamDiffCard · RangeStats · CamPane
       health/                   checks · shutdown · HealthWall · BackupNudge
       rec/ · lockdown/ · replay/

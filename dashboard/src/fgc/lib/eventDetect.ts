@@ -397,7 +397,7 @@ export function detect(log: LogStore, opts: DetectOptions = {}): LogEvent[] {
     for (let i = 1; i < cp.length; i++) {
       const t = cp[i];
       const rev = (log.valueAt(K.driveReversed, t) ?? 0) > 0.5;
-      push("flip", t, "info", rev ? "車頭反轉 → 吸取端為前" : "車頭反轉 → 射手端為前", "", { reversed: rev });
+      push("flip", t, "info", rev ? "車頭反轉 → intake 端為前" : "車頭反轉 → shooter 端為前", "", { reversed: rev });
     }
   }
 

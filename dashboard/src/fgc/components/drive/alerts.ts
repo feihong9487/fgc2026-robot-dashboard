@@ -35,7 +35,7 @@ export interface Alert {
 export const BATT_WARN_V = LIMITS.battWarnV;
 export const BATT_ERR_V = LIMITS.battErrV;
 export const LOOP_P95_MS = LIMITS.loopErrMs;
-/** 射手偏離目標的判定：與機器人端 SHOOT_OFF_PCT 同一個 10%。 */
+/** shooter 偏離目標的判定：與機器人端 SHOOT_OFF_PCT 同一個 10%。 */
 export const SHOOT_OFF_PCT = 0.1;
 /** 偏離要持續這麼久才喊，避免每次餵球的 dip 都跳一次。 */
 const SHOOT_OFF_HOLD_MS = 500;
@@ -46,8 +46,8 @@ const TTL_BY_LEVEL: Record<Level, number> = { ERROR: 0, WARN: 8000, INFO: 4000 }
 
 /** ASCII title → 中文。查不到就原樣顯示。 */
 const TITLE_CN: Record<string, string> = {
-  SHOOTER_OFF_TARGET: "射手偏離目標",
-  SHOOTER_LOW: "射手轉速偏低",
+  SHOOTER_OFF_TARGET: "shooter 偏離目標",
+  SHOOTER_LOW: "shooter 轉速偏低",
   BATTERY_LOW: "電池電壓偏低",
   REC_ROLLED: "錄影已換檔",
   OVERCURRENT_L: "左飛輪過流",
@@ -152,7 +152,7 @@ export class AlertStore {
         desc: "已 " + (linkAgeMs / 1000).toFixed(1) + " s 沒有新的一批（推播週期 50 ms）",
       });
     } else if (linkAgeMs >= 0) {
-      // ② 射手偏離目標 > 10% 且已達速，持續 0.5 s
+      // ② shooter 偏離目標 > 10% 且已達速，持續 0.5 s
       const st = log.latestStr(K.driveState, "");
       const atSpeed = log.latestBool(K.atSpeed);
       const sl = log.latestNum(K.sl, NaN);
@@ -170,7 +170,7 @@ export class AlertStore {
           conds.push({
             key: "shootOff",
             level: "WARN",
-            title: "射手偏離目標 > 10%",
+            title: "shooter 偏離目標 > 10%",
             desc: "SL " + Math.round(sl) + "/" + Math.round(tl) + "　SR " + Math.round(sr) + "/" + Math.round(tr),
           });
         }

@@ -118,7 +118,7 @@
   --fov:        var(--scan-cyan);
 
   /* ── 字體 ────────────────────────────────────────────────────────
-     Noto Sans TC 打頭：拉丁與漢字出自同一家族，`VEL_SL` 與「射手」
+     Noto Sans TC 打頭：拉丁與漢字出自同一家族，`VEL_SL` 與「shooter」
      的筆畫粗細才一致。現況 "Segoe UI" 打頭會讓拉丁來自 humanist、
      漢字來自 neo-grotesque，兩套設計軸混在一行裡。不載入 web font。 */
   --font-ui:  "Noto Sans TC", "Microsoft JhengHei", "PingFang TC",
@@ -183,7 +183,7 @@
 }
 
 /* ── 密度三檔 ─────────────────────────────────────────────────────
-   compact：參數/射手/圖表/訊號（坐著看，資訊密集）
+   compact：參數/shooter/圖表/訊號（坐著看，資訊密集）
    normal ：駕駛/檢查/回放
    loose  ：field 與 lockdown（站著看，命中區 >= 44px）
    --u:10px 而不是 9px，是為了讓 .btn 在 17px 字級下自然來到 44px。 */

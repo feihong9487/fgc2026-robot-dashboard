@@ -21,7 +21,7 @@ const LABEL: Record<string, string> = {
 };
 
 const SUB: Record<string, string> = {
-  COLLECT: "吸取",
+  COLLECT: "intake",
   SHOOT: "射擊",
   EJECT: "排出",
 };

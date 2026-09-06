@@ -51,7 +51,7 @@ interface Props {
    */
   selected?: readonly TimeEvent[];
   bookmarks?: readonly TimeMark[];
-  /** 總覽層畫哪一條；預設 SL（射手三軌裡最能一眼認出「這一場長什麼樣」的那條）。 */
+  /** 總覽層畫哪一條；預設 SL（shooter 三軌裡最能一眼認出「這一場長什麼樣」的那條）。 */
   overviewKey?: string;
   padLeft?: number;
   padRight?: number;
