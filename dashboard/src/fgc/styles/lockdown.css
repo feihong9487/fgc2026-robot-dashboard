@@ -1,0 +1,131 @@
+/* Lockdown 頁（MATCH 唯一一頁）。刻意灰、刻意空。 */
+
+.lockdown {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 2);
+  padding: calc(var(--u) * 3);
+  overflow: auto;
+  background: var(--surface-1);
+}
+
+.lockdown-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--u) * 1.5);
+  padding: calc(var(--u) * 4) calc(var(--u) * 2);
+}
+
+.lockdown-slab {
+  padding: calc(var(--u) * 2) calc(var(--u) * 6);
+  border: 3px solid var(--danger);
+  background: #2a1a0c;
+  color: var(--danger);
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  letter-spacing: 0.35em;
+  text-align: center;
+}
+
+.lockdown-rule {
+  color: var(--text-dim);
+  font-size: var(--fs-sm);
+  text-align: center;
+  line-height: 1.9;
+}
+.lockdown-rule code {
+  font-family: var(--mono);
+  color: var(--text);
+}
+
+.lockdown-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: calc(var(--u) * 2);
+  align-content: start;
+}
+
+.lockdown-card {
+  border: 1px solid var(--border-c);
+  border-radius: 6px;
+  background: var(--surface-2);
+  padding: calc(var(--u) * 2);
+}
+.lockdown-card > h3 {
+  margin: 0 0 var(--u);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.lockdown-card .src {
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+  font-weight: 400;
+  margin-left: auto;
+}
+
+.rec-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--u) * 3);
+  align-items: baseline;
+}
+.rec-line .big {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--fs-lg);
+  color: var(--text);
+}
+.rec-line .k {
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+  display: block;
+}
+.rec-line .v {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.lockdown-list {
+  margin: 0;
+  padding-left: calc(var(--u) * 2.5);
+  color: var(--text-dim);
+  font-size: var(--fs-sm);
+  line-height: 2;
+}
+.lockdown-list code {
+  font-family: var(--mono);
+  color: var(--text);
+}
+
+.lockdown-foot {
+  margin-top: auto;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: var(--fs-sm);
+  padding-top: calc(var(--u) * 2);
+  border-top: 1px solid var(--border-c);
+}
+
+/* REPLAY 佔位 */
+.replay-stub {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 2);
+  padding: calc(var(--u) * 3);
+  overflow: auto;
+}
+.replay-stub .meta {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+  font-size: var(--fs-sm);
+  line-height: 2;
+}

@@ -11,6 +11,10 @@ export interface Series {
 
 export type ConnState = "disconnected" | "connecting" | "connected" | "sim" | "replay";
 
+// 模式是獨立欄位，不塞進 ConnState 的五態——否則所有既有 switch 都要跟著改。
+// 預設 UNKNOWN 且 UNKNOWN 一律當鎖住：未知即鎖，不是未知即開放。
+import type { AppMode } from "../fgc/lib/profile";
+
 class TelemetryStore {
   latest = new Map<string, NtValue>();
   history = new Map<string, Series>();
@@ -29,6 +33,8 @@ class TelemetryStore {
   flipV = (localStorage.getItem("vmx.pc.flipV") ?? "1") === "1"; // 上下（前後 x 軸）鏡像
   flipH = (localStorage.getItem("vmx.pc.flipH") ?? "1") === "1"; // 左右（y 軸）鏡像
   connState: ConnState = "disconnected";
+  /** 只來自 /FGC/Bridge/Mode；斷線或尚未收到 hello 一律 UNKNOWN（= 鎖住）。 */
+  mode: AppMode = "UNKNOWN";
   lastBatchAt = -1; // 最後一次收到遙測的時刻（now() 秒），頂欄延遲指示用
 
   private listeners = new Set<() => void>();
@@ -51,6 +57,12 @@ class TelemetryStore {
 
   setConnState(s: ConnState) {
     this.connState = s;
+    this.emit();
+  }
+
+  setMode(m: AppMode) {
+    if (this.mode === m) return;
+    this.mode = m;
     this.emit();
   }
 

@@ -1,0 +1,7 @@
+node_modules/
+dist/
+src-tauri/target/
+.edge-profile/
+screens/
+vite.log
+.fgc-check.mjs

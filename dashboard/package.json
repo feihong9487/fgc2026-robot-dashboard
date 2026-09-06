@@ -1,5 +1,5 @@
 {
-  "name": "vmx-dashboard",
+  "name": "fgc2026-dashboard",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -7,9 +7,10 @@
     "dev": "vite",
     "build": "vite build",
     "typecheck": "tsc --noEmit",
-    "golden": "node tools/golden-check.ts",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "fake-hub": "node ../fake-hub/fake-hub.mjs",
+    "fgc-check": "esbuild tools/fgc-check.ts --bundle --platform=node --format=esm --outfile=.fgc-check.mjs --log-level=warning && node .fgc-check.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",

@@ -1,136 +1,191 @@
-import { useState } from "react";
-import { ConnectionBar, loadSavedHost } from "./components/ConnectionBar";
-import { StatusPanel } from "./components/StatusPanel";
-import { RunPanel } from "./components/RunPanel";
-import { PathPlanPanel } from "./components/PathPlanPanel";
-import { PathTestPanel } from "./components/PathTestPanel";
-import { SimPanel } from "./components/SimPanel";
-import { ConstantsPanel } from "./components/ConstantsPanel";
-import { DebugPanel } from "./components/DebugPanel";
-import { PointCloudPanel } from "./components/PointCloudPanel";
-import { PointCloudTable } from "./components/PointCloudTable";
-import { LidarStatsPanel } from "./components/LidarStatsPanel";
-import { SlamPanel } from "./components/SlamPanel";
-import { LocalizationPanel } from "./components/LocalizationPanel";
-import { VisionPanel } from "./components/VisionPanel";
-import { LinePanel } from "./components/LinePanel";
-import { LockerPanel } from "./components/LockerPanel";
-import { AllSignalsPanel } from "./components/AllSignalsPanel";
+// FGC 2026 儀表板 —— 模式路由與 App 骨架。
+//
+// 模式是結構不是狀態（§2.1）：
+//   /FGC/Bridge/Mode == "PIT" 且 ws 已連  →  PIT     （唯一可寫回，有分頁）
+//   /FGC/Bridge/Mode == "MATCH"           →  MATCH   （Lockdown 單頁，零輸入元件）
+//   模式未知 / 尚未收到 hello / ws 斷線   →  MATCH   ← 預設鎖住，不是預設開放
+//   使用者載入 jsonl                      →  REPLAY  （不建立 ws，物理上不可寫）
+//
+// MATCH 下分頁列、host 框、滑桿與快捷鍵都**不存在**，不是 disabled——
+// 「不存在」是可以當場示範給檢錄志工看的，「disabled」不是。
 
-// V1 九分頁，按比賽日使用順序排：
-// 檢錄後看「機器狀態」，上場只開「執行狀態」；備賽期用路徑規劃/模擬/常數表；
-// 組裝期用初始化除錯；光達/視覺/全部訊號為跨階段工具。
-const TABS = [
-  { id: "status", label: "機器狀態", hint: "Go/No-Go 燈牆，全綠才上場" },
-  { id: "run", label: "執行狀態", hint: "賽中監控 + S-curve 波形 + 中止" },
-  { id: "path", label: "路徑規劃", hint: "場地圖點編輯 + op:path 下傳" },
-  { id: "pathtest", label: "連續路徑測試", hint: "waypoint 陣列下傳試跑 + 速度波形 + 測程位姿" },
-  { id: "sim", label: "模擬驗證", hint: "狀態機 + 故障注入" },
-  { id: "constants", label: "常數表", hint: "constants.json 編輯器（含 PID/S-curve）" },
-  { id: "debug", label: "初始化除錯", hint: "子系統隔離測試 + 標定精靈" },
-  { id: "lidar", label: "光達", hint: "點雲 + 淨空觀測" },
-  { id: "slam", label: "定位建圖", hint: "場地圖疊即時 grid + 機器人位姿（三角形車身、內圓為光達）" },
-  { id: "localization", label: "定位診斷", hint: "牆面錨定 heading/position 修正的殘差與採用狀態（調機用）" },
-  { id: "vision", label: "乒乓球定位", hint: "調色 + 霍夫圓 + 最近球座標" },
-  { id: "line", label: "黑線定位", hint: "二值化 + 輪廓 + 最近黑線點座標" },
-  { id: "locker", label: "置物櫃辨識", hint: "逐色找色塊 + 質心 Y 排序（黑/藍/紅 上→下）" },
-  { id: "signals", label: "全部訊號", hint: "NT 鏡射總表" },
-] as const;
+import { useCallback, useEffect, useState } from "react";
+import { ConnectionBar } from "./fgc/components/shell/ConnectionBar";
+import { LockdownPage } from "./fgc/pages/LockdownPage";
+import { ReplayPage } from "./fgc/pages/ReplayPage";
+import { PIT_PAGES, pageByHotkey, findPage } from "./fgc/pages/registry";
+import { client } from "./lib/RobotClient";
+import { store } from "./lib/store";
+import { DEFAULT_HOST, PATHS, httpUrl, readUrlParams, type RouteMode } from "./fgc/lib/profile";
+import { useAppMode, useLink } from "./fgc/lib/hooks";
+import * as persist from "./fgc/lib/persist";
+import { initTheme, setTheme, getTheme, type ThemeName } from "./fgc/lib/theme";
 
-type TabId = (typeof TABS)[number]["id"];
+const URLP = readUrlParams();
 
-const LS_TAB = "vmx-dashboard.tab";
+function initialHost(): string {
+  return URLP.host ?? persist.getStr(persist.KEYS.host, DEFAULT_HOST);
+}
 
-function loadSavedTab(): TabId {
-  const t = localStorage.getItem(LS_TAB);
-  return TABS.some((x) => x.id === t) ? (t as TabId) : "status";
+function initialTab(): string {
+  const fromUrl = URLP.tab && findPage(URLP.tab) ? URLP.tab : null;
+  const saved = persist.getStr(persist.KEYS.tab, "");
+  return fromUrl ?? (findPage(saved) ? saved : (PIT_PAGES[0]?.id ?? ""));
 }
 
 export default function App() {
-  const [host, setHost] = useState(loadSavedHost);
-  const [tab, setTab] = useState<TabId>(loadSavedTab);
+  const [host, setHostState] = useState(initialHost);
+  const [tab, setTab] = useState(initialTab);
+  const mode = useAppMode();
+  const link = useLink();
 
-  const select = (id: TabId) => {
+  const setHost = useCallback((h: string) => {
+    setHostState(h);
+    persist.setStr(persist.KEYS.host, h);
+  }, []);
+
+  // 開機：schema migration → 主題 → 連線
+  useEffect(() => {
+    persist.migrate();
+    initTheme(URLP.theme);
+  }, []);
+
+  useEffect(() => {
+    if (URLP.replay) return; // ?mode=replay 不建立 ws（回放物理上不可寫）
+    const t = window.setTimeout(() => client.connect(host), 150);
+    return () => {
+      window.clearTimeout(t);
+      client.disconnect();
+    };
+  }, [host]);
+
+  // ?mode=replay&file=<rec.json 裡的檔名>：streaming 載入成一個獨立的 LogStore。
+  // name=live 一律拒絕——那條路徑會回這一場的全部遙測（§8 M01 措施 6）。
+  const [replayErr, setReplayErr] = useState("");
+  useEffect(() => {
+    if (!URLP.replay || !URLP.file) return;
+    if (URLP.file === "live") {
+      setReplayErr("拒絕載入 name=live：那是即時遙測旁路，不是錄影檔");
+      return;
+    }
+    let alive = true;
+    void (async () => {
+      try {
+        const res = await fetch(httpUrl(host, PATHS.recFile, { name: URLP.file! }), { cache: "no-store" });
+        if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
+        const okLoad = await client.startReplay(res.body, URLP.file!);
+        if (alive && !okLoad) setReplayErr("檔案裡沒有可用的批次");
+      } catch (e) {
+        if (alive) setReplayErr(String(e));
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [host]);
+
+  // 決定路由。UNKNOWN 併進 MATCH。
+  const replay = client.replayLog !== null;
+  const route: RouteMode = replay ? "REPLAY" : mode === "PIT" ? "PIT" : "MATCH";
+
+  // lockdown 主題不由使用者選：比賽日的螢幕被人看到時，
+  // 它應該明顯是一台關著的機器，不是一個正在工作的控制台。
+  useEffect(() => {
+    if (route === "MATCH") {
+      if (getTheme() !== "lockdown") setTheme("lockdown", false);
+    } else if (getTheme() === "lockdown") {
+      const saved = persist.getStr(persist.KEYS.theme, "dark");
+      setTheme((saved === "field" ? "field" : "dark") as ThemeName, false);
+    }
+  }, [route]);
+
+  const select = useCallback((id: string) => {
     setTab(id);
-    localStorage.setItem(LS_TAB, id);
-  };
+    persist.setStr(persist.KEYS.tab, id);
+  }, []);
+
+  // 快捷鍵。MATCH 全部停用，一顆都不留（M06）。
+  useEffect(() => {
+    if (route !== "PIT") return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const el = e.target as HTMLElement | null;
+      const tag = el?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || el?.isContentEditable) return;
+      const page = pageByHotkey(e.key);
+      if (page) {
+        e.preventDefault();
+        select(page.id);
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [route, select]);
+
+  if (route === "REPLAY") {
+    return (
+      <div className="fgc-app">
+        <ConnectionBar host={host} setHost={setHost} />
+        <div className="fgc-body">
+          <ReplayPage />
+        </div>
+      </div>
+    );
+  }
+
+  if (URLP.replay) {
+    // ?mode=replay 但檔案還沒載完（或載失敗）：不建立 ws，也不掉回 Lockdown
+    return (
+      <div className="fgc-app">
+        <ConnectionBar host={host} setHost={setHost} />
+        <div className="fgc-body" style={{ padding: "calc(var(--u) * 3)", color: "var(--text-dim)" }}>
+          {replayErr ? `載入失敗：${replayErr}` : `載入回放檔 ${URLP.file ?? "（未指定 file）"} …`}
+        </div>
+      </div>
+    );
+  }
+
+  if (route === "MATCH") {
+    // 分頁列不傳 = 整條不 render。這裡沒有 tabs 這個變數可以被誤用。
+    return (
+      <div className="fgc-app">
+        <ConnectionBar host={host} setHost={setHost} />
+        <div className="fgc-body">
+          <LockdownPage host={host} />
+        </div>
+      </div>
+    );
+  }
+
+  const page = findPage(tab) ?? PIT_PAGES[0];
+  const tabs = (
+    <nav className="fgc-tabs">
+      {PIT_PAGES.map((p) => (
+        <button
+          key={p.id}
+          className={p.id === page?.id ? "fgc-tab active" : "fgc-tab"}
+          title={p.hint}
+          onClick={() => select(p.id)}
+        >
+          {p.label}
+          <span className="hk">{p.hotkey}</span>
+        </button>
+      ))}
+    </nav>
+  );
 
   return (
-    <div className="app">
-      <ConnectionBar host={host} setHost={setHost} />
-
-      <div className="app-body">
-        <nav className="sidebar">
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              className={tab === t.id ? "side-tab active" : "side-tab"}
-              title={t.hint}
-              onClick={() => select(t.id)}
-            >
-              <span className="side-label">{t.label}</span>
-            </button>
-          ))}
-        </nav>
-
-        {tab === "status" ? (
-          <main className="layout-fill">
-            <StatusPanel />
-          </main>
-        ) : tab === "run" ? (
-          <main className="layout-run">
-            <RunPanel />
-          </main>
-        ) : tab === "path" ? (
-          <main className="layout-run">
-            <PathPlanPanel />
-          </main>
-        ) : tab === "pathtest" ? (
-          <main className="layout-run">
-            <PathTestPanel />
-          </main>
-        ) : tab === "sim" ? (
-          <main className="layout-sim">
-            <SimPanel />
-          </main>
-        ) : tab === "constants" ? (
-          <main className="layout-fill">
-            <ConstantsPanel />
-          </main>
-        ) : tab === "debug" ? (
-          <main className="layout-fill">
-            <DebugPanel />
-          </main>
-        ) : tab === "lidar" ? (
-          <main className="layout-sensors">
-            <PointCloudPanel />
-            <PointCloudTable />
-            <LidarStatsPanel />
-          </main>
-        ) : tab === "slam" ? (
-          <main className="layout-run">
-            <SlamPanel />
-          </main>
-        ) : tab === "localization" ? (
-          <main className="layout-fill">
-            <LocalizationPanel />
-          </main>
-        ) : tab === "vision" ? (
-          <main className="layout-vision">
-            <VisionPanel host={host} />
-          </main>
-        ) : tab === "line" ? (
-          <main className="layout-vision">
-            <LinePanel host={host} />
-          </main>
-        ) : tab === "locker" ? (
-          <main className="layout-vision">
-            <LockerPanel host={host} />
-          </main>
+    <div className="fgc-app">
+      <ConnectionBar host={host} setHost={setHost} tabs={tabs} />
+      <div className="fgc-body">
+        {page ? (
+          <page.Component />
         ) : (
-          <main className="layout-signals">
-            <AllSignalsPanel />
-          </main>
+          <div style={{ padding: "calc(var(--u) * 3)", color: "var(--text-dim)" }}>
+            尚未登記任何 PIT 分頁（後續階段各自 export 一個 PageDef 到 registry.ts）。
+            {link.lastError && <div style={{ marginTop: 8 }}>最後一個連線錯誤：{link.lastError}</div>}
+            {store.connState}
+          </div>
         )}
       </div>
     </div>

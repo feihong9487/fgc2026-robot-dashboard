@@ -5,6 +5,7 @@
 import { useEffect, useState } from "react";
 import { store, NtValue } from "../lib/store";
 import { client } from "../lib/RobotClient";
+import { isTunableKey } from "../fgc/lib/fgcKeys";
 import { Chart } from "./Chart";
 
 const LS_PINNED = "vmx-dashboard.pinnedSignals";
@@ -75,7 +76,30 @@ function StringRow({ ntKey, value }: { ntKey: string; value: string }) {
   );
 }
 
+/**
+ * §8 M01 措施 4（最大漏洞）：這個面板原本對**任何** key 都直接呼叫 client.set。
+ * 現在唯一會 render 輸入元件的情況是「PIT 模式 + key 在 21 項白名單內」；
+ * 其餘一律純文字（不是 disabled input）——唯讀就該長得像唯讀。
+ */
 function ValueCell({ ntKey, value }: { ntKey: string; value: NtValue }) {
+  const writable = store.mode === "PIT" && isTunableKey(ntKey);
+  if (!writable) {
+    const text =
+      typeof value === "number"
+        ? fmtNum(value)
+        : typeof value === "boolean"
+          ? value
+            ? "true"
+            : "false"
+          : typeof value === "string"
+            ? value
+            : `[${value.length} 項]`;
+    return (
+      <span className="ro-value" title={Array.isArray(value) ? value.join("\n") : text}>
+        {text}
+      </span>
+    );
+  }
   if (typeof value === "number") return <NumberRow ntKey={ntKey} value={value} />;
   if (typeof value === "boolean")
     return (
@@ -180,8 +204,8 @@ export function AllSignalsPanel() {
       <div className="sig-list">
         {disconnected ? (
           <div className="cam-placeholder">
-            未連線。連上機器人（或按「模擬」）後，橋接器鏡射的所有 NT 訊號會自動列在這裡 ——
-            機器人端 tab.Add(...) 加什麼就出現什麼。
+            未連線。連上 Control Hub 後，/FGC/** 的所有訊號會自動列在這裡。
+            MATCH 期間 8081 不推播是規則性靜默，不是壞了。
           </div>
         ) : sortedGroups.length === 0 ? (
           <div className="cam-placeholder">
@@ -199,7 +223,7 @@ export function AllSignalsPanel() {
                       title="釘選到波形圖"
                       onClick={() => togglePin(key)}
                     >
-                      📈
+                      圖
                     </button>
                   ) : (
                     <span className="sig-pin-slot" />

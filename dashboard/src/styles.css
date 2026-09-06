@@ -728,3 +728,397 @@ html, body, #root {
 }
 .cam-view img { max-width: 100%; max-height: 100%; }
 .cam-placeholder { color: var(--fg-dim); padding: 30px; text-align: center; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   FGC 2026 —— 三層 token（§6.1）
+
+   上面那 10 個變數是相容層（AllSignalsPanel / controls / uPlot 包裝還在用），
+   不動。以下三層才是 FGC 的真相，Canvas 與 uPlot 一律經由 theme.ts 讀這裡。
+   ═══════════════════════════════════════════════════════════════════════ */
+
+:root[data-profile="fgc"] {
+  /* ── 第一層 原始色（只被第二層引用，元件不准直接用）── */
+  --gray-900: #0d1017;
+  --gray-850: #12151c;
+  --gray-800: #1a1f2a;
+  --gray-700: #232a38;
+  --gray-600: #2e3950;
+  --gray-500: #3a4256;
+  --gray-400: #6b7488;
+  --gray-300: #8b95a7;
+  --gray-200: #b9c2d0;
+  --gray-100: #dfe6f0;
+  --green-400: #81c784;
+  --amber-400: #ffb74d;
+  --red-400: #e57373;
+  --blue-400: #4fc3f7;
+  --purple-400: #ba68c8;
+  --cyan-400: #4dd0e1;
+  --orange-400: #ffa726;
+  --yellow-300: #fff176;
+  --pink-400: #f06292;
+  --brown-400: #a1887f;
+
+  /* ── 第二層 語意色 ── */
+  --surface-1: var(--gray-850);
+  --surface-2: var(--gray-800);
+  --surface-3: var(--gray-700);
+  --text: var(--gray-100);
+  --text-dim: var(--gray-300);
+  --border-c: var(--gray-600);
+  --ok: var(--green-400);
+  --warn: var(--amber-400);
+  --err: var(--red-400);
+  /* danger ≠ err：err =「這個值不對」，danger =「這個按鈕會改機器人」 */
+  --danger: var(--orange-400);
+  --focus-ring: var(--blue-400);
+  /* 值沒更新 ≠ 值是舊的；相機與 tag 確實會過期 */
+  --stale: var(--gray-400);
+  /* 資料缺口：斜線紋的線色，絕不畫成 0 或內插 */
+  --gap: var(--gray-500);
+
+  /* ── 第三層 領域色 ── */
+  /* 色盲安全分類色盤：青 → 橙 → 綠 → 紫 → 黃 → 粉 → 藍 → 棕 */
+  --series-1: var(--cyan-400);
+  --series-2: var(--orange-400);
+  --series-3: var(--green-400);
+  --series-4: var(--purple-400);
+  --series-5: var(--yellow-300);
+  --series-6: var(--pink-400);
+  --series-7: var(--blue-400);
+  --series-8: var(--brown-400);
+  /* DiscreteBand / StateRibbon / 事件軌共用同一組狀態色 */
+  --state-collect: var(--blue-400);
+  --state-shoot: var(--green-400);
+  --state-eject: var(--red-400);
+  --band-on: var(--green-400);
+  --band-off: var(--gray-600);
+  --band-neg: var(--purple-400);
+  /* 目標線與實測同色，誤差 = 兩條同色線的距離 */
+  --target: var(--gray-100);
+  --thresh: var(--amber-400);
+  /* 必須獨立於 err/accent，否則燈牆與聯盟色互相混淆 */
+  --alliance-red: #ff5252;
+  --alliance-blue: #448aff;
+  --field-bg: var(--gray-900);
+  --field-grid: #2a3040;
+  --field-tag: var(--yellow-300);
+  --fov: var(--cyan-400);
+
+  /* ── 密度：一個變數三檔，所有 padding/gap 寫成 calc(var(--u) * n) ── */
+  --u: 6px;
+  --font-scale: 1;
+
+  /* ── 字級階梯（§6.4）── */
+  --fs-hero: calc(96px * var(--font-scale));
+  --fs-xl: calc(48px * var(--font-scale));
+  --fs-lg: calc(28px * var(--font-scale));
+  --fs-md: calc(16px * var(--font-scale));
+  --fs-sm: calc(13px * var(--font-scale));
+  --fs-xs: calc(11px * var(--font-scale));
+  --mono: ui-monospace, "Cascadia Mono", Consolas, "Courier New", monospace;
+
+  color-scheme: dark;
+}
+
+/* 密度三檔：參數/射手 4px（資訊密集）· 駕駛 6px · Lockdown 與 field 9px */
+:root[data-profile="fgc"][data-density="compact"] { --u: 4px; }
+:root[data-profile="fgc"][data-density="loose"] { --u: 9px; }
+
+/* ── 主題 2：field（賽場、站著看、隔 1.5 公尺）──
+   純黑底、四色、無漸層無陰影、字級 ×1.6、命中區 >= 44px。 */
+:root[data-profile="fgc"][data-theme="field"] {
+  --surface-1: #000000;
+  --surface-2: #000000;
+  --surface-3: #101010;
+  --text: #ffffff;
+  --text-dim: #b0b0b0;
+  --border-c: #3a3a3a;
+  --ok: #00e676;
+  --warn: #ffd600;
+  --err: #ff1744;
+  --danger: #ff1744;
+  --stale: #808080;
+  --gap: #505050;
+  --series-1: #00e5ff;
+  --series-2: #ffd600;
+  --series-3: #00e676;
+  --series-4: #e040fb;
+  --series-5: #ffffff;
+  --series-6: #ff4081;
+  --series-7: #40c4ff;
+  --series-8: #bcaaa4;
+  --state-collect: #40c4ff;
+  --state-shoot: #00e676;
+  --state-eject: #ff1744;
+  --band-on: #00e676;
+  --band-off: #303030;
+  --target: #ffffff;
+  --thresh: #ffd600;
+  --field-bg: #000000;
+  --field-grid: #303030;
+  --u: 9px;
+  --font-scale: 1.6;
+}
+
+/* ── 主題 3：lockdown（MATCH 專用，不可切換）──
+   刻意「不好看」：灰階為主 + 一個橘徽章。比賽日的螢幕被人看到時，
+   它應該明顯是一台關著的機器，不是一個正在工作的控制台。 */
+:root[data-profile="fgc"][data-theme="lockdown"] {
+  --surface-1: #16171a;
+  --surface-2: #1c1e22;
+  --surface-3: #24262b;
+  --text: #c8cacd;
+  --text-dim: #7c7f85;
+  --border-c: #34373d;
+  --ok: #8a8d93;
+  --warn: #8a8d93;
+  --err: #8a8d93;
+  --danger: #ff8f3f;
+  --stale: #5a5d63;
+  --series-1: #8a8d93;
+  --series-2: #8a8d93;
+  --series-3: #8a8d93;
+  --series-4: #8a8d93;
+  --series-5: #8a8d93;
+  --series-6: #8a8d93;
+  --series-7: #8a8d93;
+  --series-8: #8a8d93;
+  --u: 9px;
+  --font-scale: 1;
+}
+
+/* ═══ FGC 基礎排版 ═══════════════════════════════════════════════════ */
+
+:root[data-profile="fgc"] body,
+:root[data-profile="fgc"] #root {
+  background: var(--surface-1);
+  color: var(--text);
+  font-size: var(--fs-md);
+}
+
+/* 所有數值：等寬 + tabular-nums + 右對齊 + 固定寬度容器。
+   比例字體會讓 Inspector 的數字在滑鼠移動時橫向跳動，讀不了。 */
+.fgc-num {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* 單位後綴：小一號、dim；數值本體大且亮 */
+.fgc-unit {
+  font-size: 0.78em;
+  color: var(--text-dim);
+  margin-left: 2px;
+  font-family: var(--mono);
+}
+
+/* 形狀語彙（§6.3）：綠●／黃▲／紅■／灰○ —— 顏色不是唯一通道 */
+.fgc-glyph { font-family: var(--mono); }
+.fgc-glyph.ok { color: var(--ok); }
+.fgc-glyph.warn { color: var(--warn); }
+.fgc-glyph.err { color: var(--err); }
+.fgc-glyph.stale { color: var(--stale); }
+
+/* ── App 外框 ── */
+.fgc-app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--surface-1);
+  color: var(--text);
+}
+.fgc-body { flex: 1; min-height: 0; overflow: auto; }
+
+/* ── 頂欄（44px，永遠存在）── */
+.fgc-bar {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 1.5);
+  height: 44px;
+  flex: 0 0 auto;
+  padding: 0 calc(var(--u) * 2);
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border-c);
+  font-size: var(--fs-sm);
+  overflow: hidden;
+}
+.fgc-bar .sep {
+  width: 1px;
+  height: 20px;
+  background: var(--border-c);
+  flex: 0 0 auto;
+}
+.fgc-bar .spacer { flex: 1 1 auto; }
+
+/* 數字塊固定寬度：值變動時右邊的圖示不左右晃。
+   在 3 秒律下版面跳動比數字錯誤更致命——眼睛會被吸引去追移動的東西。 */
+.fgc-stat {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+.fgc-stat > .label { color: var(--text-dim); font-size: var(--fs-xs); }
+.fgc-stat > .value {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  display: inline-block;
+}
+.fgc-stat.w4 > .value { min-width: 4ch; }
+.fgc-stat.w5 > .value { min-width: 5ch; }
+.fgc-stat.w6 > .value { min-width: 6ch; }
+.fgc-stat.w8 > .value { min-width: 8ch; }
+.fgc-stat.warn > .value { color: var(--warn); }
+.fgc-stat.err > .value { color: var(--err); }
+.fgc-stat.stale > .value { color: var(--stale); }
+
+/* 模式徽章 */
+.fgc-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px calc(var(--u) * 1.5);
+  border-radius: 4px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  flex: 0 0 auto;
+}
+.fgc-badge.pit { background: #16351d; color: var(--ok); border: 1px solid var(--ok); }
+.fgc-badge.match { background: #3a2410; color: var(--danger); border: 1px solid var(--danger); }
+.fgc-badge.unknown { background: var(--surface-3); color: var(--stale); border: 1px solid var(--border-c); }
+.fgc-badge.replay { background: #1b2740; color: var(--series-7); border: 1px solid var(--series-7); }
+
+/* 連線小燈 */
+.fgc-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--stale);
+  flex: 0 0 auto;
+  display: inline-block;
+}
+.fgc-dot.ok { background: var(--ok); }
+.fgc-dot.warn { background: var(--warn); }
+.fgc-dot.err { background: var(--err); }
+.fgc-dot.pending { background: var(--warn); animation: blink 1s infinite; }
+
+.fgc-host {
+  width: 150px;
+  padding: 3px 6px;
+  background: var(--surface-3);
+  color: var(--text);
+  border: 1px solid var(--border-c);
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: var(--fs-sm);
+}
+.fgc-host:focus { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
+
+/* ── 分頁列（MATCH 下整條不 render）── */
+.fgc-tabs { display: flex; gap: 2px; flex: 0 0 auto; }
+.fgc-tab {
+  padding: calc(var(--u) * 0.75) calc(var(--u) * 1.5);
+  min-height: calc(var(--u) * 5);
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: var(--fs-sm);
+  font-family: inherit;
+}
+.fgc-tab:hover { color: var(--text); border-color: var(--border-c); }
+.fgc-tab.active {
+  background: var(--surface-3);
+  color: var(--text);
+  border-color: var(--focus-ring);
+  font-weight: 600;
+}
+.fgc-tab .hk { color: var(--text-dim); font-size: var(--fs-xs); margin-left: 4px; }
+
+/* ── PanelShell ── */
+.panel-shell {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--surface-2);
+  border: 1px solid var(--border-c);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.panel-shell > header {
+  display: flex;
+  align-items: center;
+  gap: var(--u);
+  padding: calc(var(--u) * 0.75) calc(var(--u) * 1.5);
+  background: var(--surface-3);
+  border-bottom: 1px solid var(--border-c);
+  font-size: var(--fs-sm);
+  flex: 0 0 auto;
+}
+.panel-shell > header .title { font-weight: 600; }
+.panel-shell > header .tools { margin-left: auto; display: flex; gap: 4px; align-items: center; }
+.panel-shell > .body { flex: 1 1 auto; min-height: 0; overflow: auto; padding: var(--u); }
+.panel-shell.flush > .body { padding: 0; }
+.panel-shell.fill { flex: 1 1 auto; height: 100%; }
+
+/* 新鮮度小點：250ms 門檻（推播週期 PERIOD_MS=50） */
+.fresh-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--ok); flex: 0 0 auto;
+}
+.fresh-dot.stale { background: var(--stale); }
+.fresh-dot.dead { background: var(--err); }
+
+/* 取樣率 chip：一張畫成平滑曲線的 2 Hz 電流圖比沒有這張圖更糟 */
+.rate-chip {
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--surface-1);
+  color: var(--text-dim);
+  border: 1px solid var(--border-c);
+  font-family: var(--mono);
+  font-size: var(--fs-xs);
+}
+
+/* 資料缺口：斜線紋，不是實色 */
+.gap-hatch {
+  background-image: repeating-linear-gradient(
+    45deg, var(--gap) 0 2px, transparent 2px 6px
+  );
+}
+
+/* 唯讀渲染（非 PIT）：純文字，無邊框無背景——不是 disabled input */
+.ro-value {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  padding: 2px 0;
+}
+
+/* ── 斷點（§4.7）。現況全檔 0 個 @media，1366×768 上會擠爆 ── */
+@media (max-width: 1439px) {
+  :root[data-profile="fgc"] { --u: 5px; }
+}
+@media (max-width: 1199px) {
+  /* 1366×768 舊筆電 */
+  :root[data-profile="fgc"] { --u: 4px; --fs-md: calc(15px * var(--font-scale)); }
+  .hide-lt-1200 { display: none !important; }
+}
+@media (max-width: 1023px) {
+  /* 平板 / 手機：只保留最少的東西，字級放大 */
+  :root[data-profile="fgc"] { --font-scale: 1.2; }
+  .hide-lt-1024 { display: none !important; }
+  .fgc-bar { height: auto; flex-wrap: wrap; padding: 4px calc(var(--u) * 2); }
+}
+
+/* ── 動態：極少（§6.7）。比賽日的畫面每動一次都在偷駕駛的注意力 ── */
+@media (prefers-reduced-motion: reduce) {
+  :root[data-profile="fgc"] * { animation: none !important; transition: none !important; }
+}
