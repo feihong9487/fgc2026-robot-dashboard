@@ -1,0 +1,475 @@
+/* REPLAY 分析頁（§4.6）+ 事件清單 / 匯出選單 / 書籤輸入。
+   顏色一律走 token，沒有一個硬編 hex——Canvas 那邊由 theme.ts 取同一組值。 */
+
+.rp {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.rp-none {
+  padding: calc(var(--u) * 3);
+  color: var(--text-dim);
+}
+
+/* ── 頂列 ────────────────────────────────────────────────────────── */
+.rp-top {
+  display: flex;
+  align-items: center;
+  gap: var(--u);
+  padding: calc(var(--u) * 0.75) calc(var(--u) * 1.5);
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border-c);
+  font-size: var(--fs-sm);
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+}
+.rp-top .spacer {
+  flex: 1 1 auto;
+}
+.rp-badge {
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--surface-3);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+.rp-file {
+  font-family: var(--mono);
+  max-width: 34ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rp-meta {
+  color: var(--text-dim);
+}
+.rp-ab {
+  color: var(--stale);
+  font-size: var(--fs-xs);
+  border: 1px dashed var(--border-c);
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+.rp-note {
+  color: var(--warn);
+  font-size: var(--fs-xs);
+  max-width: 40ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── M11 時間閘橫幅 ──────────────────────────────────────────────── */
+.rp-gate {
+  display: flex;
+  align-items: baseline;
+  gap: var(--u);
+  flex-wrap: wrap;
+  padding: calc(var(--u) * 0.75) calc(var(--u) * 1.5);
+  background: var(--surface-1);
+  border-bottom: 1px solid var(--warn);
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+  flex: 0 0 auto;
+}
+.rp-gate b {
+  color: var(--warn);
+}
+.rp-gate .basis {
+  color: var(--stale);
+  font-family: var(--mono);
+}
+
+/* ── 主區三欄 ────────────────────────────────────────────────────── */
+.rp-main {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  /* 列高必須鎖回容器高度：訊號樹有 120+ 列，auto 會把整列撐到兩千像素、
+     把色帶與狀態列推出畫面（第二階段 C 踩過一次）。 */
+  grid-template-rows: minmax(0, 1fr);
+  grid-template-columns: 210px minmax(0, 1fr) 330px;
+  gap: var(--u);
+  padding: var(--u);
+}
+.rp-main.no-tree {
+  grid-template-columns: minmax(0, 1fr) 330px;
+}
+.rp-main > * {
+  min-width: 0;
+  min-height: 0;
+}
+.rp-side {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.rp-side > .panel-shell {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.rp-center {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+.rp-center > .panel-shell {
+  flex: 1 1 auto;
+}
+.rp-center .panel-shell > .body {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.rp-right {
+  display: grid;
+  grid-template-rows: minmax(120px, 40%) minmax(0, 1fr);
+  gap: var(--u);
+  min-height: 0;
+}
+.rp-right > * {
+  min-height: 0;
+}
+
+.rp-tools {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+}
+.rp-tools .sep {
+  width: 1px;
+  height: 14px;
+  background: var(--border-c);
+  margin: 0 2px;
+}
+.rp-sel {
+  background: var(--surface-1);
+  color: var(--text);
+  border: 1px solid var(--border-c);
+  border-radius: 3px;
+  font-size: var(--fs-xs);
+  padding: 1px 2px;
+  max-width: 14ch;
+}
+
+/* ── 底部狀態列 ──────────────────────────────────────────────────── */
+.rp-status {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 2);
+  flex-wrap: wrap;
+  padding: calc(var(--u) * 0.5) calc(var(--u) * 1.5);
+  border-top: 1px solid var(--border-c);
+  background: var(--surface-2);
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+  flex: 0 0 auto;
+}
+.rp-status .spacer {
+  flex: 1 1 auto;
+}
+.rp-status b {
+  color: var(--text);
+}
+.rp-status .bad {
+  color: var(--err);
+}
+
+/* ═══ 事件清單（#33）════════════════════════════════════════════ */
+.ev {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.ev-tools {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-bottom: 1px solid var(--border-c);
+  flex: 0 0 auto;
+}
+.ev-search {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: var(--surface-1);
+  border: 1px solid var(--border-c);
+  border-radius: 3px;
+  color: var(--text);
+  font-size: var(--fs-xs);
+  padding: 2px 6px;
+}
+.ev-search:focus {
+  outline: none;
+  border-color: var(--focus-ring);
+}
+.ev-kinds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  padding: 4px;
+  border-bottom: 1px solid var(--border-c);
+  flex: 0 0 auto;
+}
+.ev-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  border: 1px solid var(--border-c);
+  background: var(--surface-1);
+  color: var(--stale);
+  font-size: var(--fs-xs);
+  cursor: pointer;
+}
+.ev-chip.on {
+  color: var(--text);
+  border-color: var(--accent);
+}
+.ev-chip .n {
+  font-family: var(--mono);
+  color: var(--text-dim);
+}
+.ev-count {
+  padding: 2px 6px;
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border-c);
+  flex: 0 0 auto;
+}
+.ev-rows {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+.ev-empty {
+  padding: calc(var(--u) * 2);
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+}
+.ev-row {
+  display: grid;
+  grid-template-columns: 14px 46px 40px minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 4px;
+  width: 100%;
+  text-align: left;
+  padding: 2px 6px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--surface-3);
+  color: var(--text);
+  font-size: var(--fs-xs);
+  cursor: pointer;
+}
+.ev-row:hover {
+  background: var(--surface-3);
+}
+.ev-row.active {
+  background: var(--surface-3);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+.ev-row .g {
+  font-size: 10px;
+  color: var(--text-dim);
+}
+.ev-row.ok .g {
+  color: var(--ok);
+}
+.ev-row.warn .g {
+  color: var(--warn);
+}
+.ev-row.err .g {
+  color: var(--err);
+}
+.ev-row.info .g {
+  color: var(--stale);
+}
+.ev-row.mark .g {
+  color: var(--accent);
+}
+.ev-row .t {
+  color: var(--text-dim);
+  text-align: right;
+}
+.ev-row .k {
+  color: var(--text-dim);
+}
+.ev-row .l {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ev-row .d {
+  color: var(--stale);
+  margin-left: 6px;
+}
+.ev-x {
+  color: var(--text-dim);
+  padding: 0 4px;
+}
+.ev-x:hover {
+  color: var(--err);
+}
+
+/* ═══ 匯出選單（#36）════════════════════════════════════════════ */
+.ex {
+  position: relative;
+}
+.ex-pop {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 40;
+  width: 640px;
+  max-width: 90vw;
+  padding: var(--u);
+  background: var(--surface-2);
+  border: 1px solid var(--border-c);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+.ex-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.ex-lbl {
+  width: 3em;
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+}
+.ex-span {
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+}
+.ex-note {
+  color: var(--stale);
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+  margin-bottom: 6px;
+}
+.ex-result {
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: var(--fs-xs);
+  background: var(--surface-1);
+  border-left: 3px solid var(--ok);
+  margin-bottom: 6px;
+}
+.ex-result.bad {
+  border-left-color: var(--err);
+  color: var(--err);
+}
+.ex-prev {
+  max-height: 220px;
+  overflow: auto;
+  margin: 0;
+  padding: 6px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-c);
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+  white-space: pre;
+}
+
+/* ═══ 書籤輸入（#34）════════════════════════════════════════════ */
+.bm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.bm-box {
+  width: 460px;
+  max-width: 92vw;
+  padding: calc(var(--u) * 2);
+  background: var(--surface-2);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+}
+.bm-head {
+  font-size: var(--fs-sm);
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+.bm-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--surface-1);
+  border: 1px solid var(--border-c);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: var(--fs-md);
+  padding: 6px 8px;
+}
+.bm-input:focus {
+  outline: none;
+  border-color: var(--focus-ring);
+}
+.bm-foot {
+  margin-top: 6px;
+  color: var(--stale);
+  font-size: var(--fs-xs);
+}
+
+/* ═══ §4.7 降級規則 ═════════════════════════════════════════════ */
+@media (max-width: 1439px) {
+  .rp-main {
+    grid-template-columns: 190px minmax(0, 1fr) 270px;
+  }
+  .rp-main.no-tree {
+    grid-template-columns: minmax(0, 1fr) 270px;
+  }
+}
+@media (max-width: 1199px) {
+  /* 訊號樹收起（Ctrl+.），Inspector 變窄 */
+  .rp-main {
+    grid-template-columns: 168px minmax(0, 1fr) 240px;
+  }
+  .rp-main.no-tree {
+    grid-template-columns: minmax(0, 1fr) 240px;
+  }
+}
+@media (max-width: 1023px) {
+  /* 只保留 TimeBar + 事件清單（無圖表）；訊號樹與折線都不 render 尺寸 */
+  .rp-main,
+  .rp-main.no-tree {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .rp-side,
+  .rp-center {
+    display: none;
+  }
+  .rp-right {
+    grid-template-rows: minmax(0, 1fr);
+  }
+  .rp-insp {
+    display: none;
+  }
+}
+
+/* 折線 + 色帶共用的盒子：高度由 ReplayPage 量出來再分配給 uPlot，
+   不留一塊「資料到這裡就沒了」的白。 */
+.rp-plotbox {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
