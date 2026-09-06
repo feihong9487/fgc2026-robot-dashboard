@@ -171,7 +171,7 @@
 .clock-row { display: flex; align-items: baseline; gap: calc(var(--u) * 1.25); }
 .clock-glyph { font-size: var(--fs-md); color: var(--text-dim); }
 .clock-big {
-  font-size: var(--fs-xl);
+  font-size: var(--fs-2xl);
   font-weight: 700;
   line-height: 1;
   min-width: 4.5ch;

@@ -19,7 +19,11 @@ html, body, #root {
   height: 100%;
   background: var(--bg);
   color: var(--fg);
-  font-family: "Segoe UI", "Microsoft JhengHei", sans-serif;
+  /* Noto Sans TC 打頭：拉丁與漢字出自同一家族，VEL_SL 與「射手」的筆畫
+     粗細才一致。這裡寫成字面值而不是 var(--font-ui)：data-profile 是
+     initTheme 才掛上去的，開機第一幀讀不到那個變數。 */
+  font-family: "Noto Sans TC", "Microsoft JhengHei", "PingFang TC",
+               "Noto Sans", system-ui, sans-serif;
   font-size: 14px;
 }
 
@@ -773,17 +777,12 @@ html, body, #root {
 .fgc-bar > .fgc-tabs,
 .fgc-bar > .fgc-settings { flex: 0 0 auto; }
 
-/* 頂欄是「近距離讀的診斷條」，不跟著 field 主題的 1.6 倍字級一起放大。
-   放大的是面板內容（駕駛隔 1.5 公尺看的是巨燈與膠囊，不是 ws age）。
-   不設這條的話，field 主題下 44px 的頂欄裝不下所有欄位，
-   而 overflow:hidden 會**默默**把分頁列整條吃掉——實測就是這樣掉的。
-   註：--fs-* 是在 :root 上就把 --font-scale 代換掉的，所以這裡只能重新宣告字級本身。 */
+/* 介面音階（--fs-md/sm/xs）已經不吃 --font-scale 了，所以原本那組
+   「把頂欄字級一個一個壓回去」的 hack 整段刪掉。剩下的只有密度：
+   loose 的 10px gap 會把 44px 高的頂欄撐爆，而 overflow:hidden 會
+   **默默**把分頁列整條吃掉——滑鼠就換不了頁了。 */
 :root[data-profile="fgc"][data-theme="field"] .fgc-bar {
-  --fs-md: 15px;
-  --fs-sm: 13px;
-  --fs-xs: 11px;
   --u: 6px;
-  font-size: 13px;
 }
 
 /* 數字塊固定寬度：值變動時右邊的圖示不左右晃。
@@ -941,7 +940,7 @@ html, body, #root {
 }
 @media (max-width: 1199px) {
   /* 1366×768 舊筆電 */
-  :root[data-profile="fgc"] { --u: 4px; --fs-md: calc(15px * var(--font-scale)); }
+  :root[data-profile="fgc"] { --u: 4px; }
   .hide-lt-1200 { display: none !important; }
 }
 @media (max-width: 1023px) {

@@ -173,7 +173,7 @@ export function roundRect(
 }
 
 /** 介面字體堆疊（Canvas 吃不到 CSS 變數，這裡是唯一的字體真相）。 */
-export const UI_FONT = '"Segoe UI", "Microsoft JhengHei", system-ui, sans-serif';
+export const UI_FONT = '"Noto Sans TC", "Microsoft JhengHei", "PingFang TC", system-ui, sans-serif';
 /** 所有數值一律等寬：比例字體會讓數字在更新時橫向跳動。 */
 export const MONO_FONT = 'ui-monospace, "Cascadia Mono", Consolas, monospace';
 
