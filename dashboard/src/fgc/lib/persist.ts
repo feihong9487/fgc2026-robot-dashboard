@@ -160,4 +160,5 @@ export const KEYS = {
   bookmarks: "bookmarks",
   lastBackup: "lastBackup",
   loopSnapshots: "loopSnapshots",
+  camMode: "camMode",
 } as const;

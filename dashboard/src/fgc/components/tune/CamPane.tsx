@@ -18,13 +18,30 @@ import { K, paramKey } from "../../lib/fgcKeys";
 import { PATHS, httpUrl } from "../../lib/profile";
 import { percentile } from "../../lib/stats";
 import { useAppMode, useLink, useLogKeys } from "../../lib/hooks";
+import { KEYS, getStr, setStr } from "../../lib/persist";
 
 interface Props {
   log?: LogStore;
   allowInputs?: boolean;
+  /**
+   * 第一次打開時的狀態。參數頁維持「暫停」（那一頁的人在打數字，不需要畫面）；
+   * 檢查頁給 "stream"——pit 區檢查就是要看鏡頭現在看到什麼。
+   */
+  defaultMode?: CamMode;
+  /** true = 記住使用者最後一次選的狀態（存 localStorage），下次打開沿用。 */
+  remember?: boolean;
 }
 
 type CamMode = "off" | "stream" | "snap";
+
+/** 串流被拒（多半是上一個分頁的連線還沒被機器人收掉）時，最多再敲兩次門。 */
+const RETRY_MAX = 2;
+const RETRY_MS = 1500;
+
+function readSaved(def: CamMode): CamMode {
+  const v = getStr(KEYS.camMode, def);
+  return v === "off" || v === "stream" || v === "snap" ? v : def;
+}
 
 /** 代價量測視窗：太短會被單一長尾騙，太長會反應不過來。 */
 const COST_WIN_S = 10;
@@ -68,11 +85,17 @@ function fmtKB(v: number): string {
   return Number.isFinite(v) ? v.toFixed(0) + " KB" : "— KB";
 }
 
-export function CamPane({ log = liveLog, allowInputs }: Props) {
+export function CamPane({ log = liveLog, allowInputs, defaultMode = "off", remember = false }: Props) {
   const mode = useAppMode();
   const link = useLink();
   useLogKeys(CAM_KEYS, log);
-  const [cam, setCam] = useState<CamMode>("off");
+  const [cam, setCamRaw] = useState<CamMode>(() => (remember ? readSaved(defaultMode) : defaultMode));
+  const [retry, setRetry] = useState(0);        // 目前第幾次重試；也當 <img> 的 key 逼它重新連
+  const setCam = (m: CamMode) => {
+    setCamRaw(m);
+    setRetry(0);
+    if (remember) setStr(KEYS.camMode, m);
+  };
   const [visible, setVisible] = useState(() => document.visibilityState === "visible");
   const [inView, setInView] = useState(false);
   const [err, setErr] = useState("");
@@ -199,13 +222,20 @@ export function CamPane({ log = liveLog, allowInputs }: Props) {
         <div className="cam-view">
           {src ? (
             <img
+              key={retry}
               src={src}
               alt="相機"
               onError={() => {
                 // MJPEG 併發上限 1：第二處要看的時候機器人直接回 503。
-                // 這裡停下來並說明原因，不做自動重試——重試只會變成敲門風暴。
+                // 從參數頁切到檢查頁時，上一個 <img> 的連線要等機器人那端逾時才會收掉，
+                // 所以先等 1.5 s 再敲一次（最多兩次）；還是不行才停下來說明原因，
+                // 不做無限重試——那只會變成敲門風暴。
+                if (retry < RETRY_MAX) {
+                  window.setTimeout(() => setRetry((r) => r + 1), RETRY_MS);
+                  return;
+                }
                 setErr("已被另一個串流佔用（併發上限 1），或串流不可用");
-                setCam("off");
+                setCamRaw("off");
               }}
             />
           ) : (

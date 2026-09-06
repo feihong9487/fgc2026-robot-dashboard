@@ -16,6 +16,40 @@
   overflow: auto;
 }
 
+/* 上半：左邊驗機清單、右邊相機即時畫面。相機固定佔 1/3 寬，畫面 4:3，
+   1024 以下相機收到清單下面（那時候看的人已經坐著了，捲一下沒關係）。 */
+.hw-top {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 34%);
+  gap: calc(var(--u) * 1.5);
+  align-items: start;
+}
+.hw-cam {
+  display: flex;
+  min-height: 0;
+  position: sticky;
+  top: 0;
+}
+.hw-cam > .panel-shell {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.hw-cam .cam-view {
+  aspect-ratio: 4 / 3;
+  min-height: 180px;
+}
+.hw-cam .cam-view img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;   /* 640×480 撐滿 4:3 的框；小圖也放大，站著看得到 */
+}
+@media (max-width: 1024px) {
+  .hw-top { grid-template-columns: minmax(0, 1fr); }
+  .hw-cam { position: static; }
+}
+
 .hw {
   flex: 1 1 auto;
   min-height: 0;
