@@ -64,7 +64,10 @@ export function ExportMenu({ log, name, events, bookmarks, keys }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [log, sel?.t0, sel?.t1, view.t0, view.t1]);
 
-  const active: Range = ranges[rangeId] ?? ranges.all!;
+  // 沒有選區時 rangeId 還停在 "sel"，但實際會用整份 log——那時要把亮起來的那顆
+  // 也換成「整份 log」，否則畫面在說「選取區間」而匯出的是整場。
+  const effId: RangeId = ranges[rangeId] ? rangeId : "all";
+  const active: Range = ranges[effId]!;
 
   const run = async (kind: Kind) => {
     setBusy(true);
@@ -114,7 +117,7 @@ export function ExportMenu({ log, name, events, bookmarks, keys }: Props) {
               return (
                 <button
                   key={id}
-                  className={rangeId === id ? "tb-btn on" : "tb-btn"}
+                  className={effId === id ? "tb-btn on" : "tb-btn"}
                   disabled={!r}
                   title={r ? r.t0.toFixed(2) + " → " + r.t1.toFixed(2) + " s" : "還沒框選（在時間軸上 Shift+拖曳，或按 [ 與 ]）"}
                   onClick={() => setRangeId(id)}
