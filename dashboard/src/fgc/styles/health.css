@@ -278,3 +278,12 @@
 @media (max-width: 719px) {
   .hw-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* 「不知道」不可以長得像「沒生效」：○ 是形狀通道，虛線邊是第二個通道。
+   把不知道畫成沒生效會讓人以為關閉路徑失敗，然後去做第二次、更粗暴的關閉。 */
+.hw-sd-cell.unknown {
+  border-left: 2px dashed var(--stale);
+}
+.hw-sd-cell.unknown .name {
+  color: var(--text-dim);
+}
