@@ -163,17 +163,21 @@ export function DipAnalyzer({ log = liveLog, allowInputs, rows = 10 }: Props) {
             )}
           </div>
           {/* 分佈的顏色跟著來源走：以 SL 偵測就是青、以 SR 就是琥珀，
-              與主圖那條線同一個顏色，不另立第三套色。 */}
-          <div className="dip-hist" style={{ "--c": colorForKey(src, 0) } as CSSProperties} title="深度分佈（tps）">
-            {Array.from(hist.counts).map((c, i) => (
-              <span
-                key={i}
-                className="bar"
-                style={{ height: `${hist.max ? (c / hist.max) * 100 : 0}%` }}
-                title={`${Math.round(hist.edges[i])}–${Math.round(hist.edges[i + 1])} tps：${c} 顆`}
-              />
-            ))}
-          </div>
+              與主圖那條線同一個顏色，不另立第三套色。
+              一顆都還沒量到時整條不畫——全部 0 高的長條會在卡片上留下一條
+              沒有意義的橫線，而那條線看起來像一個「值是 0」的量測結果。 */}
+          {hist.max > 0 && (
+            <div className="dip-hist" style={{ "--c": colorForKey(src, 0) } as CSSProperties} title="深度分佈（tps）">
+              {Array.from(hist.counts).map((c, i) => (
+                <span
+                  key={i}
+                  className="bar"
+                  style={{ height: `${(c / hist.max) * 100}%` }}
+                  title={`${Math.round(hist.edges[i])}–${Math.round(hist.edges[i + 1])} tps：${c} 顆`}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </PanelShell>
