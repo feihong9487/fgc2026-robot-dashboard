@@ -1,4 +1,5 @@
-/* 錄影瀏覽（#30）。表格 + 兩條取檔路徑。 */
+/* 錄影瀏覽（#30）。表格 + 兩條取檔路徑。
+   這一頁只做一件事：挑一個檔案載進回放。所以整頁唯一有框的東西是那一欄按鈕。 */
 
 .rec-page {
   height: 100%;
@@ -10,47 +11,68 @@
 .rec {
   display: flex;
   flex-direction: column;
-  gap: calc(var(--u) * 1.5);
+  gap: calc(var(--u) * 2);
   max-width: 1100px;
 }
 
 .rec-head {
   display: flex;
   align-items: baseline;
-  gap: calc(var(--u) * 1.5);
+  gap: calc(var(--u) * 2);
   flex-wrap: wrap;
 }
 .rec-head .spacer { flex: 1 1 auto; }
-.rec-title { font-size: var(--fs-lg); color: var(--text); }
+.rec-title {
+  font-size: var(--fs-lg);
+  line-height: var(--lh-num);
+  color: var(--text);
+}
 .rec-src {
-  font-family: var(--mono);
+  font-family: var(--font-num);
   font-size: var(--fs-xs);
   color: var(--text-dim);
 }
 
+/* 訊息卡是唯讀的，所以沒有框；tone 由左側 3px 直條帶。 */
 .rec-msg {
-  border: 1px solid var(--border-c);
-  border-radius: 6px;
+  border-radius: var(--r-card);
+  border-left: 3px solid var(--border-c);
   background: var(--surface-2);
-  padding: calc(var(--u) * 1.5);
+  padding: calc(var(--u) * 1.5) calc(var(--u) * 2);
   font-size: var(--fs-sm);
-  line-height: 1.8;
+  line-height: var(--lh-prose);
   color: var(--text-dim);
 }
-.rec-msg code { font-family: var(--mono); color: var(--text); }
+.rec-msg code { font-family: var(--font-num); color: var(--text); }
 .rec-msg b { color: var(--text); }
-.rec-msg.warn { border-left: 3px solid var(--warn); }
-.rec-msg.err { border-left: 3px solid var(--err); }
+.rec-msg.warn { border-left-color: var(--warn); }
+.rec-msg.err { border-left-color: var(--err); }
 
+/* 目錄 / 錄影中 / 共幾個檔：標籤在上、值在下，與回放頁底部狀態列同一套。 */
 .rec-dir {
   display: flex;
-  align-items: baseline;
-  gap: calc(var(--u) * 1.5);
+  align-items: flex-end;
+  gap: calc(var(--u) * 3);
   flex-wrap: wrap;
-  font-size: var(--fs-sm);
 }
-.rec-dir .k { color: var(--text-dim); font-size: var(--fs-xs); }
-.rec-dir code { font-family: var(--mono); color: var(--text); }
+.rec-dir .pair {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.rec-dir .k {
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+}
+.rec-dir code {
+  font-family: var(--font-num);
+  font-size: var(--fs-sm);
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 .rec-table {
   width: 100%;
@@ -59,72 +81,81 @@
 }
 .rec-table th {
   text-align: left;
-  font-weight: 500;
+  font-weight: var(--fw-normal);
   color: var(--text-dim);
   font-size: var(--fs-xs);
+  background: var(--surface-3);
   padding: calc(var(--u) * 0.75) var(--u);
-  border-bottom: 1px solid var(--border-c);
+  border-bottom: var(--bw) solid var(--border-hi);
 }
 .rec-table th.num,
 .rec-table td.num {
   text-align: right;
-  font-family: var(--mono);
+  font-family: var(--font-num);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 .rec-table td {
   padding: calc(var(--u) * 0.75) var(--u);
-  border-bottom: 1px solid var(--surface-3);
+  border-bottom: var(--bw) solid var(--border-c);
   color: var(--text);
 }
-.rec-table tr.current td { background: color-mix(in srgb, var(--warn) 8%, transparent); }
-.rec-table td.name code { font-family: var(--mono); }
+.rec-table tbody tr:hover td { background: var(--surface-2); }
+/* 正在被寫的那一個檔。這不是警告，只是一個事實，所以不上黃色——
+   INIT 會開新檔，所以「最新的」不等於「上一場」，那句話由 chip 的 title 說。 */
+.rec-table tr.current td { background: var(--surface-2); }
+.rec-table td.name code { font-family: var(--font-num); }
 .rec-table td.act { text-align: right; white-space: nowrap; }
-.rec-table td.act .ro { color: var(--text-dim); font-size: var(--fs-xs); }
+.rec-table td.act .ro { color: var(--stale); font-size: var(--fs-xs); }
+
+/* 唯讀資訊 chip：底色分組，不畫框（框留給真的能按的東西）。 */
 .rec-table .tag {
-  margin-left: 8px;
+  margin-left: calc(var(--u) * 1.5);
   font-size: var(--fs-xs);
-  color: var(--warn);
-  border: 1px solid var(--warn);
-  border-radius: 3px;
-  padding: 0 4px;
+  color: var(--text-dim);
+  background: var(--surface-3);
+  border-radius: var(--r-chip);
+  padding: 1px calc(var(--u));
+  white-space: nowrap;
 }
+/* 清單列得到、8080 拉不下來的檔（safeName 只收 rec-*.jsonl）：
+   警戒 chip = 12% 底 + 40% 同色框 + ■，三個通道一起講同一件事。 */
+.rec-table .tag.bad {
+  color: var(--err);
+  background: color-mix(in srgb, var(--err) 12%, transparent);
+  border: var(--bw) solid color-mix(in srgb, var(--err) 40%, transparent);
+}
+.rec-table .tag.bad .fgc-glyph { font-size: var(--fs-xs); }
 
 .rec-paths {
   display: flex;
   flex-direction: column;
   gap: var(--u);
-  border-top: 1px solid var(--border-c);
-  padding-top: calc(var(--u) * 1.5);
+  border-top: var(--bw) solid var(--border-c);
+  padding-top: calc(var(--u) * 2);
 }
 .rec-path {
   display: flex;
   align-items: baseline;
-  gap: var(--u);
+  gap: calc(var(--u) * 1.5);
   flex-wrap: wrap;
   font-size: var(--fs-sm);
 }
+/* 兩條路徑是並列的替代方案，不是兩個步驟，所以沒有「路徑 1 / 路徑 2」的編號。
+   前面那個詞（8080 / 備援）已經說清楚是哪一條了。 */
 .rec-path .n {
-  color: var(--text-dim);
-  font-size: var(--fs-xs);
-  border: 1px solid var(--border-c);
-  border-radius: 3px;
-  padding: 0 4px;
+  color: var(--text);
+  min-width: 4em;
 }
-.rec-path b { color: var(--text); }
-.rec-path code { font-family: var(--mono); color: var(--text); }
+.rec-path code { font-family: var(--font-num); color: var(--text); }
 .rec-path .why { color: var(--text-dim); font-size: var(--fs-xs); }
 .rec-path .why code { color: var(--text-dim); }
 .rec-note {
   font-size: var(--fs-xs);
   color: var(--text-dim);
-  line-height: 1.7;
+  line-height: var(--lh-prose);
+  max-width: var(--measure);
 }
-.rec-note code { font-family: var(--mono); color: var(--text); }
-.rec-note b { color: var(--danger); }
-
-/* 清單列得到、8080 拉不下來的檔（safeName 只收 rec-*.jsonl） */
-.rec-table .tag.bad {
-  color: var(--err);
-  border-color: var(--err);
-}
+.rec-note code { font-family: var(--font-num); color: var(--text); }
+/* 這句話是規則，不是「這裡連著機器人」，所以不上野火橘。 */
+.rec-note b { color: var(--text); }

@@ -475,7 +475,7 @@ export function ReplayPage() {
           </PanelShell>
           <PanelShell
             title={"事件（" + events.length + "）"}
-            note="點一列把游標跳過去。Ctrl+F 篩選、Ctrl+↓ / Ctrl+↑ 跳事件、Ctrl+B 打書籤。"
+            note="點一列把游標跳過去。Ctrl+F 篩選、Ctrl+B 打書籤。"
             flush
             className="fill"
           >

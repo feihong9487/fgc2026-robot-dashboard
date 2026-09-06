@@ -18,6 +18,7 @@
 // 2 MB 的檔案一次切成陣列會在低階筆電上卡住主執行緒好幾百毫秒。
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Glyph } from "../shell/Glyph";
 import { client } from "../../../lib/RobotClient";
 import { PATHS, REC_FILE_LABEL, httpBase, httpPort, httpUrl, recFileUrl } from "../../lib/profile";
 import { useAppMode } from "../../lib/hooks";
@@ -173,12 +174,18 @@ export function RecBrowser({ host }: { host: string }) {
       {state.kind === "ok" && (
         <>
           <div className="rec-dir">
-            <span className="k">目錄</span>
-            <code>{state.list.dir || "—"}</code>
-            <span className="k">錄影中</span>
-            <code>{state.list.current || "（無）"}</code>
-            <span className="k">共</span>
-            <code>{state.list.files.length} 個檔</code>
+            <span className="pair">
+              <span className="k">目錄</span>
+              <code>{state.list.dir || "—"}</code>
+            </span>
+            <span className="pair">
+              <span className="k">正在寫的檔</span>
+              <code>{state.list.current || "沒有"}</code>
+            </span>
+            <span className="pair">
+              <span className="k">檔案數</span>
+              <code>{state.list.files.length}</code>
+            </span>
           </div>
           {state.list.error && <div className="rec-msg err">機器人端回報：{state.list.error}</div>}
           {state.list.files.length === 0 ? (
@@ -214,6 +221,7 @@ export function RecBrowser({ host }: { host: string }) {
                             className="tag bad"
                             title="機器人端 safeName 只收 rec-*.jsonl，這個檔名拉不下來（會回 400）；請走備援路徑"
                           >
+                            <Glyph tone="err" />
                             8080 拉不下來
                           </span>
                         )}
@@ -242,8 +250,7 @@ export function RecBrowser({ host }: { host: string }) {
 
       <div className="rec-paths">
         <div className="rec-path">
-          <span className="n">路徑 1</span>
-          <b>{httpPort()}</b>
+          <span className="n">{httpPort()}</span>
           <code>
             GET {httpBase(host)}
             {PATHS.recList}
@@ -251,8 +258,7 @@ export function RecBrowser({ host }: { host: string }) {
           <span className="why">再 <code>{REC_FILE_LABEL}?name=&lt;檔名&gt;</code>。就是這一頁在做的事</span>
         </div>
         <div className="rec-path">
-          <span className="n">路徑 2</span>
-          <b>備援</b>
+          <span className="n">備援</span>
           <code>/sdcard/FIRST/fgc-rec</code>
           <span className="why">
             OnBotJava 的檔案樹直接下載。Day 1 若 8080 註冊失敗，第一條路就沒了——賽場上不會有時間翻文件

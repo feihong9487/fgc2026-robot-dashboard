@@ -78,10 +78,13 @@ const RATES = [0.25, 1, 2, 4];
 /** 事件軌上下兩半：密度直方圖 11 px、篩選刻痕 7 px、中間 2 px 縫。 */
 const H_HIST = 11;
 const H_TICK = 7;
-/** 直方圖的桶寬與刻痕的節距（節距 3、寬 2 → 永遠留得下 1 px 縫，不會糊成一條帶）。 */
+/**
+ * 直方圖與刻痕共用同一組桶（5 px，實畫 4 px → 永遠留得下 1 px 縫，不會糊成一條帶）。
+ * 兩層必須同桶：不同桶寬會讓某一根灰柱底下剛好沒有刻痕，看起來像「這一顆被篩掉了」，
+ * 而其實只是量化誤差。同桶之後，灰柱底下沒有刻痕就真的只有一個意思——被篩掉了。
+ */
 const BUCKET = 5;
-const TICK_PITCH = 3;
-const TICK_W = 2;
+const BAR_W = BUCKET - 1;
 
 /** 嚴重度：同一格只留最嚴重的那一顆，低階被高階蓋掉，不會反過來。 */
 const RANK: Record<string, number> = { info: 1, ok: 2, warn: 3, err: 4 };
@@ -169,9 +172,10 @@ export function TimeBar({
         }
         ctx.lineTo(X(ws.xs[ws.n - 1]), Y_OVER + H_OVER);
         ctx.closePath();
-        // 總覽是「我在哪裡」的地圖，不是第七條資料線：單色 --border-hi，
+        // 總覽是「我在哪裡」的地圖，不是第七條資料線：單色，
         // 用任何一個 series 色都會讓它被讀成一條訊號。
-        ctx.fillStyle = p.border;
+        // 但也不能用 --border-c（1.6:1）——那在頁底上幾乎看不見，地圖就空了。
+        ctx.fillStyle = withAlpha(p.textDim, 0.22);
         ctx.fill();
         ctx.strokeStyle = withAlpha(p.textDim, 0.55);
         ctx.lineWidth = 1;
@@ -227,26 +231,24 @@ export function TimeBar({
           const c = counts[i];
           if (c === 0) continue;
           const h = Math.max(2, Math.round(H_HIST * (0.3 + 0.7 * ((c - 1) / span))));
-          ctx.fillRect(x0 + i * BUCKET, yHist + H_HIST - h, BUCKET - 1, h);
+          ctx.fillRect(x0 + i * BUCKET, yHist + H_HIST - h, BAR_W, h);
         }
       }
 
-      // 刻痕：節距 3 px、寬 2 px，所以再密也永遠留得下 1 px 縫，不會糊成一條實心帶。
-      // 同一格只留最嚴重的那一顆——低階被高階蓋掉，不會反過來。
-      const nt = Math.max(1, Math.ceil(w / TICK_PITCH));
-      const ticks = new Uint8Array(nt);
+      // 刻痕：與直方圖同桶，一格只留最嚴重的那一顆（低階被高階蓋掉，不會反過來）。
+      const ticks = new Uint8Array(nb);
       for (const ev of evRef.current.selected) {
         if (ev.t < tMin || ev.t > tMax) continue;
-        const i = Math.min(nt - 1, Math.max(0, Math.floor((X(ev.t) - x0) / TICK_PITCH)));
+        const i = Math.min(nb - 1, Math.max(0, Math.floor((X(ev.t) - x0) / BUCKET)));
         const r = RANK[ev.level ?? "info"] ?? 1;
         if (r > ticks[i]) ticks[i] = r;
       }
       const TONE = [p.textDim, p.stale, p.ok, p.warn, p.err];
-      for (let i = 0; i < nt; i++) {
+      for (let i = 0; i < nb; i++) {
         const r = ticks[i];
         if (r === 0) continue;
         ctx.fillStyle = TONE[r];
-        ctx.fillRect(x0 + i * TICK_PITCH, yTick, TICK_W, H_TICK);
+        ctx.fillRect(x0 + i * BUCKET, yTick, BAR_W, H_TICK);
       }
       // 書籤是使用者自己放的記號（＝這裡連著人的操作）→ 橘，且永遠畫在最上層。
       // 用倒三角不用 ⚑：字形字體一換就變寬，畫布上的字元寬度不能靠字體運氣。
