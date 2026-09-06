@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2021",
+    "lib": ["ES2021", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    // src/lib/path/* 用顯式 .ts 副檔名 import：那份程式碼除了給 Vite 打包，還要能被
+    // Node 直接執行（tools/golden-check.ts 比對 C++ 與 TS 兩份實作是否漂移），
+    // 而 Node 的 ESM 解析器不接受省略副檔名。
+    "allowImportingTsExtensions": true,
+    "useDefineForClassFields": true
+  },
+  "include": ["src"]
+}
