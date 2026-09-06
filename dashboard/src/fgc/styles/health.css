@@ -42,11 +42,13 @@
   background: color-mix(in srgb, var(--warn) 8%, var(--surface-2));
 }
 
+/* 中文永遠不加字距：漢字本來就是等寬方塊，拉開只會變鬆散。
+   拉開後的「N O G O」第一眼會被讀成四個獨立字母。 */
 .hw-banner-text {
   font-size: var(--fs-lg);
   font-weight: 700;
-  letter-spacing: 0.22em;
-  font-family: var(--mono);
+  letter-spacing: 0;
+  font-family: var(--font-ui);
 }
 .hw-banner.go .hw-banner-text { color: var(--ok); }
 .hw-banner.nogo .hw-banner-text { color: var(--err); }

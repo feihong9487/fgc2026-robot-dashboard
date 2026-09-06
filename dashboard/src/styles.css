@@ -143,9 +143,10 @@ html, body, #root {
   background: var(--bg2); border: 1px solid var(--border);
   border-radius: 6px; padding: 10px;
 }
+/* accent 現在是野火橘，而橘只有一個意思：這裡連著機器人。
+   區塊標題是結構不是強調 —— 改回 --fg-dim，並拿掉全大寫與字距。 */
 .tuning-panel h3 {
-  margin: 0 0 8px; font-size: 13px; color: var(--accent);
-  text-transform: uppercase; letter-spacing: 0.5px;
+  margin: 0 0 8px; font-size: var(--fs-sm); color: var(--fg-dim);
 }
 .num-field {
   display: flex; align-items: center; justify-content: space-between;
@@ -281,8 +282,7 @@ html, body, #root {
   border-radius: 6px; padding: 10px;
 }
 .vision-params h3 {
-  margin: 0 0 8px; font-size: 13px; color: var(--accent);
-  text-transform: uppercase; letter-spacing: 0.5px;
+  margin: 0 0 8px; font-size: var(--fs-sm); color: var(--fg-dim);
 }
 /* 側邊主讀數卡：最近球的顏色與機器座標 */
 .target-card { flex-shrink: 0; }
@@ -343,9 +343,12 @@ html, body, #root {
   background: var(--bg2); border: 1px solid var(--border);
   border-radius: 6px; padding: 8px 10px; margin-bottom: 10px;
 }
+/* 訊號頁的群組標題：整片變橘會直接吃掉全頁的橘色預算。
+   它是機器的 key path，所以用 --font-num，靠顏色階差而不是強調色分層。 */
 .sig-list h3 {
-  margin: 0 0 6px; font-size: 12px; color: var(--accent);
-  letter-spacing: 0.3px; word-break: break-all;
+  margin: 0 0 6px; font-size: var(--fs-xs); color: var(--fg-dim);
+  font-family: var(--font-num); font-weight: 400;
+  word-break: break-all;
 }
 .sig-row {
   display: flex; align-items: center; gap: 8px;
@@ -393,8 +396,7 @@ html, body, #root {
 .lv-row-right { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; }
 .lv-unit { color: var(--fg-dim); font-size: 11px; white-space: nowrap; }
 .lv-subhead {
-  color: var(--accent); font-size: 12px; margin: 8px 0 6px;
-  letter-spacing: 0.3px;
+  color: var(--fg-dim); font-size: var(--fs-xs); margin: 8px 0 6px;
 }
 .lv-hint { color: var(--fg-dim); font-size: 11px; margin-top: 6px; line-height: 1.5; }
 
@@ -517,8 +519,7 @@ html, body, #root {
 }
 .lv-collapse-head:hover { background: var(--bg3); }
 .lv-collapse-head h3 {
-  margin: 0; font-size: 13px; color: var(--accent);
-  text-transform: uppercase; letter-spacing: 0.5px; flex: 1;
+  margin: 0; font-size: var(--fs-sm); color: var(--fg); flex: 1;
 }
 .lv-collapse-arrow { color: var(--fg-dim); font-size: 11px; }
 .lv-collapse-body { padding: 4px 10px 10px; }
@@ -627,8 +628,8 @@ html, body, #root {
 /* ── 機器狀態分頁（Go/No-Go 燈牆）──────── */
 .status-panel { display: flex; flex-direction: column; gap: 10px; }
 .gonogo {
-  padding: 14px; border-radius: 6px; text-align: center;
-  font-size: 20px; font-weight: 700; letter-spacing: 1px;
+  padding: 14px; border-radius: var(--r-card); text-align: center;
+  font-size: 20px; font-weight: 700;
 }
 .gonogo.ready { background: #1d2c1e; color: var(--ok); border: 1px solid var(--ok); }
 .gonogo.notready {
@@ -669,7 +670,7 @@ html, body, #root {
   background: var(--err); border-color: var(--err); color: #fff;
   animation: blink 0.8s infinite;
 }
-.run-state-name { font-size: 22px; font-weight: 700; letter-spacing: 0.5px; }
+.run-state-name { font-size: 22px; font-weight: 700; }
 .run-cmd { color: var(--fg-dim); margin-top: 4px; word-break: break-all; }
 .run-state.fault .run-cmd { color: #fff; }
 .run-row {
@@ -679,7 +680,7 @@ html, body, #root {
 }
 .run-timer {
   font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums;
-  color: var(--accent);
+  color: var(--fg);
 }
 .trip-dot.big { width: 26px; height: 26px; line-height: 26px; font-size: 13px; }
 .run-block {
@@ -687,8 +688,7 @@ html, body, #root {
   border-radius: 6px; padding: 10px;
 }
 .run-block-title {
-  font-size: 12px; color: var(--accent); margin-bottom: 6px;
-  text-transform: uppercase; letter-spacing: 0.5px;
+  font-size: var(--fs-xs); color: var(--fg-dim); margin-bottom: 6px;
 }
 .run-chips { display: flex; flex-wrap: wrap; gap: 4px; }
 .run-chip {
@@ -704,7 +704,7 @@ html, body, #root {
 .run-abort {
   padding: 18px; border: none; border-radius: 8px; cursor: pointer;
   background: var(--err); color: #fff;
-  font-size: 20px; font-weight: 700; letter-spacing: 1px;
+  font-size: 20px; font-weight: 700;
 }
 .run-abort:hover { filter: brightness(1.15); }
 .run-abort.resume { background: var(--accent); color: #0a0d12; }
@@ -818,7 +818,7 @@ html, body, #root {
   padding: 3px calc(var(--u) * 1.5);
   border-radius: 4px;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: var(--ls-state);
   flex: 0 0 auto;
 }
 .fgc-badge.pit { background: #16351d; color: var(--ok); border: 1px solid var(--ok); }

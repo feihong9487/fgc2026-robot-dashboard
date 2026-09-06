@@ -26,7 +26,7 @@
   color: var(--danger);
   font-size: var(--fs-xl);
   font-weight: 700;
-  letter-spacing: 0.35em;
+  letter-spacing: 0;
   text-align: center;
 }
 
@@ -143,8 +143,8 @@
   color: var(--text-dim);
 }
 .lockdown-top .brand {
-  font-weight: 600;
-  letter-spacing: 0.1em;
+  font-weight: 700;
+  letter-spacing: 0;
   color: var(--text);
 }
 .lockdown-top .badge {
@@ -155,7 +155,7 @@
   color: var(--danger);
   border-radius: 4px;
   padding: 2px calc(var(--u) * 1.5);
-  letter-spacing: 0.08em;
+  letter-spacing: 0;
 }
 .lockdown-top .spacer { flex: 1 1 auto; }
 .lockdown-top .mono {

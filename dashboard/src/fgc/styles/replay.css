@@ -35,7 +35,7 @@
   border: 1px solid var(--accent);
   color: var(--accent);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-state);
 }
 .rp-file {
   font-family: var(--mono);
