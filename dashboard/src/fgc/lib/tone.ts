@@ -27,6 +27,15 @@ export const GLYPHS: Record<Tone, string> = {
 /** 關閉路徑三格用的第五個字元：□ =「這條路徑沒有生效」（不是沒資料）。 */
 export const GLYPH_IDLE = "□";
 
+/**
+ * **模式徽章用的是另一套字母**（▲PIT / ▮MATCH / ▣REPLAY / ○未知，見 ConnectionBar）。
+ * 刻意與上面這四個狀態字元分開：徽章回答的是「能不能寫」而不是「好不好」，
+ * 混用會讓人把它讀成一顆狀態燈。
+ *
+ * 同理，「已選取 / 未選取」（訊號樹的釘選、球節奏的顆數）借用 ●／○ 是計數與選取，
+ * 不是狀態——它們不在燈的位置上，所以不會被誤讀。
+ */
+
 export const TONE_LABEL: Record<Tone, string> = {
   ok: "符合驗收條件",
   warn: "接近界線",

@@ -10,6 +10,7 @@
 // 有用的那一半（它們走一般的 20 Hz 推播）。
 
 import { useEffect, useRef } from "react";
+import { GLYPHS } from "../../lib/tone";
 import { PanelShell } from "../shell/PanelShell";
 import { LogStore, liveLog } from "../../lib/LogStore";
 import { cursor } from "../../lib/cursorStore";
@@ -195,7 +196,10 @@ export function CurrentStrip({ log = liveLog, padLeft = 54, padRight = 12, rowH 
             const has = log.has(r.over);
             return (
               <span key={r.over} className={on ? "lamp on" : has ? "lamp" : "lamp none"} title={r.over}>
-                {on ? "●" : has ? "○" : "○"} {r.label}
+                {/* OverCurrent 亮起來是「壞消息」，所以形狀要是 ■ 不是 ●。
+                    顏色已經是 --err，但形狀是第二條通道——只有顏色對的話，
+                    色覺辨異的使用者看到的是一顆跟「一切正常」同形狀的燈。 */}
+                {on ? GLYPHS.err : GLYPHS.stale} {r.label}
               </span>
             );
           })}
