@@ -53,10 +53,10 @@ npm run dev                  # http://127.0.0.1:5173
 | `npm run preview` | 用 production build 服務 `dist/`，截圖驗證用這個比 dev 穩 |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run fake-hub` | 起假 Control Hub（PIT 模式，8080/8081） |
-| `npm run fgc-check` | 資料層 43 項（LogStore ZOH／decimation／白名單／真檔案解析） |
-| `npm run fgc-check-2a` | 燈牆與關閉路徑 72 項純函式 |
+| `npm run fgc-check` | 資料層 45 項（LogStore ZOH／decimation／白名單／`recFileUrl` 收口／真檔案解析） |
+| `npm run fgc-check-2a` | 燈牆／關閉路徑／rec.json／**Lockdown 的 M11 白名單** 86 項純函式 |
 | `npm run fgc-check-3e` | eventDetect 與四種匯出 94 項純函式 |
-| `npm run fgc-check-all` | 上面三支一起跑（209 項） |
+| `npm run fgc-check-all` | 上面三支一起跑（225 項） |
 | `npm run check` | `typecheck` + `build` + `fgc-check-all`，送 commit 前跑這一支 |
 
 `fgc-check*` 用 esbuild 把 TS 打包成一支 mjs 再跑。**esbuild 目前是靠 Vite 帶進來的**
