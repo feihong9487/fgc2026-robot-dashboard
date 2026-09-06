@@ -9,6 +9,7 @@
 // 這省掉一顆「回到即時」按鈕和一次分心——賽場上每一次「我剛剛按到什麼」都是成本。
 
 import { useEffect, useRef } from "react";
+import { GLYPHS } from "../../lib/tone";
 import { LogStore, liveLog } from "../../lib/LogStore";
 import { cursor } from "../../lib/cursorStore";
 import { palette } from "../../lib/theme";
@@ -67,7 +68,8 @@ const Y_AXIS = Y_WINDOW + H_WINDOW;
 const GAP_SEC = 1.0;
 const RATES = [0.25, 1, 2, 4];
 
-const GLYPH: Record<string, string> = { ok: "●", warn: "▲", err: "■", info: "○" };
+/** 形狀語彙唯一來源：lib/tone.ts（info 用 stale 的 ○）。 */
+const GLYPH: Record<string, string> = { ...GLYPHS, info: GLYPHS.stale };
 
 export function TimeBar({
   log = liveLog,
@@ -171,11 +173,26 @@ export function TimeBar({
       ctx.font = "9px ui-monospace, Consolas, monospace";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
+      // 每一像素欄只留「最嚴重的那一顆」。
+      // 一場 484 秒的 PIT 練習有 580 個事件、畫在 1300 px 上就是每 2 px 一顆，
+      // 疊出來是一條實心彩帶——看起來像「整場都在出事」，其實什麼都沒說。
+      // 這樣壓縮之後，一根紅色的 ■ 才真的代表「這裡有一件 err」。
+      // 嚴重度排序 err > warn > ok > info：低階的被高階的蓋掉，不會反過來。
+      const RANK: Record<string, number> = { err: 3, warn: 2, ok: 1, info: 0 };
+      // 格寬 = 一個字元的寬度：畫得比這密，字本來就會互相蓋掉。
+      const CELL = 7;
+      const perCell = new Map<number, { ev: TimeEvent; x: number }>();
       for (const ev of evRef.current.events) {
         if (ev.t < tMin || ev.t > tMax) continue;
+        const x = X(ev.t);
+        const cell = Math.round(x / CELL);
+        const cur = perCell.get(cell);
+        if (!cur || RANK[ev.level ?? "info"] > RANK[cur.ev.level ?? "info"]) perCell.set(cell, { ev, x });
+      }
+      for (const { ev, x } of perCell.values()) {
         const c = ev.level === "err" ? p.err : ev.level === "warn" ? p.warn : ev.level === "ok" ? p.ok : p.textDim;
         ctx.fillStyle = c;
-        ctx.fillText(GLYPH[ev.level ?? "info"], X(ev.t), Y_EVENT + H_EVENT / 2);
+        ctx.fillText(GLYPH[ev.level ?? "info"], x, Y_EVENT + H_EVENT / 2);
       }
       for (const bm of evRef.current.bookmarks) {
         if (bm.t < tMin || bm.t > tMax) continue;
@@ -341,7 +358,9 @@ export function TimeBar({
       const el = e.target as HTMLElement | null;
       const tag = el?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || el?.isContentEditable) return;
-      if (e.metaKey || e.altKey) return;
+      // Ctrl 組合鍵是別人的（Ctrl+\ 縮放到 RUN 區間、Ctrl+B 書籤、Ctrl+F 篩選）：
+      // 在這裡就讓開，而不是指望呼叫端記得 stopPropagation。
+      if (e.metaKey || e.altKey || e.ctrlKey) return;
       const [tMin, tMax] = log.tRange;
       switch (e.key) {
         case " ":

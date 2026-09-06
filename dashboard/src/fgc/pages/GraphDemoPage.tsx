@@ -302,5 +302,6 @@ export const GraphDemoPage: PageDef = {
   hotkey: "G",
   hint: "折線 + 離散色帶 + 時間軸 + 游標讀值（第二階段 C 的組裝驗收頁）",
   minWidth: 1024,
+  hidden: true, // 驗收頁：?tab=graphdemo 或 G 鍵才進得去，不佔分頁列
   Component: GraphDemo,
 };

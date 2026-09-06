@@ -27,5 +27,6 @@ export const RecPage: PageDef = {
   label: "錄影",
   hotkey: "R",
   hint: "賽後取檔：GET /dash/rec.json → 點一列 streaming 載入成 REPLAY",
+  hidden: true, // §5.1 的 R 是一個「動作」（選檔進 REPLAY），不是一個常駐分頁
   Component: Rec,
 };

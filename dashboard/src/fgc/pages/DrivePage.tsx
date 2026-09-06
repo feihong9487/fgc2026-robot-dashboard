@@ -23,6 +23,8 @@ import { GamepadStrip } from "../components/drive/GamepadStrip";
 import { HopperCmdStrip } from "../components/drive/HopperCmdStrip";
 import { AlertRail } from "../components/drive/AlertRail";
 import { useBreakpoint } from "../components/drive/driveModel";
+import { getTheme } from "../lib/theme";
+import { usePalette } from "../lib/hooks";
 import type { PageDef } from "./registry";
 import "../styles/drive.css";
 
@@ -49,10 +51,17 @@ function Drive() {
     return () => document.removeEventListener("keydown", onKey);
   }, []);
 
+  // field 主題（賽場、站著看、隔 1.5 公尺）的字級是 1.6 倍、密度 9px，
+  // 同一個視窗高度裝下的東西少很多——實測 1440x900 下巨燈從 133px 掉到約 60px，
+  // 那正好把 field 主題唯一的用途（遠距讀那一個單字）弄壞。
+  // 所以 field 視同「窄一階」：砍掉球節奏與按鍵燈條，把高度還給巨燈。
+  usePalette(); // 訂閱主題變更，換主題時這一頁要重算版面
+  const fieldTheme = getTheme() === "field";
+
   // < 1024：只保留巨燈 + 狀態膠囊 + 車頭 + 爬升柱，單欄垂直堆疊
   const tiny = bp === "sm";
-  // 1024–1199（1366×768 舊筆電）：砍掉按鍵燈條與球節奏卡；巨燈字級不變
-  const dense = bp === "md" || tiny;
+  // 1024–1199（1366x768 舊筆電）：砍掉按鍵燈條與球節奏卡；巨燈字級不變
+  const dense = bp === "md" || tiny || fieldTheme;
 
   if (full) {
     return (

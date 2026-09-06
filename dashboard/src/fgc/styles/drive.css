@@ -146,8 +146,14 @@
   font-size: var(--fs-xs);
   color: var(--text-dim);
   text-align: right;
-  white-space: nowrap;
+  /* field 主題（字級 1.6 倍）下三段擠不進同一列，會把「轉向 x.xx」切掉一半。
+     六個大字才是這張卡的重點，前後/轉向是佐證——寬度不夠時讓它換行，
+     切一半的數字比換行的數字更糟（會被讀成別的值）。 */
+  white-space: normal;
+  flex: 0 1 auto;
+  min-width: 0;
 }
+.head-box { flex-wrap: wrap; }
 /* 全 App 只有三處動態之一（§6.7）：車頭切換是「你按了 □ 而且它生效了」的唯一回饋 */
 .head-box.flash { animation: head-flash 300ms steps(1, end) 1; }
 @keyframes head-flash {

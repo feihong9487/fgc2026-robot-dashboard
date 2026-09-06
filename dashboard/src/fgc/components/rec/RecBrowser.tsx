@@ -19,7 +19,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { client } from "../../../lib/RobotClient";
-import { PATHS, httpUrl } from "../../lib/profile";
+import { PATHS, httpBase, httpPort, httpUrl } from "../../lib/profile";
 import { useAppMode } from "../../lib/hooks";
 import { parseRecList, robotAcceptsName, fmtSize, fmtTime, type RecFileRow, type RecList } from "./recList";
 
@@ -232,9 +232,10 @@ export function RecBrowser({ host }: { host: string }) {
       <div className="rec-paths">
         <div className="rec-path">
           <span className="n">路徑 1</span>
-          <b>8080</b>
+          <b>{httpPort()}</b>
           <code>
-            GET http://{host}:8080{PATHS.recList}
+            GET {httpBase(host)}
+            {PATHS.recList}
           </code>
           <span className="why">再 <code>{PATHS.recFile}?name=&lt;檔名&gt;</code>。就是這一頁在做的事</span>
         </div>

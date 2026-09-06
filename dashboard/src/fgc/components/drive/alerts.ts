@@ -11,6 +11,7 @@
 // 電壓一回來，卡片就走。這比一顆關閉鍵誠實：你關掉的是卡片，不是問題。
 
 import type { LogStore } from "../../lib/LogStore";
+import { GLYPHS, LIMITS, type Tone } from "../../lib/tone";
 import { K } from "../../lib/fgcKeys";
 import { percentile, Rolling } from "../../lib/stats";
 import type { NotifyMsg } from "../../../lib/RobotClient";
@@ -31,9 +32,9 @@ export interface Alert {
 }
 
 // ── 驗收線（§6.6，全域一致，不因面板而異）────────────────────────────
-export const BATT_WARN_V = 12.0;
-export const BATT_ERR_V = 11.5;
-export const LOOP_P95_MS = 25;
+export const BATT_WARN_V = LIMITS.battWarnV;
+export const BATT_ERR_V = LIMITS.battErrV;
+export const LOOP_P95_MS = LIMITS.loopErrMs;
 /** 射手偏離目標的判定：與機器人端 SHOOT_OFF_PCT 同一個 10%。 */
 export const SHOOT_OFF_PCT = 0.1;
 /** 偏離要持續這麼久才喊，避免每次餵球的 dip 都跳一次。 */
@@ -292,5 +293,13 @@ export class AlertStore {
 
 export const alerts = new AlertStore();
 
-/** 形狀語彙：綠●／黃▲／紅■／灰○ —— 顏色不是唯一通道（§6.3）。 */
-export const GLYPH: Record<Level, string> = { ERROR: "■", WARN: "▲", INFO: "●" };
+/**
+ * 形狀語彙（§6.3）唯一來源在 lib/tone.ts。
+ * 這裡只是把通知的三級對到全域四態：ERROR→err ■、WARN→warn ▲、INFO→ok ●。
+ */
+export const ALERT_TONE: Record<Level, Tone> = { ERROR: "err", WARN: "warn", INFO: "ok" };
+export const GLYPH: Record<Level, string> = {
+  ERROR: GLYPHS.err,
+  WARN: GLYPHS.warn,
+  INFO: GLYPHS.ok,
+};

@@ -6,7 +6,7 @@
 //
 // 用 esbuild 打包後由 node 執行（見 package.json 的 script）。
 
-import { readFileSync, existsSync, readdirSync } from "node:fs";
+import { readFileSync, existsSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { LogStore } from "../src/fgc/lib/LogStore.ts";
 import { parseJsonlText } from "../src/fgc/lib/jsonl.ts";
@@ -124,12 +124,24 @@ console.log("\n[4] jsonl 解析（fake-hub 錄影檔）");
   const arg = process.argv[2];
   let file = arg ?? "";
   if (!file) {
+    // 挑**最大**的那一份，不是字典序最後一份。
+    // 字典序最後一份就是 fake-hub 現在正在寫的那一份，可能只有 10 秒——
+    // 於是「時間跨度 > 10 s」與「狀態機 > 3 段」會失敗，而失敗的原因跟程式碼無關。
+    // 這種假紅燈比沒有燈更糟：它會訓練人忽略 fgc-check 的輸出。
     const dir = join(process.cwd(), "..", "fake-hub", "fake-rec");
     if (existsSync(dir)) {
-      const files = readdirSync(dir)
-        .filter((n) => n.endsWith(".jsonl"))
-        .sort();
-      if (files.length > 0) file = join(dir, files[files.length - 1]);
+      let best = "";
+      let bestSize = -1;
+      for (const n of readdirSync(dir)) {
+        if (!n.endsWith(".jsonl")) continue;
+        const full = join(dir, n);
+        const size = statSync(full).size;
+        if (size > bestSize) {
+          bestSize = size;
+          best = full;
+        }
+      }
+      if (best) file = best;
     }
   }
   if (!file || !existsSync(file)) {

@@ -10,6 +10,11 @@
 
 export type CopyResult = "clipboard" | "execCommand" | "failed";
 
+/** 給只在意成敗的呼叫端。 */
+export async function copyOk(text: string): Promise<boolean> {
+  return (await copyText(text)) !== "failed";
+}
+
 export async function copyText(text: string): Promise<CopyResult> {
   if (typeof navigator !== "undefined" && window.isSecureContext && navigator.clipboard) {
     try {

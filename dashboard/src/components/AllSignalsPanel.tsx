@@ -6,18 +6,22 @@ import { useEffect, useState } from "react";
 import { store, NtValue } from "../lib/store";
 import { client } from "../lib/RobotClient";
 import { isTunableKey } from "../fgc/lib/fgcKeys";
+import { seriesColor, subscribeTheme } from "../fgc/lib/theme";
+import * as persist from "../fgc/lib/persist";
 import { Chart } from "./Chart";
 
-const LS_PINNED = "vmx-dashboard.pinnedSignals";
-const PIN_COLORS = ["#4fc3f7", "#ffb74d", "#81c784", "#e57373", "#ba68c8", "#4db6ac"];
+// §3.35 改造 (2)：釘選上限原本是「色盤長度 6」，現在無上限——
+// 超過 8 條時色序循環，並用線型（實線 / 長虛 / 短虛）區分，
+// 所以第 9 條與第 1 條同色但不同線型，仍分得出來。
+const DASHES: (number[] | undefined)[] = [undefined, [8, 4], [2, 3]];
+
+function pinStyle(i: number): { color: string; dash?: number[] } {
+  return { color: seriesColor(i), dash: DASHES[Math.floor(i / 8) % DASHES.length] };
+}
 
 function loadPinned(): string[] {
-  try {
-    const v = JSON.parse(localStorage.getItem(LS_PINNED) ?? "[]");
-    return Array.isArray(v) ? v.filter((k) => typeof k === "string") : [];
-  } catch {
-    return [];
-  }
+  const v = persist.get<unknown>(persist.KEYS.pinned, []);
+  return Array.isArray(v) ? v.filter((k): k is string => typeof k === "string") : [];
 }
 
 /** NT 慣例：以 . 開頭的段落是隱藏項（.metadata、.type 等） */
@@ -117,6 +121,9 @@ function ValueCell({ ntKey, value }: { ntKey: string; value: NtValue }) {
 export function AllSignalsPanel() {
   const [, force] = useState(0);
   useEffect(() => store.subscribe(() => force((n) => n + 1)), []);
+  // 換主題時釘選線的顏色要跟著換（顏色來自 --series-* token）
+  const [themeV, setThemeV] = useState(0);
+  useEffect(() => subscribeTheme(() => setThemeV((v) => v + 1)), []);
 
   const [filter, setFilter] = useState("");
   const [showHidden, setShowHidden] = useState(false);
@@ -124,11 +131,9 @@ export function AllSignalsPanel() {
   const [windowSec, setWindowSec] = useState(30);
 
   const togglePin = (key: string) => {
-    const next = pinned.includes(key)
-      ? pinned.filter((k) => k !== key)
-      : [...pinned, key].slice(-PIN_COLORS.length); // 上限 = 色盤數
+    const next = pinned.includes(key) ? pinned.filter((k) => k !== key) : [...pinned, key];
     setPinned(next);
-    localStorage.setItem(LS_PINNED, JSON.stringify(next));
+    persist.set(persist.KEYS.pinned, next);
   };
 
   // 蒐集 + 過濾 + 依上層路徑分組
@@ -180,7 +185,7 @@ export function AllSignalsPanel() {
                 {w}s
               </button>
             ))}
-            <button className="seg" onClick={() => { setPinned([]); localStorage.setItem(LS_PINNED, "[]"); }}>
+            <button className="seg" onClick={() => { setPinned([]); persist.set(persist.KEYS.pinned, []); }}>
               清除釘選
             </button>
           </>
@@ -189,12 +194,12 @@ export function AllSignalsPanel() {
 
       {pinned.length > 0 && (
         <Chart
-          key={pinned.join("|")} // 釘選變動時重建 uPlot 序列
+          key={pinned.join("|") + "#" + themeV} // 釘選或主題變動時重建 uPlot 序列
           title="釘選訊號"
           series={pinned.map((k, i) => ({
             key: k,
             label: k.split("/").slice(-2).join("/"),
-            color: PIN_COLORS[i % PIN_COLORS.length],
+            ...pinStyle(i),
           }))}
           windowSec={windowSec}
           height={240}

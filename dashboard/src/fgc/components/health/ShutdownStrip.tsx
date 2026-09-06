@@ -1,13 +1,14 @@
 // #37 關閉路徑三格（燈牆底部一列）—— 只負責畫；判定在 shutdown.ts 的純函式。
 
 import { buildShutdown, type ShutdownCtx } from "./shutdown";
+import { GLYPHS, GLYPH_IDLE } from "../../lib/tone";
 
 export type { ShutdownCell, ShutdownCtx } from "./shutdown";
 export { buildShutdown } from "./shutdown";
 
-const GLYPH_ACTIVE = "■";
-const GLYPH_IDLE = "□";
-const GLYPH_UNKNOWN = "○";
+// ■ = 這條關閉路徑正在生效；□ = 沒生效；○ = 判斷不出來（不是「沒生效」）
+const GLYPH_ACTIVE = GLYPHS.err;
+const GLYPH_UNKNOWN = GLYPHS.stale;
 
 export function ShutdownStrip({ ctx }: { ctx: ShutdownCtx }) {
   const cells = buildShutdown(ctx);

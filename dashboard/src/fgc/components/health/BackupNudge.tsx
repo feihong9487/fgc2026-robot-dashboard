@@ -11,6 +11,8 @@
 // 從來不碰 client.set，所以與 M01 的寫回路徑完全無關。
 
 import { useCallback, useState } from "react";
+import { Glyph } from "../shell/Glyph";
+import { type Tone } from "../../lib/tone";
 import * as persist from "../../lib/persist";
 import { useTick } from "../../lib/hooks";
 
@@ -36,8 +38,7 @@ export function BackupNudge() {
   }, []);
 
   const hours = last > 0 ? (Date.now() - last) / 3_600_000 : Infinity;
-  const tone = hours >= ERR_H ? "err" : hours >= WARN_H ? "warn" : "ok";
-  const glyph = tone === "err" ? "■" : tone === "warn" ? "▲" : "●";
+  const tone: Tone = hours >= ERR_H ? "err" : hours >= WARN_H ? "warn" : "ok";
 
   const headline =
     last === 0
@@ -48,7 +49,7 @@ export function BackupNudge() {
 
   return (
     <div className={`hw-backup ${tone}`}>
-      <span className={`fgc-glyph ${tone}`}>{glyph}</span>
+      <Glyph tone={tone} />
       <div className="text">
         <div className="head">
           {headline}

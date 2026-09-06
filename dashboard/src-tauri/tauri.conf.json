@@ -1,8 +1,8 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "VMX Dashboard",
+  "productName": "FGC 2026 Dashboard",
   "version": "0.1.0",
-  "identifier": "com.vmx.dashboard",
+  "identifier": "tw.godbless.fgc2026.dashboard",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
@@ -12,9 +12,11 @@
   "app": {
     "windows": [
       {
-        "title": "VMX Dashboard",
-        "width": 800,
-        "height": 600,
+        "title": "FGC 2026 Dashboard",
+        "width": 1600,
+        "height": 900,
+        "minWidth": 1200,
+        "minHeight": 700,
         "resizable": true,
         "fullscreen": false
       }

@@ -1,8 +1,13 @@
-// uPlot 包裝：從 store 取指定 key 的歷史序列，10fps 重繪，自動跟隨時間窗
-import { useEffect, useRef } from "react";
+// uPlot 包裝：從 store 取指定 key 的歷史序列，10fps 重繪，自動跟隨時間窗。
+//
+// 軸色與格線走 theme.ts（§6.1）而不是硬編 hex —— Canvas 吃不到 CSS 變數，
+// 而 uPlot 的 stroke 是「建立時就決定」的，所以主題換了必須重建一次圖，
+// 否則切到 field 主題時整張圖還是暗色的軸（第三階段 D/E 都踩過這顆地雷）。
+import { useEffect, useRef, useState } from "react";
 import uPlot from "uplot";
 import "uplot/dist/uPlot.min.css";
 import { store } from "../lib/store";
+import { palette, subscribeTheme } from "../fgc/lib/theme";
 
 export interface ChartSeries {
   key: string;
@@ -24,8 +29,13 @@ export function Chart({ title, series, windowSec, height = 220 }: Props) {
   const propsRef = useRef({ series, windowSec });
   propsRef.current = { series, windowSec };
 
+  // 主題版本：換主題時整張圖重建（uPlot 的 stroke 不是每幀重讀的）
+  const [themeV, setThemeV] = useState(0);
+  useEffect(() => subscribeTheme(() => setThemeV((v) => v + 1)), []);
+
   useEffect(() => {
     const el = divRef.current!;
+    const pal = palette();
     const opts: uPlot.Options = {
       width: el.clientWidth || 400,
       height,
@@ -35,15 +45,15 @@ export function Chart({ title, series, windowSec, height = 220 }: Props) {
       scales: { x: { time: false } },
       axes: [
         {
-          stroke: "#8b95a7",
-          grid: { stroke: "#2a3040" },
-          ticks: { stroke: "#2a3040" },
+          stroke: pal.textDim,
+          grid: { stroke: pal.border },
+          ticks: { stroke: pal.border },
           values: (_u, vs) => vs.map((v) => `${v.toFixed(0)}s`),
         },
         {
-          stroke: "#8b95a7",
-          grid: { stroke: "#2a3040" },
-          ticks: { stroke: "#2a3040" },
+          stroke: pal.textDim,
+          grid: { stroke: pal.border },
+          ticks: { stroke: pal.border },
           size: 56,
         },
       ],
@@ -110,7 +120,7 @@ export function Chart({ title, series, windowSec, height = 220 }: Props) {
       plotRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [height, title]); // series/windowSec 變化經由 propsRef 熱更新
+  }, [height, title, themeV]); // series/windowSec 變化經由 propsRef 熱更新
 
   return <div className="chart-box" ref={divRef} />;
 }

@@ -5,3 +5,5 @@ src-tauri/target/
 screens/
 vite.log
 .fgc-check.mjs
+.fgc-check-2a.mjs
+.fgc-check-3e.mjs

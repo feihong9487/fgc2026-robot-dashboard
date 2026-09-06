@@ -12,7 +12,7 @@
 import type { LogStore } from "../../lib/LogStore";
 import { K, TUNABLES, paramKey, shortName } from "../../lib/fgcKeys";
 import { summarize } from "../../lib/stats";
-import { copyText } from "../health/clipboard";
+import { copyText } from "../../lib/clipboard";
 import type { LogEvent } from "../../lib/eventDetect";
 import { KIND_LABEL, LEVEL_GLYPH } from "../../lib/eventDetect";
 import type { Bookmark } from "./bookmarks";

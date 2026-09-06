@@ -15,6 +15,7 @@
 //   · 缺口是事件不是插值：gaps() 找到的洞會變成一顆 ■，波形那邊照樣斷開
 
 import type { LogStore } from "./LogStore";
+import { GLYPHS, type Tone } from "./tone";
 import { K, paramKey, tuneKey } from "./fgcKeys";
 
 export type EventKind =
@@ -28,10 +29,18 @@ export type EventKind =
   | "fault" // ⑧ 故障
   | "notify"; // ⑨ 機器人主動通知
 
-/** §6.3 形狀語彙：綠●／黃▲／紅■／灰○。四個字元在燈牆、事件清單、通知 rail 共用。 */
+/**
+ * §6.3 形狀語彙：綠●／黃▲／紅■／灰○，四個字元全專案共用（lib/tone.ts）。
+ * info 是 stale 在「這只是一則訊息」情境下的別名——事件清單裡的通知沒有好壞。
+ */
 export type EventLevel = "ok" | "warn" | "err" | "info";
 
-export const LEVEL_GLYPH: Record<EventLevel, string> = { ok: "●", warn: "▲", err: "■", info: "○" };
+export const LEVEL_GLYPH: Record<EventLevel, string> = { ...GLYPHS, info: GLYPHS.stale };
+
+/** 事件層級 → 全域四態（顏色與燈牆同一套）。 */
+export function levelTone(l: EventLevel): Tone {
+  return l === "info" ? "stale" : l;
+}
 
 export interface LogEvent {
   /** 穩定 id：同一份 log 重算多少次都一樣（即時增量靠這個去重）。 */

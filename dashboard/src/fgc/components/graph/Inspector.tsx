@@ -9,6 +9,7 @@
 //      否則整張表每秒重繪 60 次（§7.5 第 1 點：兩個 store 分離就是為了這個）。
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { copyOk } from "../../lib/clipboard";
 import { LogStore, liveLog } from "../../lib/LogStore";
 import { cursor } from "../../lib/cursorStore";
 import { shortName, groupOf } from "../../lib/fgcKeys";
@@ -182,30 +183,10 @@ export function Inspector({ log = liveLog, keys, onRemoveKey, staleSec = 2 }: Pr
 }
 
 /**
- * 三層剪貼簿：navigator.clipboard → execCommand → 失敗。
- * **fallback 一定要有**：Control Hub 是 http，`navigator.clipboard` 在非安全內容底下
- * 是 undefined（FTC CustomVariable.tsx:79-87 的教訓）。
+ * 三層剪貼簿的唯一實作在 lib/clipboard.ts（Control Hub 是 http，
+ * `navigator.clipboard` 在非安全內容底下是 undefined —— FTC CustomVariable.tsx:79-87
+ * 的教訓）。這裡只 re-export 成布林版，既有呼叫端只在意成敗。
  */
 export async function copyText(text: string): Promise<boolean> {
-  try {
-    if (typeof navigator !== "undefined" && window.isSecureContext && navigator.clipboard) {
-      await navigator.clipboard.writeText(text);
-      return true;
-    }
-  } catch {
-    /* 掉到下一層 */
-  }
-  try {
-    const ta = document.createElement("textarea");
-    ta.value = text;
-    ta.style.position = "fixed";
-    ta.style.opacity = "0";
-    document.body.appendChild(ta);
-    ta.select();
-    const ok = document.execCommand("copy");
-    document.body.removeChild(ta);
-    return ok;
-  } catch {
-    return false;
-  }
+  return copyOk(text);
 }

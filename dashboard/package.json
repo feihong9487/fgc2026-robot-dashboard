@@ -4,13 +4,17 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host 127.0.0.1 --port 5173 --strictPort",
     "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 5173 --strictPort",
     "typecheck": "tsc --noEmit",
-    "preview": "vite preview",
     "tauri": "tauri",
-    "fake-hub": "node ../fake-hub/fake-hub.mjs",
-    "fgc-check": "esbuild tools/fgc-check.ts --bundle --platform=node --format=esm --outfile=.fgc-check.mjs --log-level=warning && node .fgc-check.mjs"
+    "fake-hub": "node ../fake-hub/fake-hub.mjs --mode PIT",
+    "check": "npm run typecheck && npm run build && npm run fgc-check-all",
+    "fgc-check": "esbuild tools/fgc-check.ts --bundle --platform=node --format=esm --outfile=.fgc-check.mjs --log-level=warning && node .fgc-check.mjs",
+    "fgc-check-2a": "esbuild tools/fgc-check-2a.ts --bundle --platform=node --format=esm --outfile=.fgc-check-2a.mjs --log-level=warning && node .fgc-check-2a.mjs",
+    "fgc-check-3e": "esbuild tools/fgc-check-3e.ts --bundle --platform=node --format=esm --outfile=.fgc-check-3e.mjs --log-level=warning && node .fgc-check-3e.mjs",
+    "fgc-check-all": "npm run fgc-check && npm run fgc-check-2a && npm run fgc-check-3e"
   },
   "dependencies": {
     "react": "^18.3.1",

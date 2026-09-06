@@ -13,6 +13,8 @@
 // gen），沒有任何一個值可以被轉述給駕駛當作比賽建議。
 
 import { PATHS } from "../../lib/profile";
+import { Glyph } from "../shell/Glyph";
+import { type Tone } from "../../lib/tone";
 import { useLink } from "../../lib/hooks";
 import { useRecTrend } from "../health/useRecTrend";
 
@@ -29,13 +31,12 @@ export function RecHeartbeat({ host }: { host: string }) {
   // 「在動」的證據：不是有數字，是數字比上一輪大。
   const moving = Number.isFinite(trend.delta) && trend.delta > 0;
   const known = Number.isFinite(trend.delta) && trend.windowS >= 25;
-  const glyph = !ok ? "○" : moving ? "●" : known ? "■" : "○";
-  const tone = !ok ? "stale" : moving ? "ok" : known ? "err" : "stale";
+  const tone: Tone = !ok ? "stale" : moving ? "ok" : known ? "err" : "stale";
 
   return (
     <div className="lockdown-card wide">
       <h3>
-        <span className={`fgc-glyph ${tone}`}>{glyph}</span>
+        <Glyph tone={tone} />
         {ok ? (moving ? "機器人端錄影中" : known ? "錄影行數停住了" : "機器人端錄影中（觀察中）") : "無法確認錄影狀態"}
         <span className="src">
           來源：GET {PATHS.health}　每 3 秒

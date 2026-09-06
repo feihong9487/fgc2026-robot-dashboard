@@ -11,22 +11,23 @@
 // 判定全部在 checks.ts 的純函式裡，這個檔案只負責畫。
 
 import { useCallback, useState } from "react";
+import { Glyph } from "../shell/Glyph";
 import { client } from "../../../lib/RobotClient";
 import { store } from "../../../lib/store";
 import { K } from "../../lib/fgcKeys";
 import { liveLog } from "../../lib/LogStore";
 import { percentiles } from "../../lib/stats";
 import { useLink, useLogVersion, useTick } from "../../lib/hooks";
-import { buildChecks, checksToMarkdown, summarizeChecks, GLYPH, type Check } from "./checks";
+import { buildChecks, checksToMarkdown, summarizeChecks, type Check } from "./checks";
 import { ShutdownStrip } from "./ShutdownStrip";
 import { useRecTrend } from "./useRecTrend";
-import { copyText } from "./clipboard";
+import { copyText } from "../../lib/clipboard";
 
 function Cell({ c }: { c: Check }) {
   return (
     <div className={`hw-cell ${c.state}`} title={c.hint}>
       <div className="hw-name">
-        <span className={`fgc-glyph ${c.state}`}>{GLYPH[c.state]}</span>
+        <Glyph tone={c.state} />
         {c.name}
         {c.fingerprint && (
           <span className="hw-fp" title="指紋燈：這一格直接指向一個具體的機器人端故障，不必再猜">

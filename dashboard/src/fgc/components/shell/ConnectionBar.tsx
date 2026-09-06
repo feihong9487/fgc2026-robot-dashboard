@@ -16,15 +16,22 @@ import { store } from "../../../lib/store";
 import { client } from "../../../lib/RobotClient";
 import { K } from "../../lib/fgcKeys";
 import { liveLog } from "../../lib/LogStore";
-import { FGC } from "../../lib/profile";
+import { FGC, httpPort } from "../../lib/profile";
 import { percentiles } from "../../lib/stats";
 import { useAppMode, useLink, useLogVersion, useTick } from "../../lib/hooks";
+import { LIMITS, toneByThreshold } from "../../lib/tone";
+import { SettingsMenu } from "./SettingsMenu";
 
 interface Props {
   host: string;
   setHost: (h: string) => void;
   /** 分頁列；MATCH 下 App 直接不傳（整條不 render，不是 disabled）。 */
   tabs?: ReactNode;
+  /**
+   * 齒輪（主題／密度／埠／設定備份）。MATCH 下 App 直接不傳 —— 沒有這個 callback
+   * 就沒有齒輪，所以「MATCH 下零輸入元件」不是靠一個 if 記得寫，是靠沒有東西可傳。
+   */
+  onPortsChanged?: () => void;
 }
 
 function Stat({
@@ -34,6 +41,8 @@ function Stat({
   tone,
   title,
   unit,
+  clip,
+  className,
 }: {
   label?: string;
   value: string;
@@ -41,9 +50,17 @@ function Stat({
   tone?: "warn" | "err" | "stale";
   title?: string;
   unit?: string;
+  /** 長度不可預測的字串（Build tag、OpMode 名稱）：超出就省略號，全文進 title。
+      不設上限的話一個 24 字的 build tag 會把分頁列擠出畫面外——實測 1440 寬時
+      整條頂欄 scrollWidth 1439 > clientWidth 1410，最右邊的「訊號」被切掉。 */
+  clip?: boolean;
+  className?: string;
 }) {
   return (
-    <span className={`fgc-stat w${width}${tone ? " " + tone : ""}`} title={title}>
+    <span
+      className={`fgc-stat w${width}${tone ? " " + tone : ""}${clip ? " clip" : ""}${className ? " " + className : ""}`}
+      title={clip && title ? `${title}　=　${value}` : title}
+    >
       {label && <span className="label">{label}</span>}
       <span className="value">{value}</span>
       {unit && <span className="fgc-unit">{unit}</span>}
@@ -51,7 +68,12 @@ function Stat({
   );
 }
 
-export function ConnectionBar({ host, setHost, tabs }: Props) {
+/** 全域四態 → Stat 的 tone（ok 不上色，因為頂欄一半的欄位都是 ok，上色等於沒上色）。 */
+function statTone(t: "ok" | "warn" | "err" | "stale"): "warn" | "err" | "stale" | undefined {
+  return t === "ok" ? undefined : t;
+}
+
+export function ConnectionBar({ host, setHost, tabs, onPortsChanged }: Props) {
   const mode = useAppMode();
   const link = useLink();
   useLogVersion();
@@ -102,7 +124,7 @@ export function ConnectionBar({ host, setHost, tabs }: Props) {
           <span className="fgc-glyph">▣</span>
           REPLAY
         </span>
-        <Stat value={client.replayName} width={8} title="載入的錄影檔" />
+        <Stat value={client.replayName} width={8} clip title="載入的錄影檔" />
         <span className="sep" />
         <Stat label="長度" value={(rt1 - rt0).toFixed(1)} unit="s" width={6} />
         <Stat label="批" value={log.batchCount.toLocaleString("en-US")} width={6} />
@@ -119,6 +141,7 @@ export function ConnectionBar({ host, setHost, tabs }: Props) {
         />
         <span className="spacer" />
         {tabs}
+        {onPortsChanged && <SettingsMenu onPortsChanged={onPortsChanged} />}
       </header>
     );
   }
@@ -130,10 +153,10 @@ export function ConnectionBar({ host, setHost, tabs }: Props) {
         {badge.text}
       </span>
 
-      <Stat label="Build" value={build || "—"} width={8} title="/FGC/Bridge/Build" tone={build ? undefined : "stale"} />
+      <Stat label="Build" value={build || "—"} width={8} clip title="/FGC/Bridge/Build" tone={build ? undefined : "stale"} />
 
       {!lockedDown && (
-        <Stat label="OpMode" value={opMode || "—"} width={8} title="/FGC/Status/OpMode" tone={opMode ? undefined : "stale"} />
+        <Stat label="OpMode" value={opMode || "—"} width={8} clip title="/FGC/Status/OpMode" tone={opMode ? undefined : "stale"} />
       )}
 
       <span className="sep" />
@@ -165,8 +188,9 @@ export function ConnectionBar({ host, setHost, tabs }: Props) {
               : `8080 無回應：${health?.kind === "error" ? health.why : "尚未輪詢"}`
         }
       />
+      {/* 埠可被覆寫（Driver Hub 中繼是 18080），所以這裡寫的是真的在連的那個數字 */}
       <span className="label" style={{ color: "var(--text-dim)", fontSize: "var(--fs-xs)" }}>
-        8080
+        {httpPort()}
       </span>
 
       {!lockedDown && (
@@ -177,8 +201,8 @@ export function ConnectionBar({ host, setHost, tabs }: Props) {
             value={Number.isFinite(battery) ? battery.toFixed(1) : "—"}
             unit="V"
             width={4}
-            tone={!Number.isFinite(battery) ? "stale" : battery < 11.5 ? "err" : battery < 12.0 ? "warn" : undefined}
-            title="/FGC/Status/Battery V —— 驗收線 12.0 / 11.5 V"
+            tone={statTone(toneByThreshold(battery, LIMITS.battWarnV, LIMITS.battErrV, "low"))}
+            title={`/FGC/Status/Battery V —— 驗收線 ${LIMITS.battWarnV} / ${LIMITS.battErrV} V`}
           />
           <Stat
             label="loop"
@@ -187,8 +211,8 @@ export function ConnectionBar({ host, setHost, tabs }: Props) {
             }
             unit="ms"
             width={6}
-            tone={!Number.isFinite(p95) ? "stale" : p95 > 25 ? "err" : p95 > 20 ? "warn" : undefined}
-            title="/FGC/Status/Loop ms 的 p50 / p95（最近 20 秒滾動視窗）。驗收線 25 ms"
+            tone={statTone(toneByThreshold(p95, LIMITS.loopWarnMs, LIMITS.loopErrMs))}
+            title={`/FGC/Status/Loop ms 的 p50 / p95（最近 20 秒滾動視窗）。驗收線 ${LIMITS.loopErrMs} ms`}
           />
         </>
       )}
@@ -204,7 +228,15 @@ export function ConnectionBar({ host, setHost, tabs }: Props) {
         title="/dash/health 的 reclines —— 比賽日唯一有價值的產出就是那個 jsonl，行數在動是它活著的唯一證據"
       />
       {Number.isFinite(recPending) && (
-        <Stat label="待寫" value={String(Math.round(recPending))} width={4} title="recpending：還沒 flush 到檔案的行數（FLUSH_MS=10000）" />
+        // 1200 以下讓位給分頁列：待寫是「行數為什麼還沒跳」的註腳，
+        // 而行數本身還在。分頁列被擠掉的話滑鼠就換不了頁了。
+        <Stat
+          label="待寫"
+          value={String(Math.round(recPending))}
+          width={4}
+          className="hide-lt-1200"
+          title="recpending：還沒 flush 到檔案的行數（FLUSH_MS=10000）"
+        />
       )}
 
       <Stat
@@ -232,6 +264,10 @@ export function ConnectionBar({ host, setHost, tabs }: Props) {
       )}
 
       {tabs}
+
+      {/* 齒輪固定在最右：它的下拉是 position:fixed 靠右對齊，
+          放在分頁列右邊才會從按鈕底下長出來而不是從別的地方 */}
+      {onPortsChanged && mode === "PIT" && <SettingsMenu onPortsChanged={onPortsChanged} />}
     </header>
   );
 }

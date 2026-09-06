@@ -13,19 +13,16 @@
 //   Viewers >= 1 收不到  namespace 沒訂閱成功 → 不是網路問題，是握手問題
 
 import { K, TUNABLES, paramKey, buildParamKey } from "../../lib/fgcKeys";
+import { GLYPHS, LIMITS, toneByThreshold, type Tone } from "../../lib/tone";
 import type { LogStore } from "../../lib/LogStore";
 import type { HealthState } from "../../lib/health";
 import type { LinkState } from "../../../lib/RobotClient";
 
-export type CheckState = "ok" | "warn" | "err" | "stale";
+/** 燈牆的四態就是全域四態（§6.6），不另立一套。 */
+export type CheckState = Tone;
 
-/** 形狀語彙（§6.3）：顏色不是唯一通道，約 8% 男性有紅綠色覺辨異。 */
-export const GLYPH: Record<CheckState, string> = {
-  ok: "●",
-  warn: "▲",
-  err: "■",
-  stale: "○",
-};
+/** 形狀語彙（§6.3）唯一來源在 lib/tone.ts；這裡只是給既有呼叫端的別名。 */
+export const GLYPH: Record<CheckState, string> = GLYPHS;
 
 export interface Check {
   id: string;
@@ -222,7 +219,7 @@ export function buildChecks(ctx: CheckCtx): Check[] {
   // (6) 電池 —— 驗收線 12.0 / 11.5 V
   {
     const v = num(log, K.battery);
-    const state: CheckState = !Number.isFinite(v) ? "stale" : v < 11.5 ? "err" : v < 12.0 ? "warn" : "ok";
+    const state: CheckState = toneByThreshold(v, LIMITS.battWarnV, LIMITS.battErrV, "low");
     out.push({
       id: "battery",
       name: "電池",
@@ -236,7 +233,7 @@ export function buildChecks(ctx: CheckCtx): Check[] {
   // (7) loop p95 —— 驗收線 25 ms
   {
     const p95 = ctx.loopP95;
-    const state: CheckState = !Number.isFinite(p95) ? "stale" : p95 > 25 ? "err" : p95 > 20 ? "warn" : "ok";
+    const state: CheckState = toneByThreshold(p95, LIMITS.loopWarnMs, LIMITS.loopErrMs);
     out.push({
       id: "loop",
       name: "loop p95",
@@ -254,7 +251,7 @@ export function buildChecks(ctx: CheckCtx): Check[] {
     const fps = num(log, K.visionFps);
     const enabled = log.has(K.visionEnabled) ? log.latestBool(K.visionEnabled, false) : null;
     const state: CheckState =
-      enabled === false ? "stale" : !Number.isFinite(fps) ? "stale" : fps < 10 ? "err" : fps < 15 ? "warn" : "ok";
+      enabled === false ? "stale" : toneByThreshold(fps, LIMITS.visionWarnFps, LIMITS.visionErrFps, "low");
     out.push({
       id: "visionfps",
       name: "視覺 fps",
@@ -265,7 +262,7 @@ export function buildChecks(ctx: CheckCtx): Check[] {
         enabled === false
           ? "視覺未啟用"
           : Number.isFinite(fps)
-            ? `${fps.toFixed(1)}${fps < 15 ? "（偏低）" : ""}`
+            ? `${fps.toFixed(1)}${fps < LIMITS.visionWarnFps ? "（偏低）" : ""}`
             : "沒有讀數",
       hint: "降 MJPEG_Q 到 40 或關掉串流；再不行提高 TAG_DECIMATION（犧牲遠距離辨識換 fps）",
     });

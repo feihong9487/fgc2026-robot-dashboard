@@ -5,15 +5,21 @@
 //
 // §8 M01 措施 5：RunPanel / DebugPanel / LockerPanel / PathPlanPanel / PathTestPanel
 // 這些 VMX 專用面板不得進入這張表（它們已在本專案整支刪除，連引誘都不留）。
+//
+// hidden 的意思是「不在分頁列上，但快捷鍵與 ?tab= 到得了」。
+// 兩種東西該 hidden：
+//   · 錄影選檔（R）——它是 §5.1 的一個「動作」而不是一個要常駐的分頁
+//   · 圖表組裝驗收頁（G）——第二階段 C 的驗收頁，賽場上沒有人要看它
+// 刪掉它們會少掉一條驗證路徑；留在分頁列上會多出兩個賽場上按錯的機會。
 
 import type { ComponentType } from "react";
 import { DrivePage } from "./DrivePage";
-import { HealthPage } from "./HealthPage";
-import { RecPage } from "./RecPage";
-import { GraphDemoPage } from "./GraphDemoPage";
 import { ShooterPage } from "./ShooterPage";
 import { TunePage } from "./TunePage";
+import { HealthPage } from "./HealthPage";
 import { SignalsPage } from "./SignalsPage";
+import { RecPage } from "./RecPage";
+import { GraphDemoPage } from "./GraphDemoPage";
 
 export interface PageDef {
   id: string;
@@ -23,21 +29,29 @@ export interface PageDef {
   Component: ComponentType;
   /** 滑鼠移上去的一行說明。 */
   hint?: string;
-  /** 這一頁需要的最小視窗寬度；不足時顯示降級提示而不是擠爆版面。 */
+  /** 這一頁需要的最小視窗寬度；不足時分頁列上標記，頁面自己顯示降級提示。 */
   minWidth?: number;
+  /** 不列在分頁列上（快捷鍵與 ?tab= 仍到得了）。 */
+  hidden?: boolean;
 }
 
-/** PIT 分頁（MATCH 下這張表在 UI 上不存在）。後續階段各自 push 進來。 */
+/**
+ * PIT 分頁（MATCH 下這張表在 UI 上不存在）。
+ * 前五個是 §2.2 的分頁列；後兩個 hidden。
+ */
 export const PIT_PAGES: PageDef[] = [
-  DrivePage, // ① 駕駛 DRIVE   D  —— 練習跑最常打開的一頁，所以它排第一（也是預設分頁）
-  ShooterPage, // ② 射手   S
-  TunePage, //    ③ 參數   T
-  HealthPage, // ④ 檢查   C
-  RecPage, //     選檔     R  —— §5.1「進入 REPLAY（選檔）」的實作
-  // ⑤ 視覺         V  —— 條件項（§9 第一刀）
-  GraphDemoPage, // 圖表   G  —— 第二階段 C 的組裝驗收頁（射手／REPLAY 兩頁會沿用它的組裝方式）
-  SignalsPage, // ⑥ 訊號   A
+  DrivePage, //   ① 駕駛 D —— 練習跑最常打開的一頁，所以它排第一（也是預設分頁）
+  ShooterPage, // ② 射手 S
+  TunePage, //    ③ 參數 T
+  HealthPage, //  ④ 檢查 C
+  // ⑤ 視覺 V —— 條件項（§9 第一刀），v1 不做
+  SignalsPage, // ⑥ 訊號 A
+  RecPage, //     選檔 R —— §5.1「進入 REPLAY（選檔）」的實作，不佔分頁列
+  GraphDemoPage, // 圖表 G —— 第二階段 C 的組裝驗收頁，?tab=graphdemo 才進得去
 ];
+
+/** 分頁列上真的畫出來的那幾個。 */
+export const TAB_PAGES: PageDef[] = PIT_PAGES.filter((p) => !p.hidden);
 
 export function findPage(id: string | null | undefined): PageDef | undefined {
   if (!id) return undefined;

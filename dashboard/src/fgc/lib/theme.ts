@@ -111,6 +111,13 @@ const VAR_MAP: Record<Exclude<keyof Palette, "series">, string> = {
 
 let cache: Palette = FALLBACK;
 let current: ThemeName = "dark";
+/**
+ * 使用者「真正想要的」主題（永遠不是 lockdown）。
+ * lockdown 是 MATCH 強制套上的，離開 MATCH 時要還原成這個而不是去讀 localStorage
+ * ——`?theme=field` 這種一次性的網址參數不寫 localStorage，去讀 localStorage
+ * 會把它吃掉（開機 route 一定先是 MATCH，所以每一次都會吃掉）。
+ */
+let preferred: Exclude<ThemeName, "lockdown"> = "dark";
 const listeners = new Set<() => void>();
 
 function readVar(cs: CSSStyleDeclaration, name: string, fallback: string): string {
@@ -153,12 +160,18 @@ export function getTheme(): ThemeName {
   return current;
 }
 
+/** 離開 MATCH 時要還原成哪一個（永遠不是 lockdown）。 */
+export function preferredTheme(): Exclude<ThemeName, "lockdown"> {
+  return preferred;
+}
+
 /**
  * 套用主題。lockdown 不由使用者選——MATCH 進來時強制套上，
  * 刻意「不好看」：比賽日的螢幕被人看到時，它應該明顯是一台關著的機器。
  */
 export function setTheme(name: ThemeName, remember = true): void {
   current = name;
+  if (name !== "lockdown") preferred = name;
   if (typeof document !== "undefined") {
     document.documentElement.setAttribute("data-theme", name);
   }
@@ -183,7 +196,7 @@ export function getDensity(): Density {
 export function initTheme(forced?: string | null): ThemeName {
   let name: ThemeName = "dark";
   const saved = persist.getStr(persist.KEYS.theme, "");
-  if (forced === "dark" || forced === "field" || forced === "lockdown") name = forced;
+  if (forced === "dark" || forced === "field") name = forced;
   else if (saved === "dark" || saved === "field") name = saved;
   else if (typeof window !== "undefined" && window.matchMedia) {
     // 現況全檔 0 個 prefers-color-scheme；淺色偏好的人在賽場其實需要的是 field
