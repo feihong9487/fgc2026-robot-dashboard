@@ -1,0 +1,391 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   FGC 2026 · 野火暗色工業風 —— 三層 token
+
+   從 styles.css 搬出並重估。**第二／第三層的變數名一個都沒改**，
+   所以 theme.ts 的 VAR_MAP 零改動，32 個 widget 零改動——換掉的只有值。
+
+   載入順序：main.tsx 必須 `import "./styles.css"` **之後**再
+   `import "./fgc/styles/tokens.css"`（選擇器特異度相同，後載入者贏）。
+   styles.css 原本的 token 區段已整段刪掉。
+   ═══════════════════════════════════════════════════════════════════════ */
+
+:root[data-profile="fgc"] {
+
+  /* ── 第一層 原始色 ────────────────────────────────────────────────
+     燒過的地表。色度隨層數遞增（.019 → .025 → .030），暗處也能分辨三層，
+     所以全案不需要任何陰影。元件不准直接引用這一層。 */
+  --char:        #0E141C;  /* oklch(.189 .019 256) 炭 · 頁底 */
+  --ash:         #161F2A;  /* oklch(.236 .025 254) 燼 · 面板 */
+  --soot:        #1F2A38;  /* oklch(.281 .030 255) 煤 · 凹槽 */
+  --rule:        #2C3A4B;  /* oklch(.344 .035 254) 1.6:1 框線刻意低 */
+  --rule-hi:     #3D4E63;  /* oklch(.418 .041 254) hover / 表格分隔 */
+  --slag:        #44566D;  /* oklch(.448 .044 255) 缺口斜線 */
+  --ember-cold:  #6C7B90;  /* oklch(.578 .037 257) 已過期 */
+  --smoke:       #8B99AC;  /* oklch(.678 .032 256) 6.4:1 次要文字 */
+  --smoke-hi:    #B9C6D6;  /* oklch(.822 .027 254) 10.7:1 目標線 */
+  --bone:        #E4EAF2;  /* oklch(.935 .013 256) 15.3:1 主文字 */
+
+  /* 野火橘 —— WILDFIRE 遊戲球。全案唯一強調色。
+     只有一個意思：這裡連著機器人。資料不橘，警戒不橘。像素預算 < 2%。 */
+  --wildfire:      #FF6B1A;  /* oklch(.703 .198 43) 6.5:1 */
+  --wildfire-deep: #C25415;  /* oklch(.579 .157 45) 4.0:1 按下態 */
+
+  /* 狀態三色（不是強調色）。warn 從 H73 推到 H93，
+     因為 H73 正好撞上 SR 的琥珀資料色——現況那是個真 bug。
+     err 從 H25 推到 H15，拉開與野火橘（H43）的距離。 */
+  --signal-green:  #3FD08A;  /* oklch(.764 .159 158)  9.3:1 */
+  --signal-yellow: #FFD429;  /* oklch(.882 .172  93) 13.0:1 */
+  --signal-red:    #FF4D6D;  /* oklch(.679 .213  15)  5.8:1 */
+
+  /* 熱像儀資料色盤：冷青 → 琥珀。1-4 靠色相分（橫跨藍黃安全軸，
+     明度差 >= .07，deuteranopia 下仍可分）；5-8 是 1-4 的淺色版，
+     **必須配線型**（見 --series-dash-*）。八個獨立色相在暗底上必然撞警戒色。 */
+  --scan-cyan:      #3FC9DE;  /* oklch(.772 .118 210) */
+  --scan-amber:     #F2A93B;  /* oklch(.787 .147  73) */
+  --scan-teal:      #1F9E96;  /* oklch(.633 .104 188) */
+  --scan-violet:    #9B8CFF;  /* oklch(.703 .164 287) */
+  --scan-cyan-hi:   #8FE0EE;  /* oklch(.859 .081 210) */
+  --scan-amber-hi:  #FFD08A;  /* oklch(.883 .102  77) */
+  --scan-teal-hi:   #5FC8C0;  /* oklch(.769 .098 189) */
+  --scan-violet-hi: #C7BEFF;  /* oklch(.831 .091 291) */
+
+  /* ── 第二層 語意色（名稱與 theme.ts VAR_MAP 完全對齊，不准改名）── */
+  --surface-1: var(--char);
+  --surface-2: var(--ash);
+  --surface-3: var(--soot);
+  --text:      var(--bone);
+  --text-dim:  var(--smoke);
+  --border-c:  var(--rule);
+  --border-hi: var(--rule-hi);
+
+  --ok:   var(--signal-green);
+  --warn: var(--signal-yellow);
+  --err:  var(--signal-red);
+
+  /* danger != err：err =「這個值不對」，danger =「這個按鈕會改機器人」。
+     兩者在本方案裡是不同通道：err 是狀態紅，danger 是野火橘。 */
+  --danger:     var(--wildfire);
+  --focus-ring: var(--wildfire);
+
+  /* 橘底上的字色。骨白在 #FF6B1A 上只有 2.35:1，禁用。 */
+  --on-fire: var(--char);
+
+  --stale: var(--ember-cold);
+  --gap:   var(--slag);
+
+  /* ── 第三層 領域色 ──────────────────────────────────────────── */
+  /* 固定綁定（§6.5）：SL = 1（青）、SR = 2（琥珀）、Way = 4（冷紫）。
+     不因面板而異，包含 sparkline 與匯出。 */
+  --series-1: var(--scan-cyan);
+  --series-2: var(--scan-amber);
+  --series-3: var(--scan-teal);
+  --series-4: var(--scan-violet);
+  --series-5: var(--scan-cyan-hi);
+  --series-6: var(--scan-amber-hi);
+  --series-7: var(--scan-teal-hi);
+  --series-8: var(--scan-violet-hi);
+
+  /* 5-8 是 1-4 的淺色版，所以**必須**同時吃線型，否則色盲下與 1-4 同一條。
+     LineGraph 讀這幾個字串當 uPlot 的 dash 陣列。 */
+  --series-dash-1: none;
+  --series-dash-2: none;
+  --series-dash-3: none;
+  --series-dash-4: none;
+  --series-dash-5: 8 4;
+  --series-dash-6: 8 4;
+  --series-dash-7: 2 3;
+  --series-dash-8: 2 3;
+
+  --state-collect: var(--scan-cyan);
+  --state-shoot:   var(--signal-green);
+  --state-eject:   var(--signal-red);
+  --band-on:       var(--signal-green);
+  --band-off:      var(--rule);
+  --band-neg:      var(--scan-violet);
+
+  /* 目標與實測同色，誤差 = 兩條同色線的距離。--target 是「無對應實測線」時的退路。 */
+  --target: var(--smoke-hi);
+  --thresh: var(--signal-yellow);
+
+  /* 保留 token，目前無元件使用。一旦有場地圖，聯盟色一律以「填色方塊 + 隊號」
+     呈現，絕不以裸色文字呈現——否則與 --err / --focus-ring 互相混淆。 */
+  --alliance-red:  #E03A4B;
+  --alliance-blue: #3D7DE8;
+
+  --field-bg:   #080C12;   /* 比頁底再深一階，畫布才有邊界 */
+  --field-grid: #22303F;   /* 1.4:1，是背景不是圖案 */
+  --field-tag:  var(--signal-yellow);
+  --fov:        var(--scan-cyan);
+
+  /* ── 字體 ────────────────────────────────────────────────────────
+     Noto Sans TC 打頭：拉丁與漢字出自同一家族，`VEL_SL` 與「射手」
+     的筆畫粗細才一致。現況 "Segoe UI" 打頭會讓拉丁來自 humanist、
+     漢字來自 neo-grotesque，兩套設計軸混在一行裡。不載入 web font。 */
+  --font-ui:  "Noto Sans TC", "Microsoft JhengHei", "PingFang TC",
+              "Noto Sans", system-ui, sans-serif;
+  --font-num: ui-monospace, "Cascadia Mono", Consolas,
+              "Noto Sans Mono", monospace;
+  --mono: var(--font-num);   /* 舊名，既有 CSS 還在用 */
+
+  /* 只用 400 / 700 兩檔：Noto Sans TC 與 Microsoft JhengHei 的共同可用
+     字重就這兩個。第三層級用顏色與尺寸區分，不用字重。 */
+  --fw-normal: 400;
+  --fw-bold:   700;
+
+  /* ── 字級：兩個音階 ──────────────────────────────────────────
+     讀數音階：28px = 1.5 m 可讀下限（96dpi 下 ~7.4mm），向上完全五度 1.5。
+               只有這一組吃 --font-scale。
+     介面音階：14px = 60cm 桌面下限，小三度 1.2。永遠不縮放——
+               標籤放大只會換行，不會更好讀。 */
+  --font-scale: 1;
+  --fs-hero: calc(94px * var(--font-scale));  /* 巨燈。全案只有一個元素能用 */
+  --fs-2xl:  calc(63px * var(--font-scale));  /* 比賽計時、爬升分數 */
+  --fs-xl:   calc(42px * var(--font-scale));  /* 卡片主讀數 */
+  --fs-lg:   calc(28px * var(--font-scale));  /* 狀態膠囊 · 1.5m 下限 */
+  --fs-md: 17px;   /* 卡片標題、按鈕、分頁 */
+  --fs-sm: 14px;   /* 表格、表單、正文（基準） */
+  --fs-xs: 12px;   /* 單位、軸標籤、圖例 —— 全案最小，沒有 11px */
+
+  --lh-num:   1;      /* 數字沒有下伸部，行高 1 才對得上格線 */
+  --lh-ui:    1.5;
+  --lh-prose: 1.75;   /* 中文說明段落要比拉丁更鬆 */
+
+  --ls-cjk:   0;        /* 中文永遠不加字距 */
+  --ls-num:   -0.01em;  /* tabular 數字先天偏寬 */
+  --ls-state: 0.02em;   /* 唯一例外：巨燈的 READY/SHOOT/EJECT */
+  --measure:  30em;     /* 說明段落上限 = 30 個全形字 */
+
+  /* ── 密度與形狀 ─────────────────────────────────────────────── */
+  --u: 6px;
+  --hit: 36px;          /* 最小命中區 */
+  --r-card: 3px;        /* 唯讀卡片 */
+  --r-chip: 2px;        /* 可寫元件：方正 = 機器面板上的按鍵 */
+  --r-lamp: 50%;        /* 只有燈是圓的 */
+  --bw: 1px;
+
+  /* 全案零陰影。工業面板不打光，層次靠底色階差與 1px 線。 */
+  --shadow: none;
+
+  /* ── 相容層：把舊的 10 個 VMX 變數接到第二層 ──
+     注意 --accent 現在是野火橘。舊 VMX 樣式裡把 accent 當裝飾用的
+     區塊標題已在同一個 commit 內改成 var(--text) / var(--text-dim)。 */
+  --bg:      var(--surface-1);
+  --bg2:     var(--surface-2);
+  --bg3:     var(--surface-3);
+  --border:  var(--border-c);
+  --fg:      var(--text);
+  --fg-dim:  var(--text-dim);
+  --accent:  var(--focus-ring);
+
+  color-scheme: dark;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--ls-cjk);
+}
+
+/* ── 密度三檔 ─────────────────────────────────────────────────────
+   compact：參數/射手/圖表/訊號（坐著看，資訊密集）
+   normal ：駕駛/檢查/回放
+   loose  ：field 與 lockdown（站著看，命中區 >= 44px）
+   --u:10px 而不是 9px，是為了讓 .btn 在 17px 字級下自然來到 44px。 */
+:root[data-profile="fgc"][data-density="compact"] { --u: 4px;  --hit: 32px; }
+:root[data-profile="fgc"][data-density="normal"]  { --u: 6px;  --hit: 36px; }
+:root[data-profile="fgc"][data-density="loose"]   { --u: 10px; --hit: 44px; }
+
+/* ═══ 主題 2：field（賽場、站著看、隔 1.5 公尺）══════════════════════
+   三條硬規則：
+   1. 卡片不畫框，只靠留白分組。純黑上的低對比框線是視覺垃圾。
+   2. 標題不放大——放大的只有數字。（這修掉「比賽計時」在 1.6 倍下換兩行。）
+   3. 狀態色不填滿卡片，只填燈本體。1.5 m 外一整片紅讀不出是哪一格。 */
+:root[data-profile="fgc"][data-theme="field"] {
+  --surface-1: #000000;
+  --surface-2: #000000;
+  --surface-3: #0F1318;
+  --text:      #FFFFFF;   /* 21.0:1 */
+  --text-dim:  #B6C2D0;   /* 11.6:1 —— 比 dark 亮兩階，6:1 在 1.5m 外不夠 */
+  --border-c:  #4A5461;
+  --border-hi: #6B7684;
+
+  --ok:   #22FF88;        /* 15.7:1 */
+  --warn: #FFE01B;        /* 15.9:1 */
+  --err:  #FF5A5A;        /*  6.9:1 —— 紅先天低明度，靠面積與 ■ 補償 */
+  --danger:     #FF8A3D;  /*  9.0:1 —— 橘在純黑上要提亮到 L=.75 */
+  --focus-ring: #FF8A3D;
+  --on-fire: #000000;
+  --stale: #8A939E;       /*  6.8:1 */
+  --gap:   #4A5461;
+
+  --series-1: #22E0FF;
+  --series-2: #FFB020;
+  --series-3: #00E5C0;
+  --series-4: #B49BFF;
+  --series-5: #22E0FF;    /* 與 1-4 同色，靠 dash 區分 */
+  --series-6: #FFB020;
+  --series-7: #00E5C0;
+  --series-8: #B49BFF;
+
+  --state-collect: #22E0FF;
+  --state-shoot:   #22FF88;
+  --state-eject:   #FF5A5A;
+  --band-on:  #22FF88;
+  --band-off: #2A2F36;
+  --band-neg: #B49BFF;
+  --target: #FFFFFF;
+  --thresh: #FFE01B;
+  --field-bg:   #000000;
+  --field-grid: #2A3441;
+
+  --u: 10px;
+  --hit: 44px;
+  --font-scale: 1.6;      /* 只乘讀數音階 */
+  --fs-md: 19px;          /* 介面音階明確重新宣告，不吃 1.6 倍 */
+  --fs-sm: 16px;
+  --fs-xs: 13px;
+  --shadow: none;
+}
+
+/* ═══ 主題 3：lockdown（MATCH 專用，不可切換）════════════════════════
+   演算法式的一句話：把 dark 的色度歸零，只留一個 10px 的橘方塊。
+
+   「刻意不好看」的正確做法不是加一個很大的橘框，是把所有能量抽掉。
+   --text 只有 9.4:1（dark 的 62%）。整頁最亮的東西就是普通文字。
+   遠看是一台待機的機器，不是一個正在工作的控制台。 */
+:root[data-profile="fgc"][data-theme="lockdown"] {
+  --surface-1: #15171A;   /* oklch(.204 .007 258) 色度 .019 -> .007 */
+  --surface-2: #1B1E22;
+  --surface-3: #23272C;
+  --text:      #B9BCC0;   /* 9.4:1 */
+  --text-dim:  #71757B;   /* 3.9:1 */
+  --border-c:  #31353A;
+  --border-hi: #3D4147;
+
+  /* 全部狀態色與資料色歸一為同一個灰 */
+  --ok: #7E8288;  --warn: #7E8288;  --err: #7E8288;
+  --series-1: #7E8288; --series-2: #7E8288;
+  --series-3: #7E8288; --series-4: #7E8288;
+  --series-5: #7E8288; --series-6: #7E8288;
+  --series-7: #7E8288; --series-8: #7E8288;
+  --state-collect: #7E8288;
+  --state-shoot:   #7E8288;
+  --state-eject:   #7E8288;
+  --band-on: #4A4E54; --band-off: #26292E; --band-neg: #5C6066;
+  --target: #7E8288;  --thresh: #5A5E63;
+  --stale: #5A5E63;
+  --gap:   #3A3E43;
+
+  /* 全頁唯一的顏色：錄影中的 10px 方塊徽章。 */
+  --danger: #C9642A;      /* oklch(.615 .146 47) 4.6:1 降飽和的橘 */
+  --focus-ring: #7E8288;  /* lockdown 頁沒有可 focus 的東西 */
+  --on-fire: #15171A;
+
+  --u: 10px;
+  --hit: 44px;
+  --font-scale: 1;
+  --shadow: none;
+}
+
+/* ═══ 基礎排版 ═════════════════════════════════════════════════════ */
+
+:root[data-profile="fgc"] body,
+:root[data-profile="fgc"] #root {
+  background: var(--surface-1);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-ui);
+  letter-spacing: var(--ls-cjk);
+}
+
+/* 所有數值：等寬 + tabular + 右對齊 + 固定寬。
+   比例字體會讓 Inspector 的數字在滑鼠移動時橫向跳動，讀不了。 */
+.fgc-num {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: var(--ls-num);
+  line-height: var(--lh-num);
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* 單位後綴：小一號、dim。tps / mm / ° / A / V / ms 一律顯示，不讓人猜。 */
+.fgc-unit {
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+  margin-left: 0.25em;
+  font-family: var(--font-num);
+  letter-spacing: 0;
+}
+
+/* 形狀語彙：綠● 黃▲ 紅■ 灰○ (+ □ = 路徑未生效)。
+   **不能用 --font-num**：多數等寬字體沒有這幾個 CJK 符號，
+   fallback 後四個字元寬度不一致，燈牆就對不齊。
+   固定 1.25em 容器是唯一不靠字體運氣的做法。 */
+.fgc-glyph {
+  font-family: var(--font-ui);
+  display: inline-block;
+  width: 1.25em;
+  text-align: center;
+  line-height: 1;
+  letter-spacing: 0;
+}
+.fgc-glyph.ok    { color: var(--ok); }
+.fgc-glyph.warn  { color: var(--warn); }
+.fgc-glyph.err   { color: var(--err); }
+.fgc-glyph.stale { color: var(--stale); }
+
+/* 說明段落：30 全形字，行高 1.75。 */
+.fgc-prose {
+  max-width: var(--measure);
+  line-height: var(--lh-prose);
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+}
+
+/* 卡片三態（原則 2：邊框只表示可寫）。 */
+.fgc-card {                       /* 唯讀 —— 無框 */
+  background: var(--surface-2);
+  border-radius: var(--r-card);
+  padding: calc(var(--u) * 3);
+  box-shadow: var(--shadow);
+}
+.fgc-card--writable {             /* 可寫 —— 有框 */
+  border: var(--bw) solid var(--border-c);
+}
+.fgc-card--plain {                /* 卡內分節 —— 無框無底，只有頂線 */
+  background: none;
+  border-top: var(--bw) solid var(--border-c);
+  padding: calc(var(--u) * 4) 0 0;
+}
+:root[data-profile="fgc"][data-theme="field"] .fgc-card,
+:root[data-profile="fgc"][data-theme="field"] .fgc-card--writable {
+  border: none;                   /* field：純黑上的低對比框是視覺垃圾 */
+  background: none;
+  padding: calc(var(--u) * 3);
+}
+
+/* focus：橘 = 這裡連著機器人。 */
+:root[data-profile="fgc"] :focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* ── 響應式：窄螢幕先降密度，再降字級，分頁列永遠不吃掉 ── */
+@media (max-width: 1280px) { :root[data-profile="fgc"] { --u: 5px; } }
+@media (max-width: 1024px) { :root[data-profile="fgc"] { --u: 4px; --fs-md: 16px; } }
+@media (max-width: 820px)  { :root[data-profile="fgc"] { --font-scale: .78; } }
+
+/* 高對比偏好 = 直接給 field 的文字對比 */
+@media (prefers-contrast: more) {
+  :root[data-profile="fgc"] { --text: #FFFFFF; --text-dim: #C4CEDB; --border-c: #46586E; }
+}
+
+/* 比賽日的畫面每動一次都在偷駕駛的注意力。 */
+@media (prefers-reduced-motion: reduce) {
+  :root[data-profile="fgc"] *,
+  :root[data-profile="fgc"] *::before,
+  :root[data-profile="fgc"] *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+}

@@ -103,19 +103,19 @@
 .ribbon-cell.collect.on {
   background: var(--state-collect);
   border-color: var(--state-collect);
-  color: var(--gray-900);
+  color: var(--on-fire);
 }
 .ribbon-cell.shoot.on {
   background: var(--state-shoot);
   border-color: var(--state-shoot);
-  color: var(--gray-900);
+  color: var(--on-fire);
 }
 .ribbon-cell.eject.on {
   background: var(--state-eject);
   border-color: var(--state-eject);
-  color: var(--gray-900);
+  color: var(--on-fire);
 }
-.ribbon-cell.on .rc-sub { color: var(--gray-900); opacity: 0.75; }
+.ribbon-cell.on .rc-sub { color: var(--on-fire); opacity: 0.75; }
 
 /* ── #11 HeadingChip ── */
 .head-box {
