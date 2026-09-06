@@ -1,0 +1,342 @@
+/* PIT · 射手工作台（§4.2）與它的四張數字卡。 */
+
+@import "./tables.css";
+
+.sp {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+/* §4.7：< 1024 不提供這一頁。與其擠爆版面，不如明講要多寬。 */
+.sp-narrow {
+  display: none;
+  padding: calc(var(--u) * 4);
+  color: var(--warn);
+  font-size: var(--fs-md);
+}
+
+.sp-tools .sep {
+  width: 1px;
+  height: 16px;
+  background: var(--border-c);
+  margin: 0 calc(var(--u) * 0.5);
+}
+.sp-cursor {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+}
+
+.sp-main {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  /* 列高鎖回容器高度，四欄各自內捲；用預設的 auto 會被 121 列的訊號樹撐爆 */
+  grid-template-columns: 216px minmax(0, 1fr) 232px 232px;
+  grid-template-rows: minmax(0, 1fr);
+  gap: var(--u);
+  padding: var(--u);
+}
+.sp-main > * {
+  min-width: 0;
+  min-height: 0;
+}
+
+.sp-tree {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.sp-tree > .panel-shell {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.sp-center {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+.sp-center > .panel-shell {
+  flex: 1 1 auto;
+}
+.sp-center .panel-shell > .body {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 右側兩欄：每一張卡都要能產出一個可比較的數字 */
+.sp-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--u);
+  min-height: 0;
+  overflow: auto;
+}
+.sp-col > .panel-shell {
+  flex: 0 0 auto;
+}
+/* 232 px 的窄卡：標題不可以被逐字折行（「每 球 dip」讀起來像壞掉），
+   說明文字才折。所以標題 nowrap、header 允許整體換行。 */
+.sp-col .panel-shell > header {
+  flex-wrap: wrap;
+  row-gap: 2px;
+}
+.sp-col .panel-shell > header .title {
+  white-space: nowrap;
+}
+.sp-col .panel-shell > header .tools {
+  margin-left: auto;
+}
+
+/* ── #20 DipAnalyzer ─────────────────────────────────────────────── */
+
+.dip-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.dip-table td {
+  cursor: pointer;
+}
+.dip-table td.flag {
+  text-align: right;
+}
+.dip-table tr.broke td {
+  color: var(--err);
+}
+.dip-table tr.open td {
+  color: var(--stale); /* 未回升：資料不完整，不可以看起來跟量準的那幾筆一樣有權威感 */
+}
+.dip-foot {
+  border-top: 1px solid var(--border-c);
+  padding: calc(var(--u) * 0.8) calc(var(--u) * 1.2);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.dip-sum {
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+.dip-warn {
+  color: var(--warn);
+}
+.dip-hist {
+  height: 26px;
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+}
+.dip-hist .bar {
+  flex: 1 1 0;
+  min-height: 1px;
+  background: var(--series-1);
+  opacity: 0.85;
+}
+
+/* ── #9 BalanceBar ───────────────────────────────────────────────── */
+
+.bal {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 0.6);
+}
+.bal-now {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--fs-lg);
+  line-height: 1;
+  text-align: center;
+  color: var(--ok);
+}
+.bal-now.warn {
+  color: var(--warn);
+}
+.bal-now.err {
+  color: var(--err);
+}
+.bal-now .unit {
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+  margin-left: 4px;
+}
+.bal-bar {
+  position: relative;
+  height: 14px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-c);
+  border-radius: 3px;
+}
+.bal-bar .mid {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--text-dim);
+}
+.bal-bar .thr {
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  width: 0;
+  border-left: 1px dashed var(--warn);
+  opacity: 0.7;
+}
+.bal-bar .knob {
+  position: absolute;
+  top: 1px;
+  width: 6px;
+  height: 10px;
+  margin-left: -3px;
+  border-radius: 2px;
+  background: var(--ok);
+  /* 0.15 s 線性緩動：避免 20 Hz 的視覺噪音，但不用 ease（會讓人誤判到位時間） */
+  transition: left 0.15s linear;
+}
+.bal-bar .knob.warn {
+  background: var(--warn);
+}
+.bal-bar .knob.err {
+  background: var(--err);
+}
+.bal-scale {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--fs-xs);
+  color: var(--stale);
+  font-variant-numeric: tabular-nums;
+}
+.bal-rms {
+  display: flex;
+  align-items: baseline;
+  gap: calc(var(--u));
+  border-top: 1px solid var(--surface-3);
+  padding-top: calc(var(--u) * 0.6);
+  font-size: var(--fs-sm);
+}
+.bal-rms .lbl {
+  color: var(--text-dim);
+}
+.bal-rms .val {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--fs-md);
+}
+.bal-rms .val.warn {
+  color: var(--warn);
+}
+.bal-rms .val.err {
+  color: var(--err);
+}
+.bal-rms .sub {
+  margin-left: auto;
+  font-size: var(--fs-xs);
+  color: var(--stale);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── #23 LoopHistogram ───────────────────────────────────────────── */
+
+.lh {
+  display: flex;
+  flex-direction: column;
+}
+.lh-stat {
+  display: flex;
+  gap: calc(var(--u) * 1.5);
+  padding: 2px calc(var(--u) * 1.2);
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+  border-top: 1px solid var(--surface-3);
+}
+.lh-stat b {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  font-weight: 600;
+}
+.lh-stat b.warn {
+  color: var(--warn);
+}
+.lh-stat b.err {
+  color: var(--err);
+}
+.lh-stat .n {
+  margin-left: auto;
+}
+.lh-tools {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  padding: calc(var(--u) * 0.6) calc(var(--u) * 1.2);
+  flex-wrap: wrap;
+}
+.lh-msg {
+  font-size: var(--fs-xs);
+  color: var(--ok);
+}
+.lh-snap td.build {
+  font-family: var(--mono);
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+}
+
+/* ── #22 CurrentStrip ────────────────────────────────────────────── */
+
+.cs-lamps {
+  display: flex;
+  gap: calc(var(--u) * 1.2);
+  align-items: center;
+  padding: calc(var(--u) * 0.6) calc(var(--u) * 1.2);
+  font-size: var(--fs-xs);
+  border-bottom: 1px solid var(--surface-3);
+}
+.cs-lamps .lamp {
+  color: var(--stale);
+  font-family: var(--mono);
+}
+.cs-lamps .lamp.on {
+  color: var(--err);
+  font-weight: 600;
+}
+.cs-lamps .lamp.none {
+  opacity: 0.4;
+}
+.cs-hint {
+  margin-left: auto;
+  color: var(--text-dim);
+}
+
+/* ── §4.7 降級 ───────────────────────────────────────────────────── */
+
+@media (max-width: 1439px) {
+  .sp-main {
+    grid-template-columns: 200px minmax(0, 1fr) 216px 216px;
+  }
+}
+@media (max-width: 1199px) {
+  /* 1366×768 舊筆電：訊號樹收窄成一條、右側兩欄各再瘦一圈，中間的圖不讓 */
+  .sp-main {
+    grid-template-columns: 148px minmax(0, 1fr) 196px 196px;
+    gap: calc(var(--u) * 0.75);
+  }
+  .lh-snap {
+    display: none; /* 快照對照表在窄視窗折疊：它是「回頭比對」不是「現在要看」 */
+  }
+}
+@media (max-width: 1023px) {
+  .sp-narrow {
+    display: block;
+  }
+  .sp-tools,
+  .sp-main {
+    display: none;
+  }
+}

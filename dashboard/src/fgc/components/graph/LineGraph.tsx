@@ -17,7 +17,7 @@ import uPlot from "uplot";
 import "uplot/dist/uPlot.min.css";
 import { LogStore, liveLog } from "../../lib/LogStore";
 import { cursor } from "../../lib/cursorStore";
-import { palette, seriesColor } from "../../lib/theme";
+import { palette, seriesColor, subscribeTheme } from "../../lib/theme";
 import { K, paramKey, shortName } from "../../lib/fgcKeys";
 import { view } from "./viewWindow";
 import { attachPanZoom, fmtT, observeSize, withAlpha } from "./timeAxis";
@@ -225,6 +225,13 @@ export function LineGraph({
   pausedRef.current = paused;
   const [dragSide, setDragSide] = useState<AxisSide | null>(null);
 
+  // uPlot 的線色/軸色是**建立時就烤進去的**，而主題在開機時必然會翻一次：
+  // App 在 mode 還是 UNKNOWN 的那幾百毫秒是 lockdown（預設鎖住），收到 hello 才翻回
+  // dark。任何在那個瞬間掛載的圖會永遠停在 lockdown 的灰階 series 色（實測：射手頁
+  // 三條線全部畫成 #8a8d93）。Canvas 面板每一幀重讀 palette() 所以沒事，只有 uPlot 要重建。
+  const [themeV, setThemeV] = useState(0);
+  useEffect(() => subscribeTheme(() => setThemeV((n) => n + 1)), []);
+
   // 序列組成變了才重建 uPlot；值變動走 setData，不重建。
   const sig = series
     .map((s) => s.key + "~" + (s.scale ?? "left") + "~" + (s.stepped ? 1 : 0) + "~" + (s.points ? 1 : 0))
@@ -394,7 +401,7 @@ export function LineGraph({
       plot.destroy();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sig, height, syncKey, showTargets, targetSig, log]);
+  }, [sig, height, syncKey, showTargets, targetSig, log, themeV]);
 
   const onDrop = (e: React.DragEvent, side: AxisSide) => {
     e.preventDefault();

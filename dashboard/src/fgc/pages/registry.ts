@@ -11,6 +11,8 @@ import { DrivePage } from "./DrivePage";
 import { HealthPage } from "./HealthPage";
 import { RecPage } from "./RecPage";
 import { GraphDemoPage } from "./GraphDemoPage";
+import { ShooterPage } from "./ShooterPage";
+import { TunePage } from "./TunePage";
 import { SignalsPage } from "./SignalsPage";
 
 export interface PageDef {
@@ -28,8 +30,8 @@ export interface PageDef {
 /** PIT 分頁（MATCH 下這張表在 UI 上不存在）。後續階段各自 push 進來。 */
 export const PIT_PAGES: PageDef[] = [
   DrivePage, // ① 駕駛 DRIVE   D  —— 練習跑最常打開的一頁，所以它排第一（也是預設分頁）
-  // ② 射手         S  —— 第二階段 B
-  // ③ 參數         T  —— 第二階段 B
+  ShooterPage, // ② 射手   S
+  TunePage, //    ③ 參數   T
   HealthPage, // ④ 檢查   C
   RecPage, //     選檔     R  —— §5.1「進入 REPLAY（選檔）」的實作
   // ⑤ 視覺         V  —— 條件項（§9 第一刀）

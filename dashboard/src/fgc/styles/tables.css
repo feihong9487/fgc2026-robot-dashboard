@@ -1,0 +1,55 @@
+/* 資訊密集表格的共用底（射手頁與參數頁都吃這一份）。
+   所有數值一律等寬 + tabular-nums + 右對齊：比例字體會讓數字在 20 Hz 回推下
+   橫向跳動，讀不了。這是必需不是偏好（§6.4）。 */
+
+.fgc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+}
+.fgc-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-dim);
+  background: var(--surface-3);
+  border-bottom: 1px solid var(--border-c);
+  padding: 2px calc(var(--u) * 1.2);
+  white-space: nowrap;
+}
+.fgc-table td {
+  padding: 2px calc(var(--u) * 1.2);
+  border-bottom: 1px solid var(--surface-3);
+  white-space: nowrap;
+}
+.fgc-table td.num,
+.fgc-table th.num {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.fgc-table td.empty {
+  color: var(--stale);
+  white-space: normal;
+  padding: calc(var(--u) * 1.5);
+  line-height: 1.5;
+}
+.fgc-table tbody tr:hover {
+  background: var(--surface-3);
+}
+
+/* 語意色：與 §6.6 的全域警戒色一致，不因面板而異 */
+.fgc-table .ok,
+.ok-txt {
+  color: var(--ok);
+}
+.fgc-table .warn,
+.warn-txt {
+  color: var(--warn);
+}
+.fgc-table .err,
+.err-txt {
+  color: var(--err);
+}

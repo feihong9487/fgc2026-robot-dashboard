@@ -1,0 +1,525 @@
+/* PIT · 參數對帳台（§4.3）：雙欄表 / 帳本 / 差異卡 / 統計 / 相機。 */
+
+@import "./tables.css";
+
+.tp {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.tp-main {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  gap: var(--u);
+  padding: var(--u);
+}
+.tp-main > * {
+  min-width: 0;
+  min-height: 0;
+}
+
+.tp-left,
+.tp-right {
+  display: flex;
+  flex-direction: column;
+  gap: var(--u);
+  min-height: 0;
+}
+.tp-table {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+}
+.tp-table > .panel-shell {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.tp-ledger {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.tp-ledger.open {
+  flex: 0 1 40%;
+}
+.tp-ledger > .panel-shell {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.tp-drawer {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font: inherit;
+  font-size: var(--fs-xs);
+  cursor: pointer;
+  padding: 0 0 2px 2px;
+}
+.tp-diff {
+  flex: 0 0 auto;
+}
+.tp-stats {
+  flex: 0 0 auto;
+}
+.tp-cam {
+  flex: 1 1 auto;
+  min-height: 160px;
+  display: flex;
+}
+.tp-cam > .panel-shell {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* ── #24 TuneTable ───────────────────────────────────────────────── */
+
+.tt {
+  display: flex;
+  flex-direction: column;
+}
+.tt-search {
+  width: 110px;
+  background: var(--surface-1);
+  color: var(--text);
+  border: 1px solid var(--border-c);
+  border-radius: 3px;
+  padding: 1px 5px;
+  font: inherit;
+  font-size: var(--fs-xs);
+}
+.tt-group {
+  border-bottom: 1px solid var(--border-c);
+}
+.tt-ghead {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface-1);
+  border: none;
+  border-bottom: 1px solid var(--surface-3);
+  color: var(--text-dim);
+  font: inherit;
+  font-size: var(--fs-xs);
+  padding: 3px calc(var(--u) * 1.2);
+  cursor: pointer;
+  text-align: left;
+}
+.tt-ghead .cnt {
+  margin-left: auto;
+  color: var(--stale);
+}
+.tt-table td {
+  border-bottom: none;
+  padding-top: 1px;
+  padding-bottom: 1px;
+}
+.tt-row td.nm {
+  font-family: var(--mono);
+  font-size: var(--fs-xs);
+}
+.tt-row td.nm .mark {
+  display: inline-block;
+  width: 8px;
+  color: var(--warn);
+}
+.tt-row td.in {
+  width: 96px;
+}
+.tt-row td.arrow {
+  color: var(--stale);
+  padding: 0 2px;
+}
+.tt-row td.rb {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  width: 74px;
+}
+.tt-row td.unit {
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+  width: 30px;
+}
+.tt-row td.st {
+  font-size: var(--fs-xs);
+  width: 74px;
+  white-space: nowrap;
+}
+.tt-row td.st .ok {
+  color: var(--ok);
+}
+.tt-row td.st .warn {
+  color: var(--warn);
+}
+.tt-row td.st .err {
+  color: var(--err);
+}
+
+/* 四態的列底色。回讀不符（被夾限）整列 10% 底色——那是「你以為改成功了」的那一種失敗 */
+.tt-row.draft td,
+.tt-row.sent td {
+  background: color-mix(in srgb, var(--warn) 8%, transparent);
+}
+.tt-row.late td,
+.tt-row.rejected td {
+  background: color-mix(in srgb, var(--err) 10%, transparent);
+}
+.tt-row.clamped td {
+  background: color-mix(in srgb, var(--warn) 14%, transparent);
+}
+.tt-row.ok td {
+  background: color-mix(in srgb, var(--ok) 10%, transparent);
+}
+
+.tt-slider td {
+  padding-bottom: 3px;
+}
+.tt-slider input[type="range"] {
+  width: calc(100% - 96px);
+  vertical-align: middle;
+  accent-color: var(--focus-ring);
+  height: 12px;
+}
+.tt-slider .lo,
+.tt-slider .hi {
+  font-size: var(--fs-xs);
+  color: var(--stale);
+  font-variant-numeric: tabular-nums;
+  display: inline-block;
+  width: 44px;
+}
+.tt-slider .hi {
+  text-align: right;
+  cursor: help;
+}
+.tt-why td {
+  color: var(--err);
+  font-size: var(--fs-xs);
+  font-family: var(--mono);
+  padding-bottom: 4px;
+  white-space: normal;
+}
+.tt-foot {
+  padding: calc(var(--u)) calc(var(--u) * 1.2);
+  font-size: var(--fs-xs);
+  color: var(--stale);
+  line-height: 1.5;
+}
+
+/* ── #25 SetLedger ───────────────────────────────────────────────── */
+
+/* 外殼由呼叫端掛 class（不用 :has，舊 WebView2 沒有） */
+.panel-shell.sl-shell > .body,
+.panel-shell.cam-shell > .body {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.sl {
+  flex: 1 1 auto;
+  min-height: 60px;
+  overflow: auto;
+}
+.sl-table td {
+  font-size: var(--fs-xs);
+  vertical-align: top;
+}
+.sl-table td.tm {
+  font-family: var(--mono);
+  color: var(--text-dim);
+}
+.sl-table td.nm {
+  font-family: var(--mono);
+}
+.sl-table td.vv {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.sl-table td.vv .ar {
+  color: var(--stale);
+  padding: 0 4px;
+}
+.sl-table td.ms {
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.sl-table td.rs {
+  text-align: right;
+}
+.sl-table tr.ok td.rs {
+  color: var(--ok);
+}
+.sl-table tr.bad td.rs {
+  color: var(--err);
+}
+.sl-table .why {
+  color: var(--err);
+  white-space: normal;
+  text-align: left;
+  font-family: var(--mono);
+}
+.sl-foot {
+  flex: 0 0 auto;
+  display: flex;
+  gap: calc(var(--u) * 1.5);
+  padding: 3px calc(var(--u) * 1.2);
+  border-top: 1px solid var(--border-c);
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+  font-family: var(--mono);
+  overflow: hidden;
+}
+.sl-foot .rej {
+  margin-left: auto;
+  color: var(--stale);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── #26 ParamDiffCard ───────────────────────────────────────────── */
+
+.pd {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 0.8);
+}
+.pd-empty,
+.pd-ok {
+  font-size: var(--fs-sm);
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+.pd-ok {
+  color: var(--ok);
+}
+.pd-empty code {
+  font-family: var(--mono);
+  color: var(--text);
+}
+.pd-table td.nm {
+  font-family: var(--mono);
+  font-size: var(--fs-xs);
+}
+.pd-table td.build {
+  color: var(--text-dim);
+}
+.pd-table td.ar {
+  color: var(--stale);
+}
+.pd-table td.cur {
+  color: var(--warn);
+}
+.pd-table td.unit,
+.pd-table td.st {
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+}
+.pd-table td.st {
+  color: var(--err);
+}
+.pd-btns {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.pd-foot {
+  display: flex;
+  gap: calc(var(--u));
+  font-size: var(--fs-xs);
+  color: var(--stale);
+}
+.pd-msg {
+  margin-left: auto;
+  color: var(--ok);
+}
+.pd-snip pre {
+  max-height: 130px;
+  overflow: auto;
+  background: var(--surface-1);
+  border: 1px solid var(--border-c);
+  border-radius: 3px;
+  padding: calc(var(--u) * 0.8);
+  font-family: var(--mono);
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+  margin: 4px 0 0;
+}
+.pd-snip summary {
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+  cursor: pointer;
+}
+.pd-ro {
+  font-size: var(--fs-xs);
+  color: var(--stale);
+}
+
+/* ── #21 RangeStats ──────────────────────────────────────────────── */
+
+.rs {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 0.7);
+}
+.rs-sel {
+  max-width: 190px;
+  background: var(--surface-1);
+  color: var(--text);
+  border: 1px solid var(--border-c);
+  border-radius: 3px;
+  font: inherit;
+  font-size: var(--fs-xs);
+  padding: 1px 3px;
+}
+.rs-tabs {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+.rs-nums {
+  display: flex;
+  gap: calc(var(--u) * 1.6);
+  flex-wrap: wrap;
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+}
+.rs-nums b {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--fs-md);
+  color: var(--text);
+  font-weight: 600;
+  margin-left: 4px;
+}
+.rs-nums .sigma b {
+  color: var(--series-1);
+}
+.rs-hist {
+  height: 46px;
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-c);
+  border-radius: 3px;
+  padding: 2px;
+}
+.rs-hist .bar {
+  flex: 1 1 0;
+  min-height: 1px;
+  background: var(--series-1);
+  opacity: 0.85;
+}
+.rs-empty {
+  color: var(--stale);
+  font-size: var(--fs-xs);
+  margin: auto;
+}
+.rs-foot {
+  display: flex;
+  align-items: center;
+  font-size: var(--fs-xs);
+  color: var(--stale);
+  font-variant-numeric: tabular-nums;
+}
+.rs-bins {
+  margin-left: auto;
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
+
+/* ── #27 CamPane ─────────────────────────────────────────────────── */
+
+.cam {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.cam-view {
+  flex: 1 1 auto;
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--field-bg);
+  overflow: hidden;
+}
+.cam-view img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.cam-off {
+  text-align: center;
+  padding: calc(var(--u) * 2);
+}
+.cam-off .big {
+  font-size: var(--fs-md);
+  color: var(--text-dim);
+}
+.cam-off .hint {
+  margin-top: 6px;
+  font-size: var(--fs-xs);
+  color: var(--stale);
+  font-variant-numeric: tabular-nums;
+}
+.cam-err {
+  margin-top: 6px;
+  font-size: var(--fs-xs);
+  color: var(--err);
+}
+.cam-cost {
+  flex: 0 0 auto;
+  display: flex;
+  gap: calc(var(--u) * 1.2);
+  align-items: baseline;
+  padding: 3px calc(var(--u) * 1.2);
+  border-top: 1px solid var(--border-c);
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+}
+.cam-cost .ok {
+  color: var(--ok);
+}
+.cam-cost .warn {
+  color: var(--warn);
+}
+.cam-cost .err {
+  color: var(--err);
+}
+.cam-cost .sub {
+  margin-left: auto;
+  color: var(--stale);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── §4.7 降級 ───────────────────────────────────────────────────── */
+
+@media (max-width: 1439px) {
+  /* 統計區摺疊成一行摘要：直方圖是「有沒有變好」的細節，數字才是結論 */
+  .tp-stats .rs-hist {
+    height: 30px;
+  }
+}
+@media (max-width: 1023px) {
+  /* 只保留 TuneTable 單欄 + 差異卡（帳本／統計／相機掛 hide-lt-1024） */
+  .tp-main {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+}
