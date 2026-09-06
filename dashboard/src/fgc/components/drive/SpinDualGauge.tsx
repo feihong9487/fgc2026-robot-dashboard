@@ -107,7 +107,7 @@ function drawGauge(a: GaugeArgs, p: ReturnType<typeof palette>) {
 
   ctx.lineCap = "butt";
   ctx.lineWidth = lw;
-  ctx.strokeStyle = p.surface3;
+  ctx.strokeStyle = p.border;
   ctx.beginPath();
   ctx.arc(rcx, cy, r, start, start + dir * SWEEP, mirror);
   ctx.stroke();
@@ -199,7 +199,7 @@ export function SpinDualGauge() {
     const xOf = (v: number) => cxm + (Math.max(-BAL_RANGE, Math.min(BAL_RANGE, v)) / BAL_RANGE) * half;
 
     ctx.lineCap = "butt";
-    ctx.strokeStyle = p.surface3;
+    ctx.strokeStyle = p.border;
     ctx.lineWidth = Math.max(4, barH * 0.13);
     ctx.beginPath();
     ctx.moveTo(bx0, by);

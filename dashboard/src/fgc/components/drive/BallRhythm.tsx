@@ -45,7 +45,7 @@ export function BallRhythm() {
   return (
     <PanelShell
       title="球節奏"
-      note={`dip 為前端推估：跌破深度大於 ${DIP_DEPTH} tps 才算一顆，解析度 ±50 ms`}
+      note={`dip 為前端推估：跌破超過 ${DIP_DEPTH} tps 才算一顆`}
       flush
       className="drive-rhythm"
     >

@@ -112,13 +112,23 @@ export function AlertRail() {
   const extra = alerts.count() - list.length;
 
   return (
-    <PanelShell title="警報" note="ERROR 會響兩短嗶；條件解除卡片自己收" flush className="drive-alerts">
+    // 「另有 N 條」走卡片底部的 note 而不是 rail 裡的一列：rail 塞滿三張卡的時候，
+    // 正好就是最需要看到這句話的時候，而那時 rail 已經沒有高度可以放它了。
+    <PanelShell
+      title="警報"
+      note={
+        extra > 0
+          ? `另有 ${extra} 條未顯示：rail 只留最嚴重的 3 條`
+          : "ERROR 會響兩短嗶；條件解除卡片自己收"
+      }
+      flush
+      className="drive-alerts"
+    >
       <div className="alert-rail">
         {list.length === 0 && <div className="alert-empty">目前沒有警報。</div>}
         {list.map((a) => (
           <AlertCard key={a.key} a={a} />
         ))}
-        {extra > 0 && <div className="alert-more">另有 {extra} 條未顯示（rail 只留最嚴重的 3 條）</div>}
       </div>
     </PanelShell>
   );

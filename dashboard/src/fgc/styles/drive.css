@@ -63,7 +63,7 @@
 .drive .drive-heading { flex: 0 0 auto; }
 /* 爬升柱比警報 rail 值錢：rail 大多數時間是空的（那正是它該有的樣子），
    而爬升柱要同時放得下五條分數線、分數、counts 與 HOLD 燈。 */
-.drive .drive-climb { flex: 1.6 1 0; min-height: 190px; }
+.drive .drive-climb { flex: 1.4 1 0; min-height: 190px; }
 .drive .drive-alerts { flex: 1 1 0; min-height: 108px; }
 .drive .drive-hopper { flex: 0 0 auto; }
 
@@ -281,14 +281,13 @@
 .alert-rail {
   display: flex;
   flex-direction: column;
-  gap: calc(var(--u) * 0.75);
+  gap: calc(var(--u) * 0.6);
   padding: calc(var(--u) * 0.5) var(--u) var(--u);
   height: 100%;
   box-sizing: border-box;
   overflow: hidden;
 }
-.alert-empty,
-.alert-more { font-size: var(--fs-xs); color: var(--text-dim); padding: 2px calc(var(--u) * 0.5); }
+.alert-empty { font-size: var(--fs-xs); color: var(--text-dim); padding: 2px calc(var(--u) * 0.5); }
 .alert-card {
   display: flex;
   align-items: flex-start;
@@ -312,11 +311,13 @@
 .alert-card.warn .ac-glyph { color: var(--warn); }
 .alert-card.info .ac-glyph { color: var(--ok); }
 .ac-body { display: flex; flex-direction: column; min-width: 0; }
-.ac-title { font-size: var(--fs-sm); font-weight: var(--fw-normal); color: var(--text); }
+/* 行高壓到 1.35：rail 最多三張卡，而三張卡剛好是它最需要放得下的時候。 */
+.ac-title { font-size: var(--fs-sm); font-weight: var(--fw-normal); color: var(--text); line-height: 1.35; }
 .ac-desc {
   font-size: var(--fs-xs);
   color: var(--text-dim);
   font-family: var(--font-num);
+  line-height: 1.35;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

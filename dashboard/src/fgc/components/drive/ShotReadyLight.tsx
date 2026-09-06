@@ -133,6 +133,15 @@ export function ShotReadyLight({ full }: { full?: boolean }) {
         ctx.stroke();
       }
       drawShape(ctx, st, cx, cy, r * 0.6, c);
+      // 百分比畫在燈裡（形狀下方），不是燈與狀態字中間：
+      // 夾在兩個大元素之間的小字會同時貼到兩邊，看起來像沒對齊。
+      if (pctTxt) {
+        ctx.font = `700 ${Math.round(r * 0.26)}px ${MONO_FONT}`;
+        ctx.fillStyle = c;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(pctTxt, cx, cy + r * 0.68);
+      }
     };
 
     if (stacked) {
@@ -165,14 +174,6 @@ export function ShotReadyLight({ full }: { full?: boolean }) {
       ctx.textBaseline = "top";
       ctx.fillText(word, cx, top + ringR * 2 + g1);
       setTracking(ctx, "0px");
-
-      if (pctTxt) {
-        ctx.font = `700 ${Math.round(ringR * 0.34)}px ${MONO_FONT}`;
-        ctx.fillStyle = c;
-        ctx.textBaseline = "middle";
-        ctx.fillText(pctTxt, cx, top + ringR * 2 + g1 * 0.5);
-        ctx.textBaseline = "top";
-      }
 
       ctx.font = `${subFs}px ${MONO_FONT}`;
       let sw = ctx.measureText(subTxt).width;
