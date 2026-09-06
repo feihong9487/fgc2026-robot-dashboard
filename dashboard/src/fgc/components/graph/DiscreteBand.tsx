@@ -11,7 +11,7 @@
 import { useEffect, useRef } from "react";
 import { LogStore, liveLog, type Run } from "../../lib/LogStore";
 import { cursor } from "../../lib/cursorStore";
-import { palette } from "../../lib/theme";
+import { numFont, palette, uiFont } from "../../lib/theme";
 import { K, shortName } from "../../lib/fgcKeys";
 import { view } from "./viewWindow";
 import { attachPanZoom, fitCanvas, hatchPattern, observeSize, tToX, withAlpha } from "./timeAxis";
@@ -53,8 +53,15 @@ export const DEFAULT_BAND_ROWS: readonly BandRow[] = [
 const GAP_SEC = 1.0;
 
 interface Colors {
+  /** 基色（不透明）。畫的時候拆成 35% 的底 + 同色 1px 上下邊——
+      滿版飽和的色塊會讓整條讀成堆疊進度條，而且蓋過上方折線的色彩系統。 */
   fill: string;
   label: string | null;
+  /** off / 未知：只填底，不畫邊，不算「有東西發生」。 */
+  off?: boolean;
+  /** level 模式的填色透明度（0.12–0.35）。上下邊仍是實色，所以「有按」看得到、
+      「按多深」讀得出來，而整條帶的能量上限與其他列一致。 */
+  alpha?: number;
 }
 
 function runColor(
@@ -72,22 +79,22 @@ function runColor(
     if (s === "COLLECT") return { fill: p.stateCollect, label: s };
     if (s === "SHOOT") return { fill: p.stateShoot, label: s };
     if (s === "EJECT") return { fill: p.stateEject, label: s };
-    return { fill: p.bandOff, label: s || null };
+    return { fill: p.bandOff, label: s || null, off: true };
   }
   if (m === "bool") {
     const on = run.v > 0.5;
-    return { fill: on ? p.bandOn : p.bandOff, label: on ? "on" : null };
+    return { fill: on ? p.bandOn : p.bandOff, label: on ? "on" : null, off: !on };
   }
   if (m === "sign") {
     if (run.v > 1e-6) return { fill: p.bandOn, label: "pos" };
     if (run.v < -1e-6) return { fill: p.bandNeg, label: "neg" };
-    return { fill: p.bandOff, label: "0" };
+    return { fill: p.bandOff, label: "0", off: true };
   }
   // level：0 → 底色；1 → 滿色。中間值用透明度表示「按到一半」。
   const a = Math.min(1, Math.abs(run.v));
-  if (a < 0.02) return { fill: p.bandOff, label: null };
+  if (a < 0.02) return { fill: p.bandOff, label: null, off: true };
   const base = run.v < 0 ? p.bandNeg : p.bandOn;
-  return { fill: withAlpha(base, 0.28 + 0.72 * a), label: a >= 0.98 ? null : a.toFixed(2) };
+  return { fill: base, label: a >= 0.98 ? null : a.toFixed(2), alpha: 0.12 + 0.23 * a };
 }
 
 export function DiscreteBand({
@@ -134,7 +141,6 @@ export function DiscreteBand({
       const rs = rowsRef.current;
       if (!hatch) hatch = hatchPattern(ctx, p.gap);
 
-      ctx.font = "10px ui-monospace, Consolas, monospace";
       ctx.textBaseline = "middle";
 
       for (let i = 0; i < rs.length; i++) {
@@ -142,11 +148,14 @@ export function DiscreteBand({
         const y = i * rowH + 1;
         const h = rowH - 2;
 
-        // 列底：沒有資料的地方是斜線紋，不是黑色——「沒有這個 key」與「值是 0」不同
+        // 列底：沒有資料的地方是斜線紋，不是黑色——「沒有這個 key」與「值是 0」不同。
+        // 不畫外框：框在這一案裡只表示「可寫」，色帶靠比卡片深一階的底色界定。
         ctx.fillStyle = p.surface1;
         ctx.fillRect(x0, y, plotW, h);
 
-        // 列標籤（畫在 LineGraph 讓出來的左內距裡，所以兩者的繪圖區完全對齊）
+        // 列標籤（畫在 LineGraph 讓出來的左內距裡，所以兩者的繪圖區完全對齊）。
+        // 標籤是比例字體，只有塊內的機器字面值才是等寬。
+        ctx.font = uiFont();
         ctx.fillStyle = p.textDim;
         ctx.textAlign = "right";
         ctx.fillText(row.label ?? shortName(row.key), x0 - 5, y + h / 2, x0 - 8);
@@ -167,6 +176,7 @@ export function DiscreteBand({
         // 不合併的話 Way 這種每個樣本都在變的連續量會產生上千個 1 px 的矩形，
         // 相鄰同色矩形的次像素接縫會把一整段實心色塊畫成一片條紋——那是渲染假象，
         // 會被讀成「way 在抖」。順便把 fillRect 的次數從上千降到個位數。
+        ctx.font = numFont();
         const runs = log.runs(row.key, t0, t1, 4000);
         const merged: { x0: number; x1: number; c: Colors }[] = [];
         for (const r of runs) {
@@ -174,24 +184,30 @@ export function DiscreteBand({
           const rx1 = tToX(r.t1, t0, t1, x0, plotW);
           const c = runColor(row.mode ?? "auto", r, kind, p);
           const last = merged[merged.length - 1];
-          if (last && last.c.fill === c.fill && last.c.label === c.label) last.x1 = rx1;
+          if (last && last.c.fill === c.fill && last.c.label === c.label && last.c.alpha === c.alpha) last.x1 = rx1;
           else merged.push({ x0: rx0, x1: rx1, c });
         }
         for (const m of merged) {
-          const wpx = Math.max(1, m.x1 - m.x0);
-          ctx.fillStyle = m.c.fill;
-          ctx.fillRect(m.x0, y, wpx, h);
-          if (m.c.label && wpx > 46) {
-            // 深色塊上用亮字、亮色塊上用暗字；固定用其中一種一定會有一半讀不到
-            ctx.fillStyle = m.c.fill === p.bandOff ? p.textDim : p.surface1;
+          // 塊間留 1px 的 surface-1 縫（不是圓角）：兩段相鄰的 SHOOT 是兩件事
+          const wpx = Math.max(1, m.x1 - m.x0 - 1);
+          if (m.c.off) {
+            ctx.fillStyle = m.c.fill;
+            ctx.fillRect(m.x0, y, wpx, h);
+          } else {
+            // 35% 的底 + 同色 1px 上下邊：色塊仍然指得出來，但不再蓋過折線的色彩系統
+            ctx.fillStyle = withAlpha(m.c.fill, m.c.alpha ?? 0.35);
+            ctx.fillRect(m.x0, y, wpx, h);
+            ctx.fillStyle = m.c.fill;
+            ctx.fillRect(m.x0, y, wpx, 1);
+            ctx.fillRect(m.x0, y + h - 1, wpx, 1);
+          }
+          // 32px 以下的塊寫不下字；寫得下的用 --text，因為底是 35% 的暗色不是滿版亮色
+          if (m.c.label && wpx > 32) {
+            ctx.fillStyle = m.c.off ? p.textDim : p.text;
             ctx.textAlign = "center";
             ctx.fillText(m.c.label, m.x0 + wpx / 2, y + h / 2, wpx - 6);
           }
         }
-
-        ctx.strokeStyle = withAlpha(p.border, 0.7);
-        ctx.lineWidth = 1;
-        ctx.strokeRect(x0 + 0.5, y + 0.5, plotW - 1, h - 1);
       }
 
       // 資料缺口：整條貫穿所有列的斜線紋（絕不內插）

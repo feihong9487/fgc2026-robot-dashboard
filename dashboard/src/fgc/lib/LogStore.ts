@@ -110,6 +110,11 @@ export class LogStore {
   private version = 0;
   private clientT0 = 0;
 
+  /** gaps() 的增量快取：新的一批只可能在尾端多出一個缺口，不必每次重掃全部。 */
+  private gapCache: Gap[] = [];
+  private gapThreshold = -1;
+  private gapScanned = 0;
+
   private listeners = new Set<() => void>();
   private keyListeners = new Map<string, Set<() => void>>();
   private dirty = new Set<string>();
@@ -153,8 +158,13 @@ export class LogStore {
     }
     this.lastT = t;
 
-    if (this.batchN >= this.batchT.length) this.batchT = grow(this.batchT, this.batchN + 1);
-    this.batchT[this.batchN++] = t;
+    // 同一個機器人時刻只算一批。樂觀更新（RobotClient.set 的 liveLog.applyBatch(patch,
+    // liveLog.tMax)）本來會在尾端塞一個與前一筆相同的時戳，製造一個 0 秒的假間隔，
+    // 把 batchIntervals() 的 p50 / p95 拉低——長時間調參可以塞進數百筆。
+    if (this.batchN === 0 || this.batchT[this.batchN - 1] !== t) {
+      if (this.batchN >= this.batchT.length) this.batchT = grow(this.batchT, this.batchN + 1);
+      this.batchT[this.batchN++] = t;
+    }
 
     for (const key in d) {
       const v = d[key];
@@ -179,12 +189,28 @@ export class LogStore {
 
   /** 批次載入（回放檔）：全部套完才發一次訊號。 */
   applyBatches(batches: readonly { t: number; d: Record<string, NtValue> }[]): void {
-    this.silent = true;
+    this.beginBulk();
     try {
       for (const b of batches) this.applyBatch(b.d, b.t);
     } finally {
-      this.silent = false;
+      this.endBulk();
     }
+  }
+
+  /**
+   * 串流載入用：進入靜默，逐批 applyBatch，最後 endBulk() 發一次訊號。
+   *
+   * 為什麼要開這一對而不是先收集成陣列再 applyBatches：那樣「全部批次的 JS 物件」
+   * 會同時活在記憶體裡（一份 20 MB 的錄影檔是幾十萬個 batch 物件 + 每個 key 一個
+   * 字串參照），比它想省掉的「原始字串的第二份拷貝」更貴。逐批寫進來，峰值就只有
+   * LogStore 自己的 Float64Array。
+   */
+  beginBulk(): void {
+    this.silent = true;
+  }
+
+  endBulk(): void {
+    this.silent = false;
     this.flush();
   }
 
@@ -423,6 +449,18 @@ export class LogStore {
   }
 
   /**
+   * 這個欄位在整份 log 裡有沒有變過（編碼器沒插線的特徵就是「一直是同一個值」）。
+   * 只掃不配置——問一個布林值不該付兩次 Float64Array 的配置成本（changePoints
+   * 會 new 一份再 slice 一份，一個 3000 樣本的 key 就是 48 KB，而燈牆 20 Hz 重繪）。
+   */
+  hasChanged(key: string): boolean {
+    const f = this.fields.get(key);
+    if (!f || f.n < 2) return false;
+    for (let i = 1; i < f.n; i++) if (f.v[i] !== f.v[i - 1]) return true;
+    return false;
+  }
+
+  /**
    * 值變化點的時刻（Alt+↓/↑ 跳下一個變化用）。
    * 稀疏布林可能 500 幀不變，逐格前進毫無意義。
    */
@@ -438,14 +476,25 @@ export class LogStore {
     return out.slice(0, n);
   }
 
-  /** 資料缺口：相鄰兩批的間隔超過門檻。畫斜線紋，絕不內插。 */
+  /**
+   * 資料缺口：相鄰兩批的間隔超過門檻。畫斜線紋，絕不內插。
+   *
+   * 增量快取：LineGraph / DiscreteBand / TimeBar 每一幀都問，而新的一批只可能在
+   * 尾端產生一個新缺口。長 pit session（30 分鐘 ≈ 36,000 批）不做這件事會愈跑愈慢。
+   */
   gaps(thresholdSec = 1.0): Gap[] {
-    const out: Gap[] = [];
-    for (let i = 1; i < this.batchN; i++) {
-      const dt = this.batchT[i] - this.batchT[i - 1];
-      if (dt > thresholdSec) out.push({ t0: this.batchT[i - 1], t1: this.batchT[i] });
+    if (thresholdSec !== this.gapThreshold) {
+      this.gapThreshold = thresholdSec;
+      this.gapCache = [];
+      this.gapScanned = 0;
     }
-    return out;
+    const from = Math.max(1, this.gapScanned);
+    for (let i = from; i < this.batchN; i++) {
+      const dt = this.batchT[i] - this.batchT[i - 1];
+      if (dt > thresholdSec) this.gapCache.push({ t0: this.batchT[i - 1], t1: this.batchT[i] });
+    }
+    this.gapScanned = this.batchN;
+    return this.gapCache;
   }
 
   /** 相鄰批次間隔的分位數（底部狀態列的「間隔 p50 / p95」）。 */
@@ -535,6 +584,9 @@ export class LogStore {
     this.latest.clear();
     this.batchT = new Float64Array(INIT_CAP);
     this.batchN = 0;
+    this.gapCache = [];
+    this.gapThreshold = -1;
+    this.gapScanned = 0;
     this.samples = 0;
     this.overflow = false;
     this.lastT = -1;

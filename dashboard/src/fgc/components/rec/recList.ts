@@ -21,7 +21,10 @@ export interface RecList {
 export function parseRecList(raw: unknown): RecList {
   const o = raw && typeof raw === "object" && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
   const files: RecFileRow[] = [];
-  const arr = Array.isArray(o.files) ? o.files : [];
+  // 註解說「甚至整包是舊版的裸陣列，都只是少幾列」，那就真的要解得出來：
+  // 以前這裡對裸陣列會整包退成 {}，files 變空——「機器人根本沒錄到」是賽後取檔
+  // 最糟的失敗模式，因為它看起來完全不像故障。
+  const arr = Array.isArray(raw) ? raw : Array.isArray(o.files) ? o.files : [];
   for (const f of arr) {
     if (!f || typeof f !== "object") continue;
     const r = f as Record<string, unknown>;

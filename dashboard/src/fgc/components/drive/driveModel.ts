@@ -4,9 +4,9 @@
 // 巨燈說 READY、狀態膠囊說 SHOOT、按鍵燈條說 RT 沒按，這種互相矛盾的畫面
 // 比沒有畫面更糟。所以推導寫在這裡，四個元件共用同一支函式。
 
-import { useEffect, useState } from "react";
 import { LogStore } from "../../lib/LogStore";
 import { K, paramKey, tunable } from "../../lib/fgcKeys";
+import { useWindowWidth } from "../../lib/hooks";
 
 /** §7.5 第 10 點：DRIVE 掛零張 uPlot，只訂閱這些 key。 */
 export const DRIVE_KEYS: readonly string[] = [
@@ -91,15 +91,13 @@ function bpOf(w: number): Bp {
   return "sm";
 }
 
+/**
+ * 斷點從共用的 useWindowWidth 衍生（帶 100 ms debounce），不再自己掛第三個
+ * 沒有 debounce 的 resize 監聽器。拖視窗邊框時每一個事件都會讓 App 整棵樹與
+ * DrivePage 的斷點一起重繪，而底下還有十幾個 rAF Canvas 迴圈在跑。
+ */
 export function useBreakpoint(): Bp {
-  const [bp, setBp] = useState<Bp>(() => bpOf(typeof window === "undefined" ? 1440 : window.innerWidth));
-  useEffect(() => {
-    const onResize = () => setBp(bpOf(window.innerWidth));
-    onResize();
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
-  return bp;
+  return bpOf(useWindowWidth());
 }
 
 /** 固定寬度的 tps 顯示：值變動時右邊的東西不可以左右晃。 */

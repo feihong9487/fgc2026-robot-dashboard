@@ -7,13 +7,14 @@
 // 標題列固定掛「±50 ms」chip：推播週期 PERIOD_MS=50，恢復時間 180 ms 與 220 ms
 // 之間的差距只有 40 ms，本來就在解析度之內。不寫出來，這張表會被過度解讀。
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { PanelShell } from "../shell/PanelShell";
 import { LogStore, liveLog } from "../../lib/LogStore";
 import { cursor } from "../../lib/cursorStore";
 import { K, paramKey, shortName } from "../../lib/fgcKeys";
 import { histogram } from "../../lib/stats";
 import { view } from "../graph/viewWindow";
+import { colorForKey } from "../graph/LineGraph";
 import { detectDips, median, type Dip } from "./dipDetect";
 
 interface Props {
@@ -107,7 +108,7 @@ export function DipAnalyzer({ log = liveLog, allowInputs, rows = 10 }: Props) {
             {shown.length === 0 && (
               <tr>
                 <td colSpan={5} className="empty">
-                  尚無資料：需要 /FGC/Drive/State 進入 SHOOT 且 {shortName(src)} 有 &gt; 150 tps 的凹陷
+                  還沒量到凹陷。進入 SHOOT 射一顆球，{shortName(src)} 掉超過 150 tps 就會列在這裡。
                 </td>
               </tr>
             )}
@@ -121,24 +122,49 @@ export function DipAnalyzer({ log = liveLog, allowInputs, rows = 10 }: Props) {
                 <td className="num">{d.index}</td>
                 <td className="num">{fmt0(d.bottom)}</td>
                 <td className="num">−{fmt0(d.depth)}</td>
-                <td className="num">{d.recoverMs === null ? "—" : `${fmt0(d.recoverMs)}ms`}</td>
-                <td className="num flag">{d.broke ? "是 ⚠" : "否"}</td>
+                {/* 單位不混進數字：`627ms` 會讓這一欄的小數點對不齊上一欄 */}
+                <td className="num">
+                  {d.recoverMs === null ? "—" : fmt0(d.recoverMs)}
+                  {d.recoverMs !== null && <span className="fgc-unit">ms</span>}
+                </td>
+                <td className="flag">
+                  {d.broke ? (
+                    <>
+                      <span className="fgc-glyph err">■</span>是
+                    </>
+                  ) : (
+                    <span className="no">否</span>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
 
         <div className="dip-foot">
+          {/* 中點串的 meta 改成標籤／值：這三個數字不是並列的同級項，
+              「中位」是統計、「跌破」是計數、「未回升」是資料完整度的警告。 */}
           <div className="dip-sum">
-            中位 {fmt0(median(bottoms))} · 跌破 {broke}/{closed.length}
-            {open > 0 && <span className="dip-warn"> · {open} 顆未回升（不計入分佈）</span>}
+            <span className="k">中位</span>
+            <span className="fgc-num">{fmt0(median(bottoms))}</span>
+            <span className="k">跌破</span>
+            <span className="fgc-num">
+              {broke}/{closed.length}
+            </span>
+            {open > 0 && (
+              <span className="dip-warn" title="未回到參考轉速的凹陷不計入中位與分佈">
+                <span className="fgc-num">{open}</span> 顆未回升
+              </span>
+            )}
             {dips.length > 0 && !dips[dips.length - 1].refFromTarget && (
               <span className="dip-warn" title="沒有 TargetL/TargetR 埋點，參考轉速改用該段最大值">
-                {" "}· ref=段內最大值
+                ref=段內最大值
               </span>
             )}
           </div>
-          <div className="dip-hist" title="深度分佈（tps）">
+          {/* 分佈的顏色跟著來源走：以 SL 偵測就是青、以 SR 就是琥珀，
+              與主圖那條線同一個顏色，不另立第三套色。 */}
+          <div className="dip-hist" style={{ "--c": colorForKey(src, 0) } as CSSProperties} title="深度分佈（tps）">
             {Array.from(hist.counts).map((c, i) => (
               <span
                 key={i}

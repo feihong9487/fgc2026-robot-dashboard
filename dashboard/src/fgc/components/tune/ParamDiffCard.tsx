@@ -13,10 +13,10 @@
 
 import { useState } from "react";
 import { PanelShell } from "../shell/PanelShell";
+import { client } from "../../../lib/RobotClient";
 import { LogStore, liveLog } from "../../lib/LogStore";
 import { K, TUNABLES, buildParamKey, paramKey, tuneKey, type Tunable } from "../../lib/fgcKeys";
-import { PATHS, httpUrl } from "../../lib/profile";
-import { useLink, useLogVersion } from "../../lib/hooks";
+import { useFlash, useLogVersion } from "../../lib/hooks";
 import { copyText } from "../graph/Inspector";
 
 interface Props {
@@ -40,8 +40,7 @@ function show(v: number | null, t: Tunable): string {
 
 export function ParamDiffCard({ log = liveLog, allowInputs }: Props) {
   useLogVersion(log);
-  const link = useLink();
-  const [msg, setMsg] = useState("");
+  const [msg, flash] = useFlash(2500);
   const [busy, setBusy] = useState("");
 
   const rows = TUNABLES.map((t) => {
@@ -63,27 +62,21 @@ export function ParamDiffCard({ log = liveLog, allowInputs }: Props) {
   const snippet = log.latestStr(K.snippet, "");
   const saved = log.latestStr(K.saved, "");
 
-  const flash = (s: string) => {
-    setMsg(s);
-    window.setTimeout(() => setMsg(""), 2500);
-  };
-
+  /**
+   * _save / _load 一律走 client.command()：與 client.set() 共用同一組全域硬閘，
+   * 成功與失敗都進寫回帳本。
+   *
+   * 以前這裡自己 fetch(/dash/set?k=_save)，是專案裡的第二條寫回路徑——沒有模式檢查、
+   * 沒有連線檢查、被拒也只 flash 一行會自己消失的字。它唯一的保護是 render 時的
+   * allowInputs，而 §8 措施 1 的整個立論是「set() 是**全域**硬閘」。而且有一個真實
+   * 競態：按下「存到機器人」的同一秒機器人切進 MATCH，請求已經送出去了而前端沒有
+   * 留下任何紀錄說它送過。
+   */
   const cmd = async (k: "_save" | "_load", label: string) => {
-    if (!link.host) return flash("尚未連線，指令未送出");
     setBusy(k);
     try {
-      const res = await fetch(httpUrl(link.host, PATHS.set, { k }), { cache: "no-store" });
-      const txt = await res.text();
-      let why = "";
-      try {
-        const j = JSON.parse(txt) as { ok?: boolean; why?: string };
-        why = j.why ?? "";
-        flash(j.ok ? label + "成功" + (why ? "：" + why : "") : label + "失敗：" + (why || res.status));
-      } catch {
-        flash(res.ok ? label + "成功" : label + "失敗：HTTP " + res.status);
-      }
-    } catch (e) {
-      flash(label + "失敗：" + String(e).slice(0, 80));
+      const r = await client.command(k);
+      flash(r.ok ? label + "成功" + (r.why ? "：" + r.why : "") : label + "失敗：" + r.why);
     } finally {
       setBusy("");
     }
@@ -98,11 +91,14 @@ export function ParamDiffCard({ log = liveLog, allowInputs }: Props) {
   return (
     <PanelShell
       title="目前值 vs 編譯值"
+      className={allowInputs ? "writable" : undefined}
+      // 全數一致時卡片內文已經講完了，說明句就不要再講第二次——
+      // 同一句話印兩遍，讀的人會開始懷疑其中一句是舊的。
       note={
         noBuild
           ? "機器人未發布 /FGC/Param/Build <NAME>"
           : changed.length === 0
-            ? "21 項與編譯值一致"
+            ? undefined
             : changed.length + " 項不同（Restart Robot 就會回到編譯值）"
       }
     >
@@ -113,18 +109,38 @@ export function ParamDiffCard({ log = liveLog, allowInputs }: Props) {
             沒有編譯值就沒有辦法判斷「調完的東西會不會在重開後消失」——請確認機器人端是新版。
           </div>
         ) : changed.length === 0 ? (
-          <div className="pd-ok">● 目前值與編譯值全數一致，重開機不會掉任何東西。</div>
+          <div className="pd-ok">
+            <span className="fgc-glyph ok">●</span>
+            目前值與編譯值全數一致，重開機不會掉任何東西。
+          </div>
         ) : (
+          // 與雙欄表同一套版面語彙：左頁是編譯值，右頁是現在跑的值，中間一條裝訂線。
+          // 同一頁上同一種關係用兩種畫法（那邊裝訂線、這邊 →）會讓人以為它們不是同一件事。
           <table className="fgc-table pd-table">
+            <thead>
+              <tr>
+                <th colSpan={2}>編譯值</th>
+                <th colSpan={3} className="bind">
+                  目前值
+                </th>
+              </tr>
+            </thead>
             <tbody>
               {changed.map((r) => (
                 <tr key={r.t.name}>
                   <td className="nm">{r.t.name}</td>
                   <td className="num build">{show(r.build, r.t)}</td>
-                  <td className="ar">→</td>
-                  <td className="num cur">{show(r.cur, r.t)}</td>
+                  <td className="num cur bind">{show(r.cur, r.t)}</td>
                   <td className="unit">{r.t.unit}</td>
-                  <td className="st">{r.applied ? "" : "✗ 尚未套用"}</td>
+                  <td className="pd-st">
+                    {r.applied ? (
+                      ""
+                    ) : (
+                      <>
+                        <span className="fgc-glyph err">■</span>尚未套用
+                      </>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -137,12 +153,12 @@ export function ParamDiffCard({ log = liveLog, allowInputs }: Props) {
               複製 Constants 片段
             </button>
             <button
-              className="tb-btn"
+              className="pd-primary"
               disabled={busy === "_save"}
               onClick={() => cmd("_save", "存到機器人")}
               title="GET /dash/set?k=_save → 寫進 /sdcard/FIRST/fgc-tune.json，下次開機自動載回"
             >
-              存到機器人 fgc-tune.json
+              存到機器人
             </button>
             <button
               className="tb-btn"

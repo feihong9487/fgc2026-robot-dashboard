@@ -128,19 +128,31 @@ export async function parseJsonlStream(
   return res;
 }
 
-/** 直接灌進一個 LogStore 實例（回放與 A/B 都走這條）。 */
+/**
+ * 直接灌進一個 LogStore 實例（回放與 A/B 都走這條）。
+ *
+ * 逐批寫進去，不先堆成陣列。堆成陣列會讓「全部批次的 JS 物件」同時活在記憶體裡
+ * （一份 20 MB 的錄影檔是幾十萬個 batch 物件 + 每個 key 一個字串參照，解析後的
+ * 物件表示遠比原文肥），換來的只是省下「原始字串的第二份拷貝」——很可能比直接
+ * text() 更糟。這樣峰值就只有 LogStore 自己的 Float64Array，而且 onProgress
+ * 走完之後不必再等一次全量 applyBatches。
+ */
 export async function loadIntoLog(
   log: LogStore,
   source: ReadableStream<Uint8Array> | string,
   onProgress?: (bytes: number) => void,
 ): Promise<ParseResult> {
-  const batches: Batch[] = [];
-  const res =
-    typeof source === "string"
-      ? parseJsonlText(source, (b) => batches.push(b))
-      : await parseJsonlStream(source, (b) => batches.push(b), onProgress);
-  log.applyBatches(batches);
-  return res;
+  log.beginBulk();
+  try {
+    const feed = (b: Batch) => {
+      log.applyBatch(b.d, b.t);
+    };
+    return typeof source === "string"
+      ? parseJsonlText(source, feed)
+      : await parseJsonlStream(source, feed, onProgress);
+  } finally {
+    log.endBulk();
+  }
 }
 
 /** 序列化回 jsonl（匯出選區剪輯用）。 */

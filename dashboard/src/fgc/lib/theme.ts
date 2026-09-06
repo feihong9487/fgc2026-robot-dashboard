@@ -30,6 +30,11 @@ export interface Palette {
   gap: string;
   /** 8 條（不是 6），超過循環並用線型區分。 */
   series: string[];
+  /**
+   * series 5-8 是 1-4 的淺色版，所以**必須**同時吃線型：色覺辨異下淺青與青是同一條，
+   * 只有 dash 分得開。值讀 --series-dash-1..8（"none" → null，"8 4" → [8,4]）。
+   */
+  seriesDash: (number[] | null)[];
   stateCollect: string;
   stateShoot: string;
   stateEject: string;
@@ -46,6 +51,14 @@ export interface Palette {
   fieldGrid: string;
   fieldTag: string;
   fov: string;
+  /**
+   * Canvas 讀不到 CSS 變數，而軸標籤／列名／刻度全是 Canvas 畫的。
+   * 這三個把「字級階梯與家族」也帶進 Canvas，否則圖上永遠是寫死的 10px：
+   * 那既不是設計計畫裡的任何一階（全案最小 --fs-xs），field 主題下也不會跟著換。
+   */
+  fontNum: string;
+  fontUi: string;
+  fsXs: string;
 }
 
 const FALLBACK: Palette = {
@@ -62,7 +75,8 @@ const FALLBACK: Palette = {
   focusRing: "#4fc3f7",
   stale: "#6b7488",
   gap: "#3a4256",
-  series: ["#4dd0e1", "#ffb74d", "#81c784", "#ba68c8", "#fff176", "#f06292", "#64b5f6", "#a1887f"],
+  series: ["#3FC9DE", "#F2A93B", "#1F9E96", "#9B8CFF", "#8FE0EE", "#FFD08A", "#5FC8C0", "#C7BEFF"],
+  seriesDash: [null, null, null, null, [8, 4], [8, 4], [2, 3], [2, 3]],
   stateCollect: "#4fc3f7",
   stateShoot: "#81c784",
   stateEject: "#e57373",
@@ -77,9 +91,12 @@ const FALLBACK: Palette = {
   fieldGrid: "#2a3040",
   fieldTag: "#fff176",
   fov: "#4dd0e1",
+  fontNum: 'ui-monospace, Consolas, monospace',
+  fontUi: 'system-ui, sans-serif',
+  fsXs: "12px",
 };
 
-const VAR_MAP: Record<Exclude<keyof Palette, "series">, string> = {
+const VAR_MAP: Record<Exclude<keyof Palette, "series" | "seriesDash">, string> = {
   surface1: "--surface-1",
   surface2: "--surface-2",
   surface3: "--surface-3",
@@ -107,6 +124,9 @@ const VAR_MAP: Record<Exclude<keyof Palette, "series">, string> = {
   fieldGrid: "--field-grid",
   fieldTag: "--field-tag",
   fov: "--fov",
+  fontNum: "--font-num",
+  fontUi: "--font-ui",
+  fsXs: "--fs-xs",
 };
 
 let cache: Palette = FALLBACK;
@@ -131,15 +151,28 @@ export function readPalette(): Palette {
   const cs = getComputedStyle(document.documentElement);
   const out = { ...FALLBACK } as Palette;
   for (const [k, varName] of Object.entries(VAR_MAP) as [keyof Palette, string][]) {
-    if (k === "series") continue;
+    if (k === "series" || k === "seriesDash") continue;
     (out as unknown as Record<string, unknown>)[k] = readVar(cs, varName, FALLBACK[k] as string);
   }
   out.series = [];
+  out.seriesDash = [];
   for (let i = 1; i <= 8; i++) {
     out.series.push(readVar(cs, `--series-${i}`, FALLBACK.series[i - 1]));
+    out.seriesDash.push(parseDash(readVar(cs, `--series-dash-${i}`, "none")));
   }
   cache = out;
   return out;
+}
+
+/** "none" / "" → null；"8 4" 或 "8,4" → [8,4]。壞值一律當 none，不讓一條線消失。 */
+function parseDash(raw: string): number[] | null {
+  const t = raw.trim();
+  if (!t || t === "none") return null;
+  const nums = t
+    .split(/[\s,]+/)
+    .map(Number)
+    .filter((n) => Number.isFinite(n) && n > 0);
+  return nums.length >= 2 ? nums : null;
 }
 
 /** 取快取（每幀都可以呼叫，不會觸發 layout）。 */
@@ -154,6 +187,33 @@ export function palette(): Palette {
 export function seriesColor(i: number): string {
   const s = cache.series;
   return s[((i % s.length) + s.length) % s.length];
+}
+
+/** 與 seriesColor 同一個索引：5-8 的淺色版一定帶 dash，否則色覺辨異下與 1-4 同一條。 */
+export function seriesDash(i: number): number[] | undefined {
+  const d = cache.seriesDash;
+  if (!d || d.length === 0) return undefined;
+  return d[((i % d.length) + d.length) % d.length] ?? undefined;
+}
+
+/**
+ * Canvas 的字串：`"12px ui-monospace, Consolas, monospace"`。
+ * mul 只給「比軸標籤再小一點也還讀得到」的極少數情況——預設就是 --fs-xs，
+ * 本案最小的一階，沒有 10px 也沒有 11px。
+ */
+export function numFont(mul = 1): string {
+  const px = parseFloat(cache.fsXs) || 12;
+  return (mul === 1 ? px : Math.round(px * mul)) + "px " + cache.fontNum;
+}
+
+/**
+ * Canvas 上的**標籤**用這個，不用 numFont。等寬白名單只有四項：數值、機器字面
+ * 字串、時間刻度、形狀語彙——「State」「總覽」「無此埋點」都不在裡面，
+ * 而「小資料標籤用等寬字」正是模板 chrome 的 tell 之一。
+ */
+export function uiFont(mul = 1): string {
+  const px = parseFloat(cache.fsXs) || 12;
+  return (mul === 1 ? px : Math.round(px * mul)) + "px " + cache.fontUi;
 }
 
 export function getTheme(): ThemeName {

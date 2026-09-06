@@ -15,12 +15,29 @@
 import { PATHS } from "../../lib/profile";
 import { Glyph } from "../shell/Glyph";
 import { type Tone } from "../../lib/tone";
-import { useLink } from "../../lib/hooks";
+import { K, lockdownValue } from "../../lib/fgcKeys";
+import { liveLog } from "../../lib/LogStore";
+import { useLink, useTick } from "../../lib/hooks";
 import { useRecTrend } from "../health/useRecTrend";
 
 export function RecHeartbeat({ host }: { host: string }) {
   const link = useLink();
   const trend = useRecTrend(1000);
+  useTick(1000);
+
+  // Lockdown 的每一次取值都走 lockdownValue()：不在 LOCKDOWN_KEYS ∩
+  // isLockdownSafeKey 裡的 key 拿到的是 null，整格不 render。以前這一頁的 M11
+  // 白名單完全靠手寫 JSX，而 LockdownCards 的檔頭卻宣稱「這條線寫在旗標裡，
+  // 不靠記憶」——旗標其實是死碼。現在它是真的。
+  //
+  // Last Notify（DashNotify.java:58）是 MATCH 期間唯一看得到「機器人剛剛喊了
+  // 什麼」的埋點：即時的 notify 在 MATCH 不推播，這個 key 是那一段時間唯一的痕跡。
+  // 格式是 "level:title"，零比賽資料，不違反 M11。
+  const notifyRaw = lockdownValue(K.lastNotify, (k) => liveLog.latestStr(k, "")) ?? "";
+  const ci = notifyRaw.indexOf(":");
+  const notify = notifyRaw
+    ? { level: ci > 0 ? notifyRaw.slice(0, ci) : "INFO", title: ci > 0 ? notifyRaw.slice(ci + 1) : notifyRaw }
+    : null;
 
   const h = link.health;
   const ok = h?.kind === "ok";
@@ -74,6 +91,17 @@ export function RecHeartbeat({ host }: { host: string }) {
               <span className="k">更新於</span>
               <span className="v">{ageS >= 0 ? `${ageS.toFixed(0)} 秒前` : "—"}</span>
             </span>
+            {notify && (
+              <span>
+                <span className="k">最後通知</span>
+                <span
+                  className={"v " + (notify.level === "ERROR" ? "lv-err" : notify.level === "WARN" ? "lv-warn" : "")}
+                  title="/FGC/Bridge/Last Notify —— MATCH 期間 notify 不推播，這是唯一的痕跡"
+                >
+                  {notify.title || notify.level}
+                </span>
+              </span>
+            )}
           </div>
           <div className="lockdown-fine">
             行數每 10 秒跳一階（flush 週期），所以要看 30 秒才判得出停沒停。

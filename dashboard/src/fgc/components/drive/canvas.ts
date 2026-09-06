@@ -47,12 +47,15 @@ export function useCanvasFrame(draw: (f: Frame) => void): RefObject<HTMLCanvasEl
     let raf = 0;
     let last = performance.now();
     let resizeTimer = 0;
+    let lastFit = 0;
     let alive = true;
 
+    // clientWidth/Height（整數）而不是 getBoundingClientRect（分數）：
+    // 下面的每幀守門要拿同一組數字比對，用兩套量法會因為 0.5 px 的捨入差
+    // 而每 150 ms 重配一次 backing store。
     const applySize = () => {
-      const rect = cv.getBoundingClientRect();
-      const nw = Math.max(1, Math.round(rect.width));
-      const nh = Math.max(1, Math.round(rect.height));
+      const nw = Math.max(1, cv.clientWidth);
+      const nh = Math.max(1, cv.clientHeight);
       const ndpr = Math.min(window.devicePixelRatio || 1, 3);
       if (nw === w && nh === h && ndpr === dpr) return;
       w = nw;
@@ -73,7 +76,20 @@ export function useCanvasFrame(draw: (f: Frame) => void): RefObject<HTMLCanvasEl
     const loop = (t: number) => {
       if (!alive) return;
       raf = requestAnimationFrame(loop);
-      if (document.hidden || w === 0 || h === 0) {
+      if (document.hidden) {
+        last = t;
+        return;
+      }
+      // 尺寸守門。ResizeObserver 的 100 ms debounce 在版面連續變動時會漏掉最後一次
+      // （flex 重排 → RO → 排 timer → 版面又動了），backing store 的長寬比就跟元素框
+      // 對不起來，而瀏覽器會把 bitmap 拉伸去填滿元素——**巨燈直接從圓變成橢圓**。
+      // 每幀比一次整數尺寸（rAF 時版面已經是乾淨的，clientWidth 不會逼出 reflow），
+      // 但真正重配 backing store 最快 150 ms 一次，保住「拖視窗邊框不掉幀」。
+      if ((cv.clientWidth !== w || cv.clientHeight !== h) && t - lastFit > 150) {
+        lastFit = t;
+        applySize();
+      }
+      if (w === 0 || h === 0) {
         last = t;
         return;
       }
@@ -196,4 +212,15 @@ export function alpha(hex: string, a: number): string {
     return h;
   }
   return `rgba(${r},${g},${b},${a})`;
+}
+
+/**
+ * Canvas 字距。全案唯一會用到字距的地方是巨燈的 READY/SHOOT/EJECT（--ls-state）：
+ * 它們是狀態機的字面值，不是設計師選的大寫標籤。
+ * `letterSpacing` 是 Chromium 99+ 才有的屬性，TS 的 lib.dom 也還沒收——
+ * 不支援時安靜地維持預設字距，絕不讓一個排版細節丟例外。
+ */
+export function setTracking(ctx: CanvasRenderingContext2D, v: string): void {
+  const c = ctx as unknown as { letterSpacing?: string };
+  if (typeof c.letterSpacing === "string") c.letterSpacing = v;
 }

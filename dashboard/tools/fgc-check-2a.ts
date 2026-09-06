@@ -8,7 +8,16 @@
 //     --outfile=.fgc-check-2a.mjs --log-level=warning && node .fgc-check-2a.mjs
 
 import { LogStore } from "../src/fgc/lib/LogStore.ts";
-import { K, TUNABLES, paramKey, buildParamKey } from "../src/fgc/lib/fgcKeys.ts";
+import {
+  K,
+  LOCKDOWN_KEYS,
+  TUNABLES,
+  buildParamKey,
+  isCoachRiskKey,
+  isLockdownSafeKey,
+  lockdownValue,
+  paramKey,
+} from "../src/fgc/lib/fgcKeys.ts";
 import type { HealthState, HealthInfo } from "../src/fgc/lib/health.ts";
 import {
   buildChecks,
@@ -117,6 +126,8 @@ function ctxOf(patch: Partial<CheckCtx> = {}): CheckCtx {
     log: goodLog(),
     loopP50: 11,
     loopP95: 19,
+    loopMax: 24,
+    loopFromRobot: true,
     ...patch,
   };
 }
@@ -227,6 +238,14 @@ section("燈牆：驗收線");
   ok(bat(11.4) === "err", "電池 11.4 V → err（11.5 是第二條線）");
 
   const loop = (p95: number) => byId(buildChecks(ctxOf({ loopP95: p95 })), "loop").state;
+  ok(
+    byId(buildChecks(ctxOf({ loopFromRobot: false })), "loop").detail.includes("本機估算"),
+    "舊 Build（沒有 /FGC/Status/Loop p95）時 detail 要誠實說出「本機估算」",
+  );
+  ok(
+    byId(buildChecks(ctxOf({ loopMax: 300 })), "loop").detail.includes("max 300"),
+    "Loop Max 一起顯示：p95 25 ms 但 Max 300 ms 是完全不同的故障",
+  );
   ok(loop(19) === "ok", "loop p95 19 ms → ok");
   ok(loop(22) === "warn", "loop p95 22 ms → warn");
   ok(loop(30) === "err", "loop p95 30 ms → err（驗收線 25）");
@@ -337,7 +356,11 @@ section("RecBrowser：rec.json 解析與檔名白名單");
   const junk = parseRecList({ files: [{ size: 1 }, null, "x", { name: "rec-x.jsonl" }] });
   ok(junk.files.length === 1 && junk.files[0].size === 0, "壞資料不整支炸掉，缺的欄位補 0");
   ok(parseRecList(null).files.length === 0, "null 也不炸");
-  ok(parseRecList([]).files.length === 0, "舊版的裸陣列格式回 0 個檔（真機是 {dir,current,files}）");
+  ok(parseRecList([]).files.length === 0, "空的裸陣列回 0 個檔");
+  ok(
+    parseRecList([{ name: "rec-a.jsonl", size: 9, mtime: 5 }]).files.length === 1,
+    "舊版的裸陣列格式也解得出來（真機是 {dir,current,files}，但少幾列 > 顯示成沒錄到）",
+  );
 
   ok(robotAcceptsName("rec-20261007-094012.jsonl"), "rec-*.jsonl 可以拉");
   ok(!robotAcceptsName("real-B1PIT-174830.jsonl"), "手動拷進去的檔名拉不下來（safeName 只收 rec- 開頭）");
@@ -345,6 +368,27 @@ section("RecBrowser：rec.json 解析與檔名白名單");
   ok(!robotAcceptsName("../../etc/passwd"), "路徑穿越拒絕");
   ok(!robotAcceptsName("rec-x.txt"), "副檔名不對拒絕");
   ok(!robotAcceptsName("rec-" + "x".repeat(70) + ".jsonl"), "超過 64 字拒絕");
+}
+
+// ── 12. Lockdown 的 M11 白名單（§8）────────────────────────────────────
+
+section("Lockdown：M11 白名單由程式保證，不是靠記憶");
+{
+  const bad = LOCKDOWN_KEYS.filter((k) => !isLockdownSafeKey(k));
+  ok(bad.length === 0, "LOCKDOWN_KEYS 全部通過 isLockdownSafeKey", bad.join(","));
+  const risky = LOCKDOWN_KEYS.filter((k) => isCoachRiskKey(k));
+  ok(risky.length === 0, "LOCKDOWN_KEYS 沒有任何 coachRisk 欄位", risky.join(","));
+
+  ok(!isLockdownSafeKey(K.sl), "Shooter/SL 不是 lockdown-safe");
+  ok(!isLockdownSafeKey(K.bestRange), "Vision/Best/Range m 不是 lockdown-safe");
+  ok(!isLockdownSafeKey(K.driveState), "Drive/State 不是 lockdown-safe");
+  ok(!isLockdownSafeKey(K.aimDelta), "Aim/Delta 不是 lockdown-safe");
+  ok(!isLockdownSafeKey(K.targetL), "Shooter/TargetL 不是 lockdown-safe");
+  ok(!isLockdownSafeKey(K.battery), "Status/Battery V 不是 lockdown-safe（電壓是機器人狀態但不在 M11 的劃線裡）");
+
+  ok(lockdownValue(K.lastNotify, () => "ERROR:電池過低") === "ERROR:電池過低", "白名單內的 key 取得到值");
+  ok(lockdownValue(K.bestRange, () => 3.14) === null, "白名單外的 key 一律回 null（呼叫端整格不 render）");
+  ok(LOCKDOWN_KEYS.includes(K.lastNotify), "Last Notify 在白名單內（MATCH 期間唯一的通知痕跡）");
 }
 
 console.log(`\n${failed === 0 ? "OK" : "FAILED"}：${checks - failed}/${checks} 通過`);

@@ -12,11 +12,12 @@ import { PanelShell } from "../shell/PanelShell";
 import { LogStore, liveLog } from "../../lib/LogStore";
 import { K } from "../../lib/fgcKeys";
 import { histogram, percentiles } from "../../lib/stats";
-import { palette } from "../../lib/theme";
+import { numFont, palette } from "../../lib/theme";
 import * as persist from "../../lib/persist";
-import { fitCanvas, observeSize } from "../graph/timeAxis";
+import { fitCanvas, observeSize, withAlpha } from "../graph/timeAxis";
 import { view } from "../graph/viewWindow";
 import { copyText } from "../graph/Inspector";
+import { useFlash } from "../../lib/hooks";
 
 interface Props {
   log?: LogStore;
@@ -56,7 +57,7 @@ export function LoopHistogram({ log = liveLog, allowInputs, height = 116 }: Prop
   const [range, setRange] = useState<Range>("all");
   const [tick, setTick] = useState(0);
   const [snaps, setSnaps] = useState<LoopSnapshot[]>(loadSnapshots);
-  const [msg, setMsg] = useState("");
+  const [msg, flash] = useFlash(2000);
 
   useEffect(() => {
     const t = window.setInterval(() => setTick((n) => n + 1), RECALC_MS);
@@ -84,13 +85,13 @@ export function LoopHistogram({ log = liveLog, allowInputs, height = 116 }: Prop
     const padB = 14;
     const plotH = h - padB - 2;
 
-    ctx.font = "10px ui-monospace, Consolas, monospace";
+    ctx.font = numFont();
     ctx.textBaseline = "top";
 
     if (data.v.length === 0) {
       ctx.fillStyle = p.stale;
       ctx.textAlign = "center";
-      ctx.fillText("尚無 /FGC/Status/Loop ms 樣本", w / 2, h / 2 - 5);
+      ctx.fillText("還沒收到 Loop ms。機器人跑起來就會有分佈。", w / 2, h / 2 - 5);
       return;
     }
 
@@ -99,15 +100,22 @@ export function LoopHistogram({ log = liveLog, allowInputs, height = 116 }: Prop
     const span = Math.max(1e-6, hi - lo);
     const xOf = (ms: number) => ((ms - lo) / span) * w;
 
-    // 長條
+    // 長條：35% 的底 + 同色 1.5px 頂蓋。滿版飽和的長條在只有一兩格有值時
+    // 會變成一整片色（實測：一格佔滿整張卡），那是裝飾不是資料。
+    // 超過驗收線的那幾格用紅色：形狀之外還要一眼看到「尾巴在紅區」。
     const n = hist.counts.length;
     const bw = w / n;
     for (let i = 0; i < n; i++) {
       const c = hist.counts[i];
+      if (!c) continue;
       const bh = hist.max ? (c / hist.max) * plotH : 0;
-      // 超過驗收線的那幾格用紅色：形狀之外還要一眼看到「尾巴在紅區」
-      ctx.fillStyle = hist.edges[i] >= RED_MS ? p.err : p.series[0];
-      ctx.fillRect(i * bw + 0.5, 2 + plotH - bh, Math.max(1, bw - 1), bh);
+      const col = hist.edges[i] >= RED_MS ? p.err : p.series[0];
+      const bx = i * bw + 0.5;
+      const bwid = Math.max(1, bw - 1);
+      ctx.fillStyle = withAlpha(col, 0.35);
+      ctx.fillRect(bx, 2 + plotH - bh, bwid, bh);
+      ctx.fillStyle = col;
+      ctx.fillRect(bx, 2 + plotH - bh, bwid, Math.min(1.5, bh));
     }
 
     // 25 ms 驗收線
@@ -126,11 +134,13 @@ export function LoopHistogram({ log = liveLog, allowInputs, height = 116 }: Prop
       ctx.fillText("25", Math.min(w - 14, xOf(RED_MS) + 3), 1);
     }
 
-    // p50 / p95 標記
+    // p50 / p95 標記。標籤排在驗收線標籤的下一行——p50 落在 25 ms 附近時
+    // 兩個標籤會疊在同一個像素上，那時最需要讀的就是它們。
     const marks: [number, string, string][] = [
       [p50, p.textDim, "p50"],
       [p95, p.warn, "p95"],
     ];
+    const lblY = 1 + Math.round(parseFloat(numFont()) || 12);
     for (const [val, col, label] of marks) {
       if (!Number.isFinite(val) || val < lo || val > hi) continue;
       ctx.strokeStyle = col;
@@ -141,7 +151,7 @@ export function LoopHistogram({ log = liveLog, allowInputs, height = 116 }: Prop
       ctx.stroke();
       ctx.fillStyle = col;
       ctx.textAlign = "right";
-      ctx.fillText(label, Math.max(20, x - 2), 1);
+      ctx.fillText(label, Math.max(24, x - 2), lblY);
     }
 
     // x 軸刻度（每 5 個 bin 一個）
@@ -174,8 +184,7 @@ export function LoopHistogram({ log = liveLog, allowInputs, height = 116 }: Prop
     const next = [s, ...snaps].slice(0, MAX_SNAPSHOTS);
     setSnaps(next);
     persist.set(persist.KEYS.loopSnapshots, next);
-    setMsg("已存快照");
-    window.setTimeout(() => setMsg(""), 1500);
+    flash("已存快照");
   };
 
   const copyTable = async () => {
@@ -193,8 +202,7 @@ export function LoopHistogram({ log = liveLog, allowInputs, height = 116 }: Prop
       )
       .join("\n");
     const ok = await copyText(head + body + "\n");
-    setMsg(ok ? "已複製 Markdown 表格" : "複製失敗（可手動選取）");
-    window.setTimeout(() => setMsg(""), 2000);
+    flash(ok ? "已複製 Markdown 表格" : "複製失敗（可手動選取）");
   };
 
   const p95level = data.p95 > RED_MS ? "err" : data.p95 > 20 ? "warn" : "ok";
@@ -202,7 +210,7 @@ export function LoopHistogram({ log = liveLog, allowInputs, height = 116 }: Prop
   return (
     <PanelShell
       title="loop ms 直方圖"
-      note={BIN_MS + " ms 一格 · 驗收線 " + RED_MS + " ms"}
+      note={"一格 " + BIN_MS + " ms，紅色虛線是 " + RED_MS + " ms 的驗收線。"}
       tools={
         allowInputs ? (
           <>

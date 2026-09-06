@@ -17,7 +17,7 @@ import uPlot from "uplot";
 import "uplot/dist/uPlot.min.css";
 import { LogStore, liveLog } from "../../lib/LogStore";
 import { cursor } from "../../lib/cursorStore";
-import { palette, seriesColor, subscribeTheme } from "../../lib/theme";
+import { getTheme, numFont, palette, seriesColor, seriesDash, subscribeTheme, uiFont } from "../../lib/theme";
 import { K, paramKey, shortName } from "../../lib/fgcKeys";
 import { view } from "./viewWindow";
 import { attachPanZoom, fmtT, observeSize, withAlpha } from "./timeAxis";
@@ -79,15 +79,43 @@ const FIXED_COLOR: Record<string, number> = {
   [K.way]: 3,
 };
 
-export function colorForKey(key: string, fallbackIdx: number): string {
+/**
+ * 沒有固定綁定的訊號可以用的色位。**刻意跳過 0 / 1 / 3**：那三個是
+ * SL / SR / Way 的固定綁定，讓第四條線拿到 series-4 會畫出一條與 Way
+ * 一模一樣的紫線（實測：同時釘 Way 與 TargetL 就會撞）。
+ */
+const FREE_SLOTS = [2, 4, 5, 6, 7];
+
+function seriesIndex(key: string, fallbackIdx: number): number {
   const fixed = FIXED_COLOR[key];
-  return seriesColor(fixed !== undefined ? fixed : fallbackIdx);
+  if (fixed !== undefined) return fixed;
+  const i = Math.max(0, Math.trunc(fallbackIdx));
+  return FREE_SLOTS[i % FREE_SLOTS.length];
+}
+
+export function colorForKey(key: string, fallbackIdx: number): string {
+  return seriesColor(seriesIndex(key, fallbackIdx));
+}
+
+/**
+ * series 5-8 是 1-4 的淺色版：**顏色不是唯一通道**，它們必須同時帶線型，
+ * 否則 8% 紅綠色覺辨異的使用者看到的第 5 條線與第 1 條線是同一條。
+ * 值來自 --series-dash-1..8，與顏色同一個索引，所以第 5 條線永遠是「淺青 + 長虛線」。
+ */
+export function dashForKey(key: string, fallbackIdx: number): number[] | undefined {
+  return seriesDash(seriesIndex(key, fallbackIdx));
+}
+
+/** 資料線 1.5px；field 主題（站著看、隔 1.5 m）加粗到 2.5px。 */
+function strokeWidth(): number {
+  return getTheme() === "field" ? 2.5 : 1.5;
 }
 
 function resolve(series: readonly GraphSeries[], showTargets: boolean, log: LogStore): Resolved[] {
   const out: Resolved[] = series.map((s, i) => ({
     ...s,
     color: s.color ?? colorForKey(s.key, i),
+    dash: s.dash ?? dashForKey(s.key, i),
     scale: s.scale ?? "left",
     isTarget: false,
   }));
@@ -209,7 +237,10 @@ export function LineGraph({
   series,
   height = 260,
   paused = false,
-  showTargets = true,
+  // fail-closed：TargetL / TargetR 正是 isCoachRiskKey() 判 true 的欄位，
+  // 規則相關的旗標預設值必須是「關」，不然「新增第四個用到 LineGraph 的頁面」
+  // 這件事會靜默地把 M11 的閘打開。呼叫端要畫目標就自己明示。
+  showTargets = false,
   showThreshold = true,
   syncKey = "fgc",
   onGeom,
@@ -248,16 +279,21 @@ export function LineGraph({
     const usesLeft = res.some((s) => s.scale === "left") || res.length === 0;
     const usesRight = res.some((s) => s.scale === "right");
 
+    // 軸線不畫、刻度不畫——刻度標籤本身就界定了軸。垂直格線交給時間刻度，
+    // 這裡只留水平格線（y 軸那一組），而且壓到 1.6:1：格線是背景不是圖案。
     const axisBase = {
       stroke: p.textDim,
-      grid: { stroke: withAlpha(p.border, 0.85), width: 1 },
-      ticks: { stroke: p.border, width: 1 },
-      font: "11px ui-monospace, Consolas, monospace",
+      grid: { stroke: withAlpha(p.border, 0.9), width: 1 },
+      ticks: { show: false },
+      font: numFont(),
     };
 
     const axes: uPlot.Axis[] = [
       {
         ...axisBase,
+        // 刻度間距要以「最長的一個標籤」為準：t 跑到 8990.150s 時，
+        // uPlot 預設的 50 px 會讓相鄰兩格黏成 8990.150s8990.200s。
+        space: 96,
         // 小數位跟著「看得見的視窗長度」走而不是跟著絕對值走：
         // t 已經跑到 298 s、視窗只有 0.2 s 時，toFixed(0) 會讓每一格都寫「298s」。
         values: (u, vs) => {
@@ -267,6 +303,7 @@ export function LineGraph({
         },
       },
     ];
+    axes[0].grid = { show: false };
     if (usesLeft) axes.push({ ...axisBase, scale: "left", side: 3, size: 54 });
     if (usesRight) axes.push({ ...axisBase, scale: "right", side: 1, size: 54, grid: { show: false } });
 
@@ -295,11 +332,11 @@ export function LineGraph({
           label: (s.label ?? shortName(s.key)) + (s.unit ? " (" + s.unit + ")" : ""),
           scale: s.scale,
           stroke: s.color,
-          width: s.isTarget ? 1.5 : 1.6,
+          width: strokeWidth(),
           dash: s.dash,
           spanGaps: false,
           points: s.points
-            ? { show: true, size: 4, stroke: s.color, fill: s.color }
+            ? { show: true, size: 4.5, stroke: s.color, fill: s.color }
             : { show: false },
           paths: s.stepped && uPlot.paths.stepped ? uPlot.paths.stepped({ align: 1 }) : undefined,
         })),
@@ -451,6 +488,16 @@ function drawOverlays(
   const p = palette();
   const ctx = u.ctx;
   const { left, top, width, height } = u.bbox;
+  // uPlot 從不呼叫 ctx.scale / setTransform：它把所有座標乘上 pxRatio，而只有
+  // axis.font 會經過 pxRatioFont()。draw hook 裡自己寫的 "10px" 不會被放大，
+  // 所以在 dpr=2 的螢幕上實際只有 5 CSS px、dpr=3 剩 3.3 px——FEED_THRESHOLD
+  // 的數值與「已抽點（min/max）」這個誠實標示會小到讀不出來，而後者的存在意義
+  // 正是警告使用者不要目測極值。（1440x900 的無頭截圖 dpr=1，看不見這個缺陷。）
+  const r =
+    (u as unknown as { pxRatio?: number }).pxRatio ??
+    (typeof window !== "undefined" ? window.devicePixelRatio : 1) ??
+    1;
+  const overlayFont = `${Math.round(10 * r)}px ui-monospace, Consolas, monospace`;
   ctx.save();
   ctx.beginPath();
   ctx.rect(left, top, width, height);
@@ -465,7 +512,9 @@ function drawOverlays(
     if (!s.isTarget) continue;
     const col = u.data[i + 1] as unknown as (number | null)[] | undefined;
     if (!col || !xsd) continue;
-    ctx.fillStyle = withAlpha(p.ok, 0.12);
+    // 6%：SL 與 SR 的容差帶幾乎重疊，兩層疊起來才是實際看到的濃度。
+    // 放大到只剩容差帶的視窗時，這一層會鋪滿整個繪圖區——它必須淡到還是背景。
+    ctx.fillStyle = withAlpha(p.ok, 0.06);
     for (let k = 0; k + 1 < xsd.length; k++) {
       const v = col[k];
       if (v === null || v === undefined || v === 0) continue;
@@ -488,18 +537,18 @@ function drawOverlays(
       if (y >= top && y <= top + height) {
         ctx.save();
         ctx.strokeStyle = p.thresh;
-        ctx.lineWidth = 1;
-        ctx.setLineDash([2, 4]);
+        ctx.lineWidth = r;
+        ctx.setLineDash([2 * r, 4 * r]);
         ctx.beginPath();
         ctx.moveTo(left, y);
         ctx.lineTo(left + width, y);
         ctx.stroke();
         ctx.setLineDash([]);
         ctx.fillStyle = p.thresh;
-        ctx.font = "10px ui-monospace, Consolas, monospace";
+        ctx.font = numFont();
         ctx.textAlign = "left";
         ctx.textBaseline = "bottom";
-        ctx.fillText("FEED_THRESHOLD " + thr.toFixed(0), left + 4, y - 2);
+        ctx.fillText("FEED_THRESHOLD " + thr.toFixed(0), left + 4, y - 3);
         ctx.restore();
       }
     }
@@ -518,7 +567,7 @@ function drawOverlays(
   const cx = u.valToPos(cursor.cursorT, "x", true);
   if (cx >= left && cx <= left + width) {
     ctx.strokeStyle = p.focusRing;
-    ctx.lineWidth = 1;
+    ctx.lineWidth = r;
     ctx.beginPath();
     ctx.moveTo(cx, top);
     ctx.lineTo(cx, top + height);
@@ -528,7 +577,7 @@ function drawOverlays(
   // ⑤ 誠實標示：這張圖被抽點過，不可拿去目測極值
   if (decimated) {
     ctx.fillStyle = p.textDim;
-    ctx.font = "10px ui-monospace, Consolas, monospace";
+    ctx.font = uiFont();
     ctx.textAlign = "right";
     ctx.textBaseline = "top";
     ctx.fillText("已抽點（min/max）", left + width - 4, top + 2);

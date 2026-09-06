@@ -268,6 +268,9 @@ function GraphDemo() {
               series={series}
               height={300}
               paused={paused}
+              // showTargets 的預設是 false（fail-closed）：TargetL/R 是 coachRisk 欄位。
+              // 這一頁只登記在 PIT_PAGES，MATCH 路由下不存在，所以這裡明示打開。
+              showTargets
               onGeom={setGeom}
               onDropKey={addKey}
             />

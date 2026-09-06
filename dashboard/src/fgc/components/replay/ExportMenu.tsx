@@ -13,6 +13,7 @@ import { cursor } from "../../lib/cursorStore";
 import { useCursor } from "../../lib/hooks";
 import { view } from "../graph/viewWindow";
 import type { LogEvent } from "../../lib/eventDetect";
+import { gateAllows } from "./coachGate";
 import type { Bookmark } from "./bookmarks";
 import {
   DELIVERY_LABEL,
@@ -33,6 +34,12 @@ interface Props {
   bookmarks: readonly Bookmark[];
   /** CSV 欄位與區間統計的對象（通常就是圖上那幾條 + 色帶那幾列）。 */
   keys: readonly string[];
+  /**
+   * M11 時間閘的狀態。**必傳**：CSV 與 Markdown 收的是已經 gated 的 keys 所以本來
+   * 就乾淨，但 JSONL 剪輯與 Constants 片段是自己掃全部欄位的，沒有這個旗標它們會
+   * 繞過整道閘（而且結果直接 render 進下面的預覽區）。
+   */
+  gateOpen: boolean;
 }
 
 type RangeId = "sel" | "view" | "all";
@@ -45,7 +52,7 @@ const KIND_LABEL: Record<Kind, string> = {
   java: "Constants 片段",
 };
 
-export function ExportMenu({ log, name, events, bookmarks, keys }: Props) {
+export function ExportMenu({ log, name, events, bookmarks, keys, gateOpen }: Props) {
   useCursor();
   const [open, setOpen] = useState(false);
   const [rangeId, setRangeId] = useState<RangeId>("sel");
@@ -69,6 +76,9 @@ export function ExportMenu({ log, name, events, bookmarks, keys }: Props) {
   const effId: RangeId = ranges[rangeId] ? rangeId : "all";
   const active: Range = ranges[effId]!;
 
+  const allowKey = gateOpen ? undefined : (k: string) => gateAllows(k, false);
+  const gatedCount = gateOpen ? 0 : log.keys().filter((k) => !gateAllows(k, false)).length;
+
   const run = async (kind: Kind) => {
     setBusy(true);
     try {
@@ -86,11 +96,11 @@ export function ExportMenu({ log, name, events, bookmarks, keys }: Props) {
         mime = "text/markdown";
         prefer = "clipboard";
       } else if (kind === "jsonl") {
-        text = toJsonlClip(log, active);
+        text = toJsonlClip(log, active, allowKey);
         file = suggestName(name, "clip", active, "jsonl");
         mime = "application/x-ndjson";
       } else {
-        text = toConstantsSnippet(log, cursor.cursorT);
+        text = toConstantsSnippet(log, cursor.cursorT, allowKey);
         file = suggestName(name, "constants", active, "java");
         mime = "text/x-java-source";
         prefer = "clipboard";
@@ -143,6 +153,14 @@ export function ExportMenu({ log, name, events, bookmarks, keys }: Props) {
           <div className="ex-note">
             CSV / JSONL 走「Tauri 存檔 → 瀏覽器下載 → 剪貼簿」；Markdown / Constants 片段把剪貼簿排第一
             （下一步是貼進聊天室或 OnBotJava，不是躺在下載資料夾）。CSV 欄位取圖上與色帶上的 {keys.length} 條。
+            {!gateOpen && (
+              <>
+                <br />
+                已濾掉 {gatedCount} 個 coachRisk 欄位（M11 時間閘）——與畫面上那條橘線同一個理由：
+                <code>/FGC/Vision/*</code>、<code>/FGC/Aim/*</code>、TargetL / TargetR 與 AIM_* 參數
+                在「這可能是正在進行的比賽」時一個都不出去。
+              </>
+            )}
           </div>
 
           {result && (

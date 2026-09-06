@@ -23,9 +23,11 @@
   background: var(--border-c);
   margin: 0 calc(var(--u) * 0.5);
 }
+/* 工具列右端的三段讀值：標籤／值成對，沒有中點串 */
 .sp-cursor {
-  font-family: var(--mono);
-  font-variant-numeric: tabular-nums;
+  display: inline-flex;
+  align-items: baseline;
+  gap: calc(var(--u) * 2);
   color: var(--text-dim);
 }
 
@@ -103,8 +105,18 @@
 .dip-table td {
   cursor: pointer;
 }
+/* 五欄的對齊只有兩種：數字右對齊（含單位後綴），判定欄靠右但走形狀語彙。
+   `627ms` 這種數字與單位混排會讓這一欄的位數對不上上一欄。 */
 .dip-table td.flag {
   text-align: right;
+  white-space: nowrap;
+}
+.dip-table td.flag .no {
+  color: var(--stale);
+}
+.dip-table th:first-child,
+.dip-table td:first-child {
+  width: 3ch;
 }
 .dip-table tr.broke td {
   color: var(--err);
@@ -120,11 +132,24 @@
   gap: 4px;
 }
 .dip-sum {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 3px calc(var(--u) * 1.5);
   font-size: var(--fs-xs);
   color: var(--text-dim);
-  font-variant-numeric: tabular-nums;
+}
+.dip-sum .k {
+  color: var(--text-dim);
+  margin-right: 3px;
+}
+.dip-sum .fgc-num {
+  color: var(--text);
 }
 .dip-warn {
+  color: var(--warn);
+}
+.dip-warn .fgc-num {
   color: var(--warn);
 }
 .dip-hist {
@@ -133,11 +158,13 @@
   align-items: flex-end;
   gap: 1px;
 }
+/* 35% 的底 + 同色頂蓋，與 loop 直方圖、離散色帶同一條規則：
+   資料的色塊永遠不滿版飽和。--c 由元件依偵測來源（SL 青 / SR 琥珀）帶進來。 */
 .dip-hist .bar {
   flex: 1 1 0;
   min-height: 1px;
-  background: var(--series-1);
-  opacity: 0.85;
+  background: color-mix(in srgb, var(--c, var(--series-1)) 35%, transparent);
+  box-shadow: inset 0 1px 0 var(--c, var(--series-1));
 }
 
 /* ── #9 BalanceBar ───────────────────────────────────────────────── */
@@ -147,13 +174,18 @@
   flex-direction: column;
   gap: calc(var(--u) * 0.6);
 }
+/* 這張卡的主讀數（§2.2 讀數音階的 --fs-xl）。窄欄，所以值靠左貼齊標題左緣，
+   不置中也不右對齊——全案唯一置中的東西是駕駛頁的巨燈。 */
 .bal-now {
-  font-family: var(--mono);
-  font-variant-numeric: tabular-nums;
-  font-size: var(--fs-lg);
-  line-height: 1;
-  text-align: center;
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  font-size: var(--fs-xl);
+  line-height: var(--lh-num);
   color: var(--ok);
+}
+.bal-now .fgc-glyph {
+  font-size: var(--fs-sm);
 }
 .bal-now.warn {
   color: var(--warn);
@@ -161,17 +193,12 @@
 .bal-now.err {
   color: var(--err);
 }
-.bal-now .unit {
-  font-size: var(--fs-xs);
-  color: var(--text-dim);
-  margin-left: 4px;
-}
+/* 軌：凹槽色，無框。框在這一案裡只表示「可寫」，而這條軌是唯讀的。 */
 .bal-bar {
   position: relative;
-  height: 14px;
+  height: 12px;
   background: var(--surface-1);
-  border: 1px solid var(--border-c);
-  border-radius: 3px;
+  border-radius: var(--r-chip);
 }
 .bal-bar .mid {
   position: absolute;
@@ -183,11 +210,10 @@
 }
 .bal-bar .thr {
   position: absolute;
-  top: 1px;
-  bottom: 1px;
+  top: 0;
+  bottom: 0;
   width: 0;
   border-left: 1px dashed var(--warn);
-  opacity: 0.7;
 }
 .bal-bar .knob {
   position: absolute;
@@ -206,12 +232,34 @@
 .bal-bar .knob.err {
   background: var(--err);
 }
+/* 刻度直接標在門檻虛線的正下方：畫面上的一根線不該靠卡片底部的說明句去解釋。 */
 .bal-scale {
-  display: flex;
-  justify-content: space-between;
+  position: relative;
+  height: calc(var(--fs-xs) + 2px);
   font-size: var(--fs-xs);
   color: var(--stale);
-  font-variant-numeric: tabular-nums;
+}
+.bal-scale .end {
+  position: absolute;
+  top: 0;
+}
+.bal-scale .end.l {
+  left: 0;
+}
+.bal-scale .end.r {
+  right: 0;
+}
+.bal-scale .zero {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.bal-scale .thr-lbl {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  color: var(--warn);
 }
 .bal-rms {
   display: flex;
@@ -225,9 +273,11 @@
   color: var(--text-dim);
 }
 .bal-rms .val {
-  font-family: var(--mono);
-  font-variant-numeric: tabular-nums;
   font-size: var(--fs-md);
+  color: var(--text);
+}
+.bal-rms .val.ok {
+  color: var(--text);
 }
 .bal-rms .val.warn {
   color: var(--warn);
@@ -237,9 +287,17 @@
 }
 .bal-rms .sub {
   margin-left: auto;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
   font-size: var(--fs-xs);
   color: var(--stale);
-  font-variant-numeric: tabular-nums;
+}
+.bal-rms .sub .k {
+  margin-left: calc(var(--u));
+}
+.bal-rms .sub .k:first-child {
+  margin-left: 0;
 }
 
 /* ── #23 LoopHistogram ───────────────────────────────────────────── */
@@ -256,11 +314,13 @@
   color: var(--text-dim);
   border-top: 1px solid var(--surface-3);
 }
+/* 第三層級用顏色與尺寸區分，不用字重：全案只有 400 與 700 兩檔。 */
 .lh-stat b {
-  font-family: var(--mono);
+  font-family: var(--font-num);
   font-variant-numeric: tabular-nums;
+  letter-spacing: var(--ls-num);
   color: var(--text);
-  font-weight: 600;
+  font-weight: var(--fw-normal);
 }
 .lh-stat b.warn {
   color: var(--warn);
@@ -283,7 +343,7 @@
   color: var(--ok);
 }
 .lh-snap td.build {
-  font-family: var(--mono);
+  font-family: var(--font-num);
   font-size: var(--fs-xs);
   color: var(--text-dim);
 }
@@ -298,13 +358,15 @@
   font-size: var(--fs-xs);
   border-bottom: 1px solid var(--surface-3);
 }
+/* 燈的字元走 .fgc-glyph（--font-ui + 固定 1.25em 容器）；標籤是中文比例字體。
+   等寬字體多半沒有 ■ ○ 這兩個符號，fallback 之後四顆燈就對不齊了。 */
 .cs-lamps .lamp {
-  color: var(--stale);
-  font-family: var(--mono);
+  color: var(--text-dim);
+  font-family: var(--font-ui);
 }
 .cs-lamps .lamp.on {
   color: var(--err);
-  font-weight: 600;
+  font-weight: var(--fw-bold);
 }
 .cs-lamps .lamp.none {
   opacity: 0.4;

@@ -9,6 +9,7 @@
 import { readFileSync, existsSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { LogStore } from "../src/fgc/lib/LogStore.ts";
+import { recFileUrl } from "../src/fgc/lib/profile.ts";
 import { parseJsonlText } from "../src/fgc/lib/jsonl.ts";
 import { percentiles, summarize } from "../src/fgc/lib/stats.ts";
 import { K, isTunableKey, TUNABLES, tuneKey } from "../src/fgc/lib/fgcKeys.ts";
@@ -185,6 +186,24 @@ console.log("\n[4] jsonl 解析（fake-hub 錄影檔）");
     ok(st.length > 3, "狀態機 run-length", `= ${st.length} 段`);
     console.log(`  記憶體 ${(log.bytes() / 1024 / 1024).toFixed(2)} MB · 樣本 ${log.samples.toLocaleString("en-US")}`);
   }
+}
+
+// ── recFileUrl：?name=live 在編譯期就沒有第二個呼叫端可以繞過 ───────────
+
+console.log("");
+console.log("profile：rec.jsonl 的收口");
+{
+  ok(
+    recFileUrl("1.2.3.4", "rec-20261007-093412.jsonl").includes("name=rec-20261007-093412.jsonl"),
+    "正常檔名組得出 URL",
+  );
+  let threw = false;
+  try {
+    recFileUrl("1.2.3.4", "live");
+  } catch {
+    threw = true;
+  }
+  ok(threw, "?name=live 一律 throw（§8 M01 措施 6：那條路徑會回整場遙測）");
 }
 
 console.log(`\n${failed === 0 ? "OK" : "FAILED"}：${checks - failed}/${checks} 通過\n`);

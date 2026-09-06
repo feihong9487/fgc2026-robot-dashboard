@@ -31,6 +31,11 @@ interface Props {
   allowInputs?: boolean;
 }
 
+/** 型別只進 title：一整欄沒有圖例的 # / ◧ / A 是三種語彙裡最沒有人讀的那一種。 */
+function typeLabel(kind: string | null): string {
+  return kind === "num" ? "數值" : kind === "bool" ? "布林" : kind === "str" ? "字串" : "型別未知";
+}
+
 /** NT 慣例：以 . 開頭的段落是隱藏項（.metadata、.type）。 */
 const isHidden = (key: string) => key.split("/").some((seg) => seg.startsWith("."));
 
@@ -191,7 +196,7 @@ export function SignalTree({
       </div>
 
       <div className="st-body">
-        {visible.length === 0 && <div className="st-empty">{allKeys.length === 0 ? "等待訊號中…" : "沒有符合條件的 key。"}</div>}
+        {visible.length === 0 && <div className="st-empty">{allKeys.length === 0 ? "還沒收到任何 key。確認頂欄的連線點是綠的。" : "沒有 key 符合這個條件。清掉搜尋字串看全部。"}</div>}
         {visible.map((n) => {
           const open = !collapsed.has(n.group);
           return (
@@ -231,10 +236,11 @@ export function SignalTree({
                         <span className="st-pin slot" style={color ? { background: color } : undefined} />
                       )}
                       <span className="st-name">{shortName(key)}</span>
-                      {/* 唯讀渲染：純文字，無邊框無背景。不是 disabled input。 */}
-                      <span className="st-val fgc-num">{fmtValue(log, key)}</span>
-                      <span className={"st-kind " + (kind ?? "none")}>
-                        {kind === "num" ? "#" : kind === "bool" ? "◧" : kind === "str" ? "A" : "?"}
+                      {/* 唯讀渲染：純文字，無邊框無背景。不是 disabled input。
+                          型別欄（# / ◧ / A）已刪：`true`、`1965`、`PIT` 這三個值
+                          自己就說了型別，而那一欄從來沒有圖例，只能用猜的。 */}
+                      <span className={"st-val fgc-num " + (kind ?? "none")} title={typeLabel(kind)}>
+                        {fmtValue(log, key)}
                       </span>
                       {isTunableKey(key) && (
                         <span className="st-tune" title="21 項白名單之一（可寫回的只有 /FGC/Tune/*）">

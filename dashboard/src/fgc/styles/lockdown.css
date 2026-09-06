@@ -104,6 +104,18 @@
   font-family: var(--mono);
   font-variant-numeric: tabular-nums;
   color: var(--text);
+  max-width: 22ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Last Notify 的分級。lockdown 是灰階主題，這裡是整頁唯一允許帶色的讀數——
+   它講的是「機器人剛剛喊了什麼」，而 ERROR 與 INFO 不該長得一樣。 */
+.rec-line .v.lv-warn {
+  color: var(--warn);
+}
+.rec-line .v.lv-err {
+  color: var(--err);
 }
 
 .lockdown-list {

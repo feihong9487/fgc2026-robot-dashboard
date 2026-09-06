@@ -16,7 +16,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { client } from "../../lib/RobotClient";
 import { cursor } from "../lib/cursorStore";
 import { K, shortName } from "../lib/fgcKeys";
-import { detect, nextChange, nextEvent, runInterval, type LogEvent } from "../lib/eventDetect";
+import { detect, nextChange, nextEvent, runInterval, type EventKind, type LogEvent } from "../lib/eventDetect";
 import { useCursor, useLogVersion, usePalette, useTick } from "../lib/hooks";
 import { percentiles } from "../lib/stats";
 import * as persist from "../lib/persist";
@@ -44,6 +44,38 @@ const DEFAULT_LEFT = [K.sl, K.sr, K.way];
 /** 取樣率 < 10 Hz 的量：畫散點、掛 chip，不畫平滑曲線（§3.3 #22）。 */
 const SPARSE = new Set<string>([K.currentL, K.currentR, K.currentWay, K.climbCurrent]);
 
+/** 時間軸的來源說明。robot / client 是機器的字面值，所以值本身走等寬。 */
+const T_SOURCE_TITLE: Record<string, string> = {
+  robot: "/FGC/Status/Match s —— 機器人自己的時鐘",
+  client: "本機時鐘（收到那一批的時刻）",
+  none: "這份 log 裡沒有任何批次",
+};
+
+/** 底部狀態列的一格：標籤在上（--fs-xs dim），值在下（等寬）。 */
+function Stat({
+  k,
+  v,
+  unit,
+  bad,
+  title,
+}: {
+  k: string;
+  v: string;
+  unit?: string;
+  bad?: boolean;
+  title?: string;
+}) {
+  return (
+    <div className="rp-stat" title={title || undefined}>
+      <span className="k">{k}</span>
+      <span className={bad ? "v fgc-num bad" : "v fgc-num"}>
+        {v}
+        {unit && <span className="fgc-unit">{unit}</span>}
+      </span>
+    </div>
+  );
+}
+
 export function ReplayPage() {
   const log = client.replayLog;
   useCursor();
@@ -67,6 +99,17 @@ export function ReplayPage() {
   const [marks, setMarks] = useState<Bookmark[]>([]);
   const [prompt, setPrompt] = useState<{ t: number; initial: string } | null>(null);
   const [note, setNote] = useState("");
+  // 事件類別的篩選由這一頁持有：事件清單的 chip 與時間軸的刻痕吃的必須是同一份，
+  // 否則 chip 說「只看退球」而軌上還畫著全部 582 筆，兩個地方在講不同的事。
+  const [offKinds, setOffKinds] = useState<ReadonlySet<EventKind>>(() => new Set());
+  const toggleKind = useCallback((k: EventKind) => {
+    setOffKinds((prev) => {
+      const next = new Set(prev);
+      if (next.has(k)) next.delete(k);
+      else next.add(k);
+      return next;
+    });
+  }, []);
   const seeded = useRef("");
   const plotBoxRef = useRef<HTMLDivElement>(null);
   const [graphH, setGraphH] = useState(300);
@@ -202,6 +245,11 @@ export function ReplayPage() {
     () => events.map((e) => ({ t: e.t, level: e.level, label: e.label })),
     [events],
   );
+  /** 時間軸下半的刻痕只畫篩選中的類別；上半的密度直方圖永遠畫全集。 */
+  const timeSelected = useMemo<TimeEvent[]>(
+    () => (offKinds.size === 0 ? timeEvents : events.filter((e) => !offKinds.has(e.kind)).map((e) => ({ t: e.t, level: e.level, label: e.label }))),
+    [events, timeEvents, offKinds],
+  );
   const timeMarks = useMemo<TimeMark[]>(() => marks.map((b) => ({ t: b.t, label: b.label })), [marks]);
 
   // ── seek：點事件時若跳出可見視窗，把視窗搬過去（而不是把游標藏起來）──
@@ -279,11 +327,20 @@ export function ReplayPage() {
   }
 
   const [t0, t1] = log.tRange;
-  const iv = log.batchIntervals();
-  const [p50, p95] = iv.length > 0 ? percentiles(iv, [0.5, 0.95]) : [NaN, NaN];
-  const gaps = log.gaps(1.0);
-  const mb = log.bytes() / (1024 * 1024);
-  const treeLog = gateOpen ? log : projectLog(log, false);
+  // 這一整組都是 O(batchN) 的掃描，而這一頁掛了 useCursor()：TimeBar 的播放迴圈
+  // 用 rAF 每幀 setCursor，所以不 memo 的話它們每秒跑 60 次——7,770 批就是每幀
+  // 兩次 Float64Array(7769) 的配置加一次 7,769 元素的排序，約每秒 7 MB 垃圾與
+  // 600 萬次比較，而回放檔載入後就永遠不變。卡頓正好發生在使用者最需要看清楚
+  // 細節的時候（播放中）。
+  const stats = useMemo(() => {
+    const iv = log.batchIntervals();
+    const [a, b] = iv.length > 0 ? percentiles(iv, [0.5, 0.95]) : [NaN, NaN];
+    return { p50: a, p95: b, gaps: log.gaps(1.0), mb: log.bytes() / (1024 * 1024) };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [log, log.getVersion()]);
+  const { p50, p95, gaps, mb } = stats;
+  // 投影一份 log 是 O(key 數) 的配置，同樣不該每幀做一次
+  const treeLog = useMemo(() => (gateOpen ? log : projectLog(log, false)), [log, gateOpen]);
   const hiddenByGate = left.length + right.length + bandKeys.length - (visLeft.length + visRight.length + visBand.length);
 
   return (
@@ -294,14 +351,14 @@ export function ReplayPage() {
           同一個數字出現在畫面上兩次，讀的人就得先確認它們一不一樣。 */}
       <div className="rp-top">
         <span className="rp-ab" title="A/B 疊比（LogStore 已經可實例化，UI 不在第三階段範圍）">
-          載入 B：未實作
+          A/B 疊比尚未實作
         </span>
         {note && <span className="rp-note">{note}</span>}
         <span className="spacer" />
-        <button className="tb-btn" title="Ctrl+B" onClick={() => setPrompt({ t: cursor.cursorT, initial: "" })}>
-          🔖 書籤
+        <button className="tb-btn" title="在游標位置打一顆書籤（Ctrl+B）" onClick={() => setPrompt({ t: cursor.cursorT, initial: "" })}>
+          打書籤
         </button>
-        <ExportMenu log={log} name={name} events={events} bookmarks={marks} keys={inspectKeys} />
+        <ExportMenu log={log} name={name} events={events} bookmarks={marks} keys={inspectKeys} gateOpen={gateOpen} />
         <button
           className="tb-btn"
           title="回到即時（會重新建立 ws）"
@@ -334,6 +391,7 @@ export function ReplayPage() {
       <TimeBar
         log={log}
         events={timeEvents}
+        selected={timeSelected}
         bookmarks={timeMarks}
         padLeft={padLeft}
         padRight={geom.padRight}
@@ -415,10 +473,17 @@ export function ReplayPage() {
           <PanelShell title="游標讀值" note="Ctrl+C 複製成 Markdown" flush className="rp-insp">
             <Inspector log={log} keys={inspectKeys} onRemoveKey={removeKey} />
           </PanelShell>
-          <PanelShell title={"事件（" + events.length + "）"} note="Ctrl+F 篩選　點一列跳過去" flush className="fill">
+          <PanelShell
+            title={"事件（" + events.length + "）"}
+            note="點一列把游標跳過去。Ctrl+F 篩選、Ctrl+↓ / Ctrl+↑ 跳事件、Ctrl+B 打書籤。"
+            flush
+            className="fill"
+          >
             <EventList
               events={events}
               bookmarks={marks}
+              off={offKinds}
+              onToggleKind={toggleKind}
               onSeek={seek}
               onRemoveBookmark={(t) => setMarks(removeBookmark(fp, t))}
             />
@@ -426,38 +491,38 @@ export function ReplayPage() {
         </div>
       </div>
 
-      {/* ── 底部狀態列：誠實原則（§4.6）──────────────────────────── */}
+      {/* ── 底部狀態列：誠實原則（§4.6）────────────────────────────
+          原本是七段用「·」串起來的 meta 字串（`t=robot · 7,770 批 · 間隔 p50 62.0 ms · …`）。
+          中點串的問題不是醜，是**每一段都要先讀完標籤才知道那個數字是什麼**。
+          改成標籤在上、值在下的兩行對照表之後，眼睛掃的是下面那一排數字。 */}
       <div className="rp-status">
-        <span>
-          t=<b>{log.tSource}</b>
-          {log.tSource === "robot"
-            ? "（/FGC/Status/Match s）"
-            : log.tSource === "client"
-              ? "（本機時鐘，只有 ±50 ms 精度，不要拿去比較 FEED_THRESHOLD 1200 與 1300）"
-              : "（沒有任何批次）"}
-        </span>
-        <span className="fgc-num">{log.batchCount.toLocaleString("en-US")} 批</span>
-        <span className="fgc-num">
-          間隔 p50 {Number.isFinite(p50) ? (p50 * 1000).toFixed(1) : "—"} ms　p95{" "}
-          {Number.isFinite(p95) ? (p95 * 1000).toFixed(1) : "—"} ms
-        </span>
-        <span className={gaps.length ? "bad" : ""}>
-          缺口 {gaps.length} 處
-          {gaps.length > 0 &&
-            "（" +
-              gaps
-                .slice(0, 3)
-                .map((g) => g.t0.toFixed(1) + "–" + g.t1.toFixed(1) + "s")
-                .join("、") +
-              (gaps.length > 3 ? " …" : "") +
-              "）"}
-        </span>
-        <span className="fgc-num">{log.samples.toLocaleString("en-US")} 樣本 · {mb.toFixed(1)} MB</span>
-        <span className="fgc-num">{log.keys().length} 欄位</span>
-        {log.resets > 0 && <span className="bad">時戳倒退 {log.resets} 次（換場/重開 OpMode）</span>}
+        <Stat k="時間軸" v={log.tSource} title={T_SOURCE_TITLE[log.tSource] ?? ""} />
+        <Stat k="批" v={log.batchCount.toLocaleString("en-US")} />
+        <Stat k="間隔 p50" v={Number.isFinite(p50) ? (p50 * 1000).toFixed(1) : "—"} unit="ms" />
+        <Stat k="間隔 p95" v={Number.isFinite(p95) ? (p95 * 1000).toFixed(1) : "—"} unit="ms" />
+        <Stat
+          k="缺口"
+          v={String(gaps.length)}
+          unit="處"
+          bad={gaps.length > 0}
+          title={gaps
+            .slice(0, 6)
+            .map((g) => g.t0.toFixed(1) + "–" + g.t1.toFixed(1) + " s")
+            .join("、")}
+        />
+        <Stat k="樣本" v={log.samples.toLocaleString("en-US")} />
+        <Stat k="大小" v={mb.toFixed(1)} unit="MB" />
+        <Stat k="欄位" v={String(log.keys().length)} />
+        <Stat k="書籤" v={String(marks.length)} />
+        <Stat k="指紋" v={fp} title="檔名 + 長度 + 首末時戳；書籤以它為 key 存在這台筆電" />
+        {log.resets > 0 && (
+          <Stat k="時戳倒退" v={String(log.resets)} unit="次" bad title="換場或重開 OpMode" />
+        )}
         <span className="spacer" />
-        <span>書籤 {marks.length} · 指紋 {fp}</span>
-        <span>不建立 ws · 物理上不可寫回</span>
+        <div className="rp-status-note">
+          {log.tSource === "client" && <p className="warn">本機時鐘只有 ±50 ms 精度，不要拿去比較 FEED_THRESHOLD 1200 與 1300</p>}
+          <p>不建立 ws，物理上不可寫回</p>
+        </div>
       </div>
 
       {prompt && (

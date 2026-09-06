@@ -1,4 +1,7 @@
-// #37 關閉路徑三格（燈牆底部一列）—— 只負責畫；判定在 shutdown.ts 的純函式。
+// #37 關閉路徑三格（清單底部一列）—— 只負責畫；判定在 shutdown.ts 的純函式。
+//
+// 沒有 (1)(2)(3) 編號：這三格是三種**並列**的關閉方式，不是三個步驟。
+// 編號只在內容真的是序列時才帶資訊，否則它只是在暗示一個不存在的順序。
 
 import { buildShutdown, type ShutdownCtx } from "./shutdown";
 import { GLYPHS, GLYPH_IDLE } from "../../lib/tone";
@@ -22,7 +25,6 @@ export function ShutdownStrip({ ctx }: { ctx: ShutdownCtx }) {
         <div key={c.id} className={`hw-sd-cell${c.active ? " on" : ""}${c.active === null ? " unknown" : ""}`}>
           <div className="row1">
             <span className="box">{c.active ? GLYPH_ACTIVE : c.active === null ? GLYPH_UNKNOWN : GLYPH_IDLE}</span>
-            <span className="n">{c.n}</span>
             <span className="name">{c.name}</span>
           </div>
           <div className="basis">{c.basis}</div>

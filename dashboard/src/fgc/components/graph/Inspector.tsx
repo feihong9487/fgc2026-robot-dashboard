@@ -13,7 +13,7 @@ import { copyOk } from "../../lib/clipboard";
 import { LogStore, liveLog } from "../../lib/LogStore";
 import { cursor } from "../../lib/cursorStore";
 import { shortName, groupOf } from "../../lib/fgcKeys";
-import { useCursor, useLogVersion } from "../../lib/hooks";
+import { useCursor, useLogVersion, useFlash } from "../../lib/hooks";
 import { fmtT } from "./timeAxis";
 import { view } from "./viewWindow";
 
@@ -51,7 +51,7 @@ export function Inspector({ log = liveLog, keys, onRemoveKey, staleSec = 2 }: Pr
   const rootRef = useRef<HTMLDivElement>(null);
   const hoverCells = useRef(new Map<string, HTMLSpanElement>());
   const hoverHead = useRef<HTMLSpanElement>(null);
-  const [copied, setCopied] = useState("");
+  const [copied, flashCopied] = useFlash(1600);
 
   const t = cursor.cursorT;
 
@@ -114,8 +114,7 @@ export function Inspector({ log = liveLog, keys, onRemoveKey, staleSec = 2 }: Pr
 
   const copy = () => {
     void copyText(markdown()).then((ok) => {
-      setCopied(ok ? "已複製成 Markdown" : "複製失敗，請手動選取");
-      window.setTimeout(() => setCopied(""), 1600);
+      flashCopied(ok ? "已複製成 Markdown" : "複製失敗，請手動選取");
     });
   };
 
@@ -169,8 +168,10 @@ export function Inspector({ log = liveLog, keys, onRemoveKey, staleSec = 2 }: Pr
               >
                 —
               </span>
+              {/* × 只在滑到那一列時出現：一欄常駐的灰色 × 是第三套圖示語彙，
+                  而移除是每小時零次的動作。欄寬照樣留著，所以滑過去不會位移。 */}
               {onRemoveKey && (
-                <button className="insp-x" title="移除這一列" onClick={() => onRemoveKey(r.key)}>
+                <button className="insp-x" title={"移除 " + shortName(r.key)} onClick={() => onRemoveKey(r.key)}>
                   ×
                 </button>
               )}

@@ -22,13 +22,12 @@ import { PIT_PAGES, TAB_PAGES, pageByHotkey, findPage } from "./fgc/pages/regist
 import { client } from "./lib/RobotClient";
 import {
   DEFAULT_HOST,
-  PATHS,
-  httpUrl,
   initPorts,
   readUrlParams,
+  recFileUrl,
   type RouteMode,
 } from "./fgc/lib/profile";
-import { useAppMode, useLink } from "./fgc/lib/hooks";
+import { useAppMode, useLink, useReplayLog, useWindowWidth } from "./fgc/lib/hooks";
 import * as persist from "./fgc/lib/persist";
 import { initTheme, setTheme, getTheme, preferredTheme } from "./fgc/lib/theme";
 
@@ -42,17 +41,6 @@ function initialTab(): string {
   const fromUrl = URLP.tab && findPage(URLP.tab) ? URLP.tab : null;
   const saved = persist.getStr(persist.KEYS.tab, "");
   return fromUrl ?? (findPage(saved) ? saved : (PIT_PAGES[0]?.id ?? ""));
-}
-
-/** 視窗寬度（給「這一頁需要更寬的視窗」的分頁列標記用）。 */
-function useWindowWidth(): number {
-  const [w, setW] = useState(() => window.innerWidth);
-  useEffect(() => {
-    const on = () => setW(window.innerWidth);
-    window.addEventListener("resize", on);
-    return () => window.removeEventListener("resize", on);
-  }, []);
-  return w;
 }
 
 export default function App() {
@@ -77,7 +65,16 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (URLP.replay) return; // ?mode=replay 不建立 ws（回放物理上不可寫）
+    // ?mode=replay 不建立 ws（回放物理上不可寫），但仍要輪詢 /dash/health：
+    // 頂欄的 8080 燈 / 錄影行數 / Thr 是「這台筆電到底有沒有在跟機器人講話」的答案，
+    // 而 health 的 mode=MATCH 會把整頁降級成 Lockdown——網址參數蓋不過模式。
+    if (URLP.replay) {
+      const t0 = window.setTimeout(() => client.watchHealthOnly(host), 150);
+      return () => {
+        window.clearTimeout(t0);
+        client.disconnect();
+      };
+    }
     const t = window.setTimeout(() => client.connect(host), 150);
     return () => {
       window.clearTimeout(t);
@@ -90,18 +87,15 @@ export default function App() {
   const onPortsChanged = useCallback(() => setReconnectN((n) => n + 1), []);
 
   // ?mode=replay&file=<rec.json 裡的檔名>：streaming 載入成一個獨立的 LogStore。
-  // name=live 一律拒絕——那條路徑會回這一場的全部遙測（§8 M01 措施 6）。
+  // name=live 由 recFileUrl 自己 throw——那條路徑會回這一場的全部遙測（§8 M01 措施 6），
+  // 而這條自律以前是兩份要靠人記得複製的 if，現在是唯一的收口。
   const [replayErr, setReplayErr] = useState("");
   useEffect(() => {
     if (!URLP.replay || !URLP.file) return;
-    if (URLP.file === "live") {
-      setReplayErr("拒絕載入 name=live：那是即時遙測旁路，不是錄影檔");
-      return;
-    }
     let alive = true;
     void (async () => {
       try {
-        const res = await fetch(httpUrl(host, PATHS.recFile, { name: URLP.file! }), { cache: "no-store" });
+        const res = await fetch(recFileUrl(host, URLP.file!), { cache: "no-store" });
         if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
         const okLoad = await client.startReplay(res.body, URLP.file!);
         if (alive && !okLoad) setReplayErr("檔案裡沒有可用的批次");
@@ -115,7 +109,9 @@ export default function App() {
   }, [host]);
 
   // 決定路由。UNKNOWN 併進 MATCH。
-  const replay = client.replayLog !== null;
+  // replay 走顯式訂閱（useReplayLog），不再依賴 client.replayLog 這個裸欄位剛好
+  // 因為 startReplay 尾端的 patchLink 而被順便更新。
+  const replay = useReplayLog() !== null;
   const route: RouteMode = replay ? "REPLAY" : mode === "PIT" ? "PIT" : "MATCH";
 
   // lockdown 主題不由使用者選：比賽日的螢幕被人看到時，
@@ -157,6 +153,24 @@ export default function App() {
     return () => document.removeEventListener("keydown", onKey);
   }, [route, select]);
 
+  // 「已確認的 MATCH」排在所有東西前面。以前 ?mode=replay 的早退分支排在 MATCH
+  // 判斷之前，等於用一個網址參數就能跳過 Lockdown 路由——實測是安全的，但那是靠
+  // ConnectionBar 自己又檢查了一次 mode === "PIT" 的第二層防守，不是這個分支自己的
+  // 性質。UNKNOWN + ?mode=replay 仍走載入分支（那時我們刻意沒有 ws，判斷不出模式，
+  // 而 rec.jsonl 在 MATCH 一律 503，載也載不到）。
+  if (mode === "MATCH") {
+    return (
+      <div className="fgc-app">
+        <ConnectionBar host={host} setHost={setHost} />
+        <div className="fgc-body">
+          <ErrorBoundary where="比賽鎖定">
+            <LockdownPage host={host} />
+          </ErrorBoundary>
+        </div>
+      </div>
+    );
+  }
+
   if (route === "REPLAY") {
     return (
       <div className="fgc-app">
@@ -183,8 +197,9 @@ export default function App() {
   }
 
   if (route === "MATCH") {
-    // 分頁列與齒輪都不傳 = 整條不 render。
-    // 這裡沒有 tabs 這個變數可以被誤用，也沒有任何輸入元件的入口。
+    // 這裡剩下的只有 UNKNOWN（未知即鎖，不是未知即開放）。
+    // 分頁列與齒輪都不傳 = 整條不 render；這裡沒有 tabs 這個變數可以被誤用，
+    // 也沒有任何輸入元件的入口。
     return (
       <div className="fgc-app">
         <ConnectionBar host={host} setHost={setHost} />

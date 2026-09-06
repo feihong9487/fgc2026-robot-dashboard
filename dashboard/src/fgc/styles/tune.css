@@ -83,83 +83,196 @@
   display: flex;
   flex-direction: column;
 }
+/* 篩選框是可寫元件 → 凹槽底 + 方角（--r-chip）。它跟 21 個參數框同一套語彙，
+   差別只在寬度與置左的文字：這頁只有一種「可以打字」的長相。 */
 .tt-search {
   width: 110px;
-  background: var(--surface-1);
+  background: var(--surface-3);
   color: var(--text);
-  border: 1px solid var(--border-c);
-  border-radius: 3px;
-  padding: 1px 5px;
+  border: var(--bw) solid var(--border-c);
+  border-radius: var(--r-chip);
+  padding: 2px 6px;
   font: inherit;
   font-size: var(--fs-xs);
 }
-.tt-group {
-  border-bottom: 1px solid var(--border-c);
-}
-.tt-ghead {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--surface-1);
-  border: none;
-  border-bottom: 1px solid var(--surface-3);
-  color: var(--text-dim);
-  font: inherit;
-  font-size: var(--fs-xs);
-  padding: 3px calc(var(--u) * 1.2);
-  cursor: pointer;
-  text-align: left;
-}
-.tt-ghead .cnt {
-  margin-left: auto;
+.tt-search::placeholder {
   color: var(--stale);
+}
+
+/* ── 裝訂線 ───────────────────────────────────────────────────────
+   一本帳簿：左頁是你寫的，右頁是機器人讀回來的。這條 1px 的線取代原本
+   21 個逐列的 →。它畫在右頁第一格的左緣，而且**每一種列都畫**
+   （表頭、組標題、參數列、滑桿列、被拒原因列），所以整張表由上到下不斷。 */
+.tt-table .bind {
+  border-left: var(--bw) solid var(--border-c);
+}
+/* 四個固定欄 + 一個吃掉剩餘寬度的狀態欄。剩餘寬度全部堆在最右邊的外緣，
+   不是堆在名稱與輸入框之間——對帳要的是「送出的數字」與「回讀的數字」
+   隔著裝訂線緊鄰，中間隔 300px 的空白就等於沒有對帳。 */
+.tt-table col.c-in {
+  width: 140px;
+}
+.tt-table col.c-rb {
+  width: 80px;
+}
+.tt-table col.c-unit {
+  width: 34px;
+}
+.tt-table col.c-st {
+  width: auto;
+}
+.tt-table td.nm,
+.tt-table thead th:first-child {
+  width: 214px;
+}
+/* 表頭把兩頁各是什麼講完，卡片底部就不必再掛一句「左欄送出 · 右欄回讀」。
+   標籤是中文比例字體，key path 才是等寬——等寬給值，不給標籤。 */
+.tt-table thead th {
+  padding: calc(var(--u) * 0.6) calc(var(--u) * 1.2);
+}
+.tt-table thead th .path {
+  font-family: var(--font-num);
+  color: var(--stale);
+  margin-left: 4px;
 }
 .tt-table td {
   border-bottom: none;
   padding-top: 1px;
   padding-bottom: 1px;
 }
-.tt-row td.nm {
-  font-family: var(--mono);
+/* 組標題是表格的一列（不是 table 之間的按鈕），裝訂線才不會每組斷一次。
+   分組線畫在 td 上（不是 button 上），這樣它才會橫過裝訂線走完整張表——
+   一條走到一半就停的橫線看起來像壞掉，不像分組。 */
+.tt-ghead td {
+  padding: 0;
+  border-top: var(--bw) solid var(--border-c);
+}
+.tt-table tbody tr.tt-ghead:first-child td {
+  border-top: none; /* 緊接在表頭下面，不要疊出兩條線 */
+}
+.tt-ghead button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font: inherit;
   font-size: var(--fs-xs);
+  padding: calc(var(--u) * 0.8) calc(var(--u) * 1.2) calc(var(--u) * 0.4);
+  cursor: pointer;
+  text-align: left;
 }
-.tt-row td.nm .mark {
-  display: inline-block;
-  width: 8px;
-  color: var(--warn);
+.tt-ghead button:hover {
+  color: var(--text);
 }
-.tt-row td.in {
-  width: 96px;
-}
-.tt-row td.arrow {
+.tt-ghead .cnt {
+  margin-left: auto;
   color: var(--stale);
-  padding: 0 2px;
+  font-family: var(--font-num);
+}
+.tt-table tbody tr.tt-ghead:hover,
+.tt-table tbody tr.tt-slider:hover,
+.tt-table tbody tr.tt-why:hover {
+  background: none;
+}
+.tt-row td.nm {
+  font-family: var(--font-num);
+  font-size: var(--fs-xs);
+  letter-spacing: var(--ls-num);
 }
 .tt-row td.rb {
-  font-family: var(--mono);
+  font-family: var(--font-num);
   font-variant-numeric: tabular-nums;
+  letter-spacing: var(--ls-num);
   text-align: right;
-  width: 74px;
 }
 .tt-row td.unit {
   color: var(--text-dim);
   font-size: var(--fs-xs);
-  width: 30px;
+  padding-left: calc(var(--u) * 0.6);
 }
-.tt-row td.st {
+/* 布林與其他 20 個欄位同源：同樣的凹槽、同樣的框、同樣的等寬右對齊。
+   綠底黑字會讓一個值長得像「被選中的分頁」。 */
+.tt-bool {
+  width: 100%;
+  padding: 3px 6px;
+  text-align: right;
+  cursor: pointer;
+  background: var(--surface-3);
+  color: var(--text);
+  border: var(--bw) solid var(--border-c);
+  border-radius: var(--r-chip);
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--fs-sm);
+}
+.tt-bool:hover {
+  border-color: var(--border-hi);
+}
+
+/* ── 右頁尾巴的四態（§5.5）───────────────────────────────────────
+   編輯中 *（黃） · 送出中 旋轉點 · 回讀一致 ●（綠，1.2 s 淡出） ·
+   被拒 ■ · 被夾限 ▲。每一態都同時帶形狀與顏色，灰階列印仍然讀得出來。 */
+.tt-row td.tt-st {
   font-size: var(--fs-xs);
-  width: 74px;
   white-space: nowrap;
+  color: var(--text-dim);
 }
-.tt-row td.st .ok {
-  color: var(--ok);
+.tt-row td.tt-st .fgc-glyph {
+  font-size: var(--fs-xs);
+  margin-right: 2px;
 }
-.tt-row td.st .warn {
+.tt-row td.tt-st .mk {
+  font-family: var(--font-num);
   color: var(--warn);
 }
-.tt-row td.st .err {
+.tt-row td.tt-st .ok {
+  color: var(--ok);
+}
+.tt-row td.tt-st .warn {
+  color: var(--warn);
+}
+.tt-row td.tt-st .err {
   color: var(--err);
+}
+/* 回讀一致的 ● 在 1.2 s 內淡掉：它回答的是「剛剛那一下成功了嗎」，
+   不是一個要長駐的狀態。動態只回應使用者剛做的事，這是本頁唯一的動態。 */
+.tt-row td.tt-st .done {
+  color: var(--text-dim);
+  font-family: var(--font-num);
+  animation: tt-fade 1.2s linear forwards;
+}
+@keyframes tt-fade {
+  0%,
+  55% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+/* 送出未回讀：一個繞圈的點。它只在等待期間存在，等到就消失——
+   進度未知的時候，會動的東西比一句「處理中」誠實。 */
+.tt-row td.tt-st .spin {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-right: 4px;
+  vertical-align: -1px;
+  border: 1.5px solid transparent;
+  border-top-color: var(--warn);
+  border-radius: var(--r-lamp);
+  animation: tt-spin 0.8s linear infinite;
+}
+.tt-row td.tt-st .spin.bad {
+  border-top-color: var(--err);
+}
+@keyframes tt-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* 四態的列底色。回讀不符（被夾限）整列 10% 底色——那是「你以為改成功了」的那一種失敗 */
@@ -177,18 +290,29 @@
 .tt-row.ok td {
   background: color-mix(in srgb, var(--ok) 10%, transparent);
 }
+/* 被拒整列還要一條左緣直條：紅色在暗底上先天明度低，靠面積與位置補償。 */
+.tt-row.rejected td.nm,
+.tt-row.late td.nm {
+  box-shadow: inset 2px 0 0 var(--err);
+}
 
+/* 滑桿只佔左頁（colspan 2），右頁那一半是空的 —— 裝訂線照樣穿過去。
+   而且靠右貼齊輸入框：它是「值底下的一條刻度」，不是橫貫整列的軌。 */
 .tt-slider td {
-  padding-bottom: 3px;
+  padding: 0 calc(var(--u) * 1.5) 3px 0;
+  white-space: nowrap;
+  text-align: right;
 }
 /* §5.6 滑桿降級。原本 21 條全寬亮藍實心軌是整頁最強的視覺，
    但調參是打數字，滑桿是這頁最不需要精確的輸入方式。
-   這裡把它降成「數字底下的一條刻度」：2px 軌、無握把，
+   這裡把它降成「數字底下的一條刻度」：2px 軌、閒置時**沒有握把**，
    已填的部分用 --border-hi（不是橘也不是藍），握把只在 hover / focus 才出現。
    不能只靠 accent-color：Chromium 在 accent 是暗色時會把未填的那半段
-   換成白色作對比，結果是一條比原本更醮的白條。 */
+   換成白色作對比，結果是一條比原本更醒目的白條。
+   兩段軌用 --fill（TuneTable 算好的百分比）在同一點硬邊切換，
+   是一條刻度不是漸層裝飾。 */
 .tt-slider input[type="range"] {
-  width: calc(100% - 96px);
+  width: 118px;
   vertical-align: middle;
   -webkit-appearance: none;
   appearance: none;
@@ -199,7 +323,11 @@
 .tt-slider input[type="range"]::-webkit-slider-runnable-track {
   height: 2px;
   border-radius: 0;
-  background: var(--band-off);
+  background: linear-gradient(
+    to right,
+    var(--border-hi) 0 var(--fill, 0%),
+    var(--band-off) var(--fill, 0%) 100%
+  );
 }
 .tt-slider input[type="range"]::-moz-range-track {
   height: 2px;
@@ -209,6 +337,8 @@
   height: 2px;
   background: var(--border-hi);
 }
+/* 閒置無握把：軌本身就說完了「值在範圍裡的哪個位置」。
+   握把是 hover / focus 才需要的抓取點，不是常駐的裝飾。 */
 .tt-slider input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
@@ -217,16 +347,16 @@
   margin-top: -4px;
   border: none;
   border-radius: var(--r-lamp);
-  background: var(--border-hi);
+  background: transparent;
 }
 .tt-slider input[type="range"]::-moz-range-thumb {
   width: 10px;
   height: 10px;
   border: none;
   border-radius: var(--r-lamp);
-  background: var(--border-hi);
+  background: transparent;
 }
-/* 握把轉橘：正在拖它的時候它確實連著機器人。 */
+/* 握把是橘的：正在拖它的時候它確實連著機器人。 */
 .tt-slider input[type="range"]:hover::-webkit-slider-thumb,
 .tt-slider input[type="range"]:focus-visible::-webkit-slider-thumb {
   background: var(--focus-ring);
@@ -239,26 +369,27 @@
 .tt-slider .hi {
   font-size: var(--fs-xs);
   color: var(--stale);
+  font-family: var(--font-num);
   font-variant-numeric: tabular-nums;
   display: inline-block;
-  width: 44px;
+  min-width: 30px;
+}
+.tt-slider .lo {
+  text-align: right;
+  margin-right: 4px;
 }
 .tt-slider .hi {
-  text-align: right;
+  text-align: left;
+  margin-left: 4px;
   cursor: help;
 }
-.tt-why td {
+/* 被拒的原因印在右頁：那句話是機器人說的。它是一句中文，所以不用等寬。 */
+.tt-why td.why {
   color: var(--err);
   font-size: var(--fs-xs);
-  font-family: var(--mono);
-  padding-bottom: 4px;
+  line-height: var(--lh-prose);
+  padding: 0 calc(var(--u) * 1.2) calc(var(--u) * 0.8);
   white-space: normal;
-}
-.tt-foot {
-  padding: calc(var(--u)) calc(var(--u) * 1.2);
-  font-size: var(--fs-xs);
-  color: var(--stale);
-  line-height: 1.5;
 }
 
 /* ── #25 SetLedger ───────────────────────────────────────────────── */
@@ -280,15 +411,17 @@
   vertical-align: top;
 }
 .sl-table td.tm {
-  font-family: var(--mono);
+  font-family: var(--font-num);
   color: var(--text-dim);
 }
 .sl-table td.nm {
-  font-family: var(--mono);
+  font-family: var(--font-num);
+  letter-spacing: var(--ls-num);
 }
 .sl-table td.vv {
-  font-family: var(--mono);
+  font-family: var(--font-num);
   font-variant-numeric: tabular-nums;
+  letter-spacing: var(--ls-num);
   text-align: right;
 }
 .sl-table td.vv .ar {
@@ -300,31 +433,41 @@
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
-.sl-table td.rs {
+.sl-table td.sl-rs {
   text-align: right;
 }
-.sl-table tr.ok td.rs {
-  color: var(--ok);
+.sl-table td.sl-rs .fgc-glyph {
+  font-size: var(--fs-xs);
 }
-.sl-table tr.bad td.rs {
-  color: var(--err);
+/* 被拒那一列整列 err 10%：這一筆是「你以為改成功了」的那一種失敗。 */
+.sl-table tr.bad td {
+  background: color-mix(in srgb, var(--err) 10%, transparent);
 }
+/* 被拒的原因是一句中文（機器人說的），所以不等寬；30 全形字換行。 */
 .sl-table .why {
   color: var(--err);
   white-space: normal;
   text-align: left;
-  font-family: var(--mono);
+  max-width: var(--measure);
+  line-height: var(--lh-prose);
 }
+/* 頁尾是交叉驗證：標籤中文比例字體，值等寬。整行等寬會讓兩個中文標籤
+   看起來也是機器字串。 */
 .sl-foot {
   flex: 0 0 auto;
   display: flex;
   gap: calc(var(--u) * 1.5);
   padding: 3px calc(var(--u) * 1.2);
-  border-top: 1px solid var(--border-c);
+  border-top: var(--bw) solid var(--border-c);
   font-size: var(--fs-xs);
   color: var(--text-dim);
-  font-family: var(--mono);
   overflow: hidden;
+}
+.sl-foot b {
+  font-family: var(--font-num);
+  font-weight: var(--fw-normal);
+  color: var(--text);
+  margin-left: 4px;
 }
 .sl-foot .rej {
   margin-left: auto;
@@ -332,6 +475,9 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.sl-foot .rej b {
+  color: var(--text-dim);
 }
 
 /* ── #26 ParamDiffCard ───────────────────────────────────────────── */
@@ -355,30 +501,66 @@
   color: var(--text);
 }
 .pd-table td.nm {
-  font-family: var(--mono);
+  font-family: var(--font-num);
   font-size: var(--fs-xs);
+  letter-spacing: var(--ls-num);
+}
+/* 同一條裝訂線：左頁編譯值、右頁現在跑的值。 */
+.pd-table .bind {
+  border-left: var(--bw) solid var(--border-c);
+}
+.pd-table thead th {
+  padding: calc(var(--u) * 0.6) calc(var(--u) * 1.5);
 }
 .pd-table td.build {
   color: var(--text-dim);
 }
-.pd-table td.ar {
-  color: var(--stale);
-}
+/* 目前值用 --text 不用 --warn：「和編譯值不同」不是一個警戒狀態，
+   它是這張卡存在的理由。真正該用警戒色的是右邊那格的「尚未套用」。 */
 .pd-table td.cur {
-  color: var(--warn);
+  color: var(--text);
 }
 .pd-table td.unit,
-.pd-table td.st {
+.pd-table td.pd-st {
   font-size: var(--fs-xs);
   color: var(--text-dim);
 }
-.pd-table td.st {
+.pd-table td.pd-st {
+  color: var(--err);
+}
+.pd-table td.pd-st .fgc-glyph {
+  font-size: var(--fs-xs);
   color: var(--err);
 }
 .pd-btns {
   display: flex;
-  gap: 4px;
+  gap: calc(var(--u) * 0.8);
   flex-wrap: wrap;
+  align-items: center;
+}
+/* 全頁唯一的橘底：按下去會寫進機器人的 /sdcard，而且那是「保住今天一整天」的那顆。
+   旁邊兩顆（複製片段 / 讀回）是次要，無底只有框。 */
+.pd-primary {
+  min-height: calc(var(--u) * 4);
+  padding: 2px calc(var(--u) * 1.6);
+  border: none;
+  border-radius: var(--r-chip);
+  background: var(--danger);
+  color: var(--on-fire);
+  font-family: inherit;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  cursor: pointer;
+}
+.pd-primary:active {
+  background: var(--wildfire-deep);
+}
+.pd-primary:disabled {
+  background: none;
+  border: var(--bw) solid var(--border-c);
+  color: var(--stale);
+  font-weight: var(--fw-normal);
+  cursor: not-allowed;
 }
 .pd-foot {
   display: flex;
@@ -421,13 +603,13 @@
 }
 .rs-sel {
   max-width: 190px;
-  background: var(--surface-1);
+  background: var(--surface-3);
   color: var(--text);
-  border: 1px solid var(--border-c);
-  border-radius: 3px;
-  font: inherit;
+  border: var(--bw) solid var(--border-c);
+  border-radius: var(--r-chip);
+  font-family: var(--font-num);
   font-size: var(--fs-xs);
-  padding: 1px 3px;
+  padding: 2px 4px;
 }
 .rs-tabs {
   display: flex;
@@ -441,37 +623,47 @@
   font-size: var(--fs-xs);
   color: var(--text-dim);
 }
+/* 全案只有 400 / 700 兩檔字重（Noto Sans TC 與正黑的共同可用字重就這兩個）。
+   這裡原本的 600 在賽場電腦上會被合成成一個歪掉的假粗體。
+   五個數字的層級靠字體（等寬）、尺寸（17 vs 12）與顏色分，不靠字重。 */
 .rs-nums b {
-  font-family: var(--mono);
+  font-family: var(--font-num);
   font-variant-numeric: tabular-nums;
+  letter-spacing: var(--ls-num);
   font-size: var(--fs-md);
   color: var(--text);
-  font-weight: 600;
+  font-weight: var(--fw-normal);
   margin-left: 4px;
 }
-.rs-nums .sigma b {
-  color: var(--series-1);
+/* σ 是調參真正要看的那一個（射手一致性的物理量），所以只有它的標籤是亮的。
+   不用 --series-1 上色：那是 SL 的專屬色，拿來標一個純量會讓人以為它屬於 SL。 */
+.rs-nums .sigma {
+  color: var(--text);
 }
+/* 繪圖區用凹槽底、無框：軸線不畫，刻度標籤本身就界定了軸。 */
 .rs-hist {
   height: 46px;
   display: flex;
   align-items: flex-end;
   gap: 1px;
-  background: var(--surface-1);
-  border: 1px solid var(--border-c);
-  border-radius: 3px;
+  background: var(--surface-3);
+  border: none;
+  border-radius: var(--r-card);
   padding: 2px;
 }
 .rs-hist .bar {
   flex: 1 1 0;
   min-height: 1px;
-  background: var(--series-1);
+  /* 顏色由 RangeStats 依 key 綁定（§6.5），不寫死在這裡 */
   opacity: 0.85;
 }
 .rs-empty {
   color: var(--stale);
   font-size: var(--fs-xs);
+  line-height: var(--lh-prose);
+  max-width: var(--measure);
   margin: auto;
+  padding: 0 calc(var(--u) * 2);
 }
 .rs-foot {
   display: flex;
@@ -512,16 +704,29 @@
 .cam-off {
   text-align: center;
   padding: calc(var(--u) * 2);
+  max-width: var(--measure);
 }
 .cam-off .big {
   font-size: var(--fs-md);
+  line-height: var(--lh-ui);
   color: var(--text-dim);
 }
 .cam-off .hint {
-  margin-top: 6px;
+  margin-top: calc(var(--u) * 1.5);
   font-size: var(--fs-xs);
   color: var(--stale);
+}
+.cam-off .hint b,
+.cam-cost .sub b {
+  font-family: var(--font-num);
   font-variant-numeric: tabular-nums;
+  font-weight: var(--fw-normal);
+  color: var(--text-dim);
+  margin-left: 4px;
+}
+.cam-off .hint .k,
+.cam-cost .sub .k {
+  margin-left: calc(var(--u) * 1.5);
 }
 .cam-err {
   margin-top: 6px;
@@ -531,13 +736,17 @@
 .cam-cost {
   flex: 0 0 auto;
   display: flex;
-  gap: calc(var(--u) * 1.2);
+  gap: calc(var(--u) * 1.8);
   align-items: baseline;
   padding: 3px calc(var(--u) * 1.2);
-  border-top: 1px solid var(--border-c);
+  border-top: var(--bw) solid var(--border-c);
   font-size: var(--fs-xs);
+  font-family: var(--font-num);
   font-variant-numeric: tabular-nums;
   color: var(--text-dim);
+}
+.cam-cost .sub {
+  font-family: var(--font-ui);
 }
 .cam-cost .ok {
   color: var(--ok);
@@ -562,6 +771,20 @@
   /* 統計區摺疊成一行摘要：直方圖是「有沒有變好」的細節，數字才是結論 */
   .tp-stats .rs-hist {
     height: 30px;
+  }
+}
+@media (max-width: 1199px) {
+  /* §4.7 的 1024–1199 那一階：統計區真的收成一行摘要。
+     這一階以前漏了，所以 1366x768 的舊筆電（規格點名的那一台）在參數頁會同時擠著
+     21 列雙欄表格、差異卡、完整統計區與相機面板。直方圖與區間分頁是「怎麼變好的」
+     的細節，n / mean / sigma 三個數字才是結論。 */
+  .tp-stats .rs-hist,
+  .tp-stats .rs-tabs {
+    display: none;
+  }
+  .tp-stats .rs-nums {
+    flex-wrap: nowrap;
+    overflow-x: auto;
   }
 }
 @media (max-width: 1023px) {

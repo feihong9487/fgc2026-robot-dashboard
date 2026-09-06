@@ -171,3 +171,43 @@ export function fmtInt(v: number | null | undefined): string {
   if (v == null || !Number.isFinite(v)) return "—";
   return Math.round(v).toLocaleString("en-US");
 }
+
+
+// ── loop 尾端統計 ─────────────────────────────────────────────────────
+
+export interface LoopStats {
+  /** p50（ms）；NaN = 沒資料。本機估算，機器人端沒有發布 p50。 */
+  p50: number;
+  /** p95（ms）；NaN = 沒資料。 */
+  p95: number;
+  /** 整段最大值（ms）；NaN = 機器人沒發布（舊 Build）。 */
+  max: number;
+  /** true = p95/max 來自機器人端；false = 本機用 20 Hz 取樣估的。 */
+  fromRobot: boolean;
+}
+
+/**
+ * loop 的尾端統計。**優先用機器人算好的** /FGC/Status/Loop p95 與 Loop Max
+ * （FGC2026_TeleOp_Match.java:485-498，每一圈都進 ring，nearest-rank）。
+ *
+ * 為什麼不能自己算：DashPublisher.PERIOD_MS = 50 而 OpMode 迴圈約 12 ms，
+ * 所以每個推播週期裡發生 4 圈而只有最後一圈的值會被 put；DashHub.put 值相同還會
+ * 直接 return。前端手上的 Loop ms 是「1/4 取樣、且偏向有變動的那些圈」的一份樣本，
+ * 用它算出來的 p95 結構性地看不到尾端——一台 p50 12 ms、偶爾卡 60 ms 的機器人，
+ * 前端很可能整場都顯示綠燈，而燈牆拿這個假 p95 去比 25 ms 做 NO GO 判定。
+ * 那支檔案第 90 行的註解就是在說這件事：「單看 Loop ms 只會看到最後一圈」。
+ *
+ * 舊 Build 沒有這兩個 key 時才退回本機估算，並要在 UI 上標明。
+ */
+export function loopStats(
+  hasP95: boolean,
+  robotP95: number,
+  robotMax: number,
+  sample: Float64Array,
+): LoopStats {
+  const [p50, ownP95] = sample.length > 0 ? percentiles(sample, [0.5, 0.95]) : [NaN, NaN];
+  if (hasP95 && Number.isFinite(robotP95)) {
+    return { p50, p95: robotP95, max: Number.isFinite(robotMax) ? robotMax : NaN, fromRobot: true };
+  }
+  return { p50, p95: ownP95, max: NaN, fromRobot: false };
+}

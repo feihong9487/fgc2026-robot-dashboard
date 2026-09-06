@@ -2,17 +2,17 @@
 //
 //   ① 總覽波形（16 px）—— 整場縮圖，**永遠全長，不隨縮放改變**。這是「我在哪裡」的地圖，
 //      跟著縮放一起變的話它就不再是地圖，而是第二張一模一樣的折線圖。
-//   ② 事件軌（20 px）—— 事件 + 書籤 + **資料缺口斜線紋**（絕不內插成一條直線）
+//   ② 事件軌（20 px）—— 上半是**事件密度直方圖**、下半是**篩選中類別的刻痕**，
+//      外加書籤與 **資料缺口斜線紋**（絕不內插成一條直線）
 //   ③ 視窗條（22 px）+ 播放控制 —— 現在看的是整場的哪一段
 //
 // live lock 的設計：往左捲脫離即時（燈熄），捲到最右或按 L 自動接回。
 // 這省掉一顆「回到即時」按鈕和一次分心——賽場上每一次「我剛剛按到什麼」都是成本。
 
 import { useEffect, useRef } from "react";
-import { GLYPHS } from "../../lib/tone";
 import { LogStore, liveLog } from "../../lib/LogStore";
 import { cursor } from "../../lib/cursorStore";
-import { palette } from "../../lib/theme";
+import { numFont, palette } from "../../lib/theme";
 import { K } from "../../lib/fgcKeys";
 import { useCursor } from "../../lib/hooks";
 import { view } from "./viewWindow";
@@ -44,6 +44,12 @@ export interface TimeMark {
 interface Props {
   log?: LogStore;
   events?: readonly TimeEvent[];
+  /**
+   * 目前**篩選中**的事件（事件軌下半的刻痕只畫這些）。
+   * 不給就等於沒有篩選，畫全部。密度直方圖永遠畫 `events` 全集——
+   * 「事件集中在哪」與「我篩的那一類在哪」是兩個不同的問題，各佔一半軌高。
+   */
+  selected?: readonly TimeEvent[];
   bookmarks?: readonly TimeMark[];
   /** 總覽層畫哪一條；預設 SL（射手三軌裡最能一眼認出「這一場長什麼樣」的那條）。 */
   overviewKey?: string;
@@ -56,7 +62,8 @@ interface Props {
 const H_OVER = 16;
 const H_EVENT = 20;
 const H_WINDOW = 22;
-const H_AXIS = 13;
+/** 12 px 刻度 + 4 px 呼吸。本設計沒有 11px，所以軸列高度跟著字級走。 */
+const H_AXIS = 16;
 const GAP = 2;
 const TOTAL_H = H_OVER + GAP + H_EVENT + GAP + H_WINDOW + H_AXIS;
 
@@ -68,12 +75,30 @@ const Y_AXIS = Y_WINDOW + H_WINDOW;
 const GAP_SEC = 1.0;
 const RATES = [0.25, 1, 2, 4];
 
-/** 形狀語彙唯一來源：lib/tone.ts（info 用 stale 的 ○）。 */
-const GLYPH: Record<string, string> = { ...GLYPHS, info: GLYPHS.stale };
+/** 事件軌上下兩半：密度直方圖 11 px、篩選刻痕 7 px、中間 2 px 縫。 */
+const H_HIST = 11;
+const H_TICK = 7;
+/** 直方圖的桶寬與刻痕的節距（節距 3、寬 2 → 永遠留得下 1 px 縫，不會糊成一條帶）。 */
+const BUCKET = 5;
+const TICK_PITCH = 3;
+const TICK_W = 2;
+
+/** 嚴重度：同一格只留最嚴重的那一顆，低階被高階蓋掉，不會反過來。 */
+const RANK: Record<string, number> = { info: 1, ok: 2, warn: 3, err: 4 };
+
+/**
+ * 列名（總覽 / 事件）是中文，必須走介面字體：等寬字沒有這些漢字，
+ * fallback 之後兩個列名的字寬對不齊，而它們是靠右對齊到同一條線上的。
+ * 數字與時間刻度才走 numFont()。
+ */
+function uiFont(fsXs: string, fontUi: string): string {
+  return (parseFloat(fsXs) || 12) + "px " + fontUi;
+}
 
 export function TimeBar({
   log = liveLog,
   events = [],
+  selected,
   bookmarks = [],
   overviewKey = K.sl,
   padLeft = 54,
@@ -82,8 +107,8 @@ export function TimeBar({
 }: Props) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const cvRef = useRef<HTMLCanvasElement>(null);
-  const evRef = useRef({ events, bookmarks });
-  evRef.current = { events, bookmarks };
+  const evRef = useRef({ events, selected: selected ?? events, bookmarks });
+  evRef.current = { events, selected: selected ?? events, bookmarks };
   const padRef = useRef({ padLeft, padRight });
   padRef.current = { padLeft, padRight };
 
@@ -118,6 +143,7 @@ export function TimeBar({
       if (!fit) return;
       const { ctx } = fit;
       const p = palette();
+      const fUi = uiFont(p.fsXs, p.fontUi);
       const g = geom();
       const { x0, w, t0: tMin, t1: tMax } = g;
       if (!hatch) hatch = hatchPattern(ctx, p.gap);
@@ -143,17 +169,22 @@ export function TimeBar({
         }
         ctx.lineTo(X(ws.xs[ws.n - 1]), Y_OVER + H_OVER);
         ctx.closePath();
-        ctx.fillStyle = withAlpha(p.series[0], 0.55);
+        // 總覽是「我在哪裡」的地圖，不是第七條資料線：單色 --border-hi，
+        // 用任何一個 series 色都會讓它被讀成一條訊號。
+        ctx.fillStyle = p.border;
         ctx.fill();
+        ctx.strokeStyle = withAlpha(p.textDim, 0.55);
+        ctx.lineWidth = 1;
+        ctx.stroke();
       } else {
         ctx.fillStyle = p.stale;
-        ctx.font = "10px ui-monospace, Consolas, monospace";
+        ctx.font = fUi;
         ctx.textAlign = "left";
         ctx.textBaseline = "middle";
         ctx.fillText("尚無資料", x0 + 4, Y_OVER + H_OVER / 2);
       }
       ctx.fillStyle = p.textDim;
-      ctx.font = "10px ui-monospace, Consolas, monospace";
+      ctx.font = fUi;
       ctx.textAlign = "right";
       ctx.textBaseline = "middle";
       ctx.fillText("總覽", x0 - 5, Y_OVER + H_OVER / 2, x0 - 8);
@@ -170,37 +201,70 @@ export function TimeBar({
       }
       ctx.restore();
 
-      ctx.font = "9px ui-monospace, Consolas, monospace";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      // 每一像素欄只留「最嚴重的那一顆」。
-      // 一場 484 秒的 PIT 練習有 580 個事件、畫在 1300 px 上就是每 2 px 一顆，
-      // 疊出來是一條實心彩帶——看起來像「整場都在出事」，其實什麼都沒說。
-      // 這樣壓縮之後，一根紅色的 ■ 才真的代表「這裡有一件 err」。
-      // 嚴重度排序 err > warn > ok > info：低階的被高階的蓋掉，不會反過來。
-      const RANK: Record<string, number> = { err: 3, warn: 2, ok: 1, info: 0 };
-      // 格寬 = 一個字元的寬度：畫得比這密，字本來就會互相蓋掉。
-      const CELL = 7;
-      const perCell = new Map<number, { ev: TimeEvent; x: number }>();
+      // 一場 484 秒的 PIT 練習有 580 個事件；畫在 1300 px 上是每 2 px 一顆 ▲■●○，
+      // 疊出來是一條糊掉的彩帶——看起來像「整場都在出事」，其實什麼都沒說。
+      // 改成回答使用者真正的那兩個問題，上下各佔一半軌高：
+      //   上半（密度直方圖）：事件集中在哪一段？
+      //   下半（篩選刻痕）  ：我現在篩的那一類，落在哪幾個時刻？
+      const yHist = Y_EVENT;
+      const yTick = Y_EVENT + H_HIST + 2;
+
+      const nb = Math.max(1, Math.ceil(w / BUCKET));
+      const counts = new Int32Array(nb);
+      let peak = 0;
       for (const ev of evRef.current.events) {
         if (ev.t < tMin || ev.t > tMax) continue;
-        const x = X(ev.t);
-        const cell = Math.round(x / CELL);
-        const cur = perCell.get(cell);
-        if (!cur || RANK[ev.level ?? "info"] > RANK[cur.ev.level ?? "info"]) perCell.set(cell, { ev, x });
+        const i = Math.min(nb - 1, Math.max(0, Math.floor((X(ev.t) - x0) / BUCKET)));
+        const c = ++counts[i];
+        if (c > peak) peak = c;
       }
-      for (const { ev, x } of perCell.values()) {
-        const c = ev.level === "err" ? p.err : ev.level === "warn" ? p.warn : ev.level === "ok" ? p.ok : p.textDim;
-        ctx.fillStyle = c;
-        ctx.fillText(GLYPH[ev.level ?? "info"], x, Y_EVENT + H_EVENT / 2);
+      if (peak > 0) {
+        // 一顆事件畫 30% 高、峰值畫滿。純比例（c / peak）在 peak = 1 的 log 上會
+        // 讓每一顆都畫成滿高，於是「密度圖」退化成一排等高的柵欄——那正是要修掉的東西。
+        ctx.fillStyle = p.textDim;
+        const span = peak > 1 ? peak - 1 : 1;
+        for (let i = 0; i < nb; i++) {
+          const c = counts[i];
+          if (c === 0) continue;
+          const h = Math.max(2, Math.round(H_HIST * (0.3 + 0.7 * ((c - 1) / span))));
+          ctx.fillRect(x0 + i * BUCKET, yHist + H_HIST - h, BUCKET - 1, h);
+        }
       }
+
+      // 刻痕：節距 3 px、寬 2 px，所以再密也永遠留得下 1 px 縫，不會糊成一條實心帶。
+      // 同一格只留最嚴重的那一顆——低階被高階蓋掉，不會反過來。
+      const nt = Math.max(1, Math.ceil(w / TICK_PITCH));
+      const ticks = new Uint8Array(nt);
+      for (const ev of evRef.current.selected) {
+        if (ev.t < tMin || ev.t > tMax) continue;
+        const i = Math.min(nt - 1, Math.max(0, Math.floor((X(ev.t) - x0) / TICK_PITCH)));
+        const r = RANK[ev.level ?? "info"] ?? 1;
+        if (r > ticks[i]) ticks[i] = r;
+      }
+      const TONE = [p.textDim, p.stale, p.ok, p.warn, p.err];
+      for (let i = 0; i < nt; i++) {
+        const r = ticks[i];
+        if (r === 0) continue;
+        ctx.fillStyle = TONE[r];
+        ctx.fillRect(x0 + i * TICK_PITCH, yTick, TICK_W, H_TICK);
+      }
+      // 書籤是使用者自己放的記號（＝這裡連著人的操作）→ 橘，且永遠畫在最上層。
+      // 用倒三角不用 ⚑：字形字體一換就變寬，畫布上的字元寬度不能靠字體運氣。
       for (const bm of evRef.current.bookmarks) {
         if (bm.t < tMin || bm.t > tMax) continue;
-        ctx.fillStyle = p.series[4];
-        ctx.fillText("⚑", X(bm.t), Y_EVENT + H_EVENT / 2);
+        const bx = Math.round(X(bm.t));
+        ctx.fillStyle = p.focusRing;
+        ctx.beginPath();
+        ctx.moveTo(bx - 3.5, Y_EVENT);
+        ctx.lineTo(bx + 3.5, Y_EVENT);
+        ctx.lineTo(bx, Y_EVENT + 6);
+        ctx.closePath();
+        ctx.fill();
       }
       ctx.fillStyle = p.textDim;
+      ctx.font = fUi;
       ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
       ctx.fillText("事件", x0 - 5, Y_EVENT + H_EVENT / 2, x0 - 8);
 
       // ── ③ 視窗條 ──
@@ -211,7 +275,9 @@ export function TimeBar({
       ctx.strokeRect(x0 + 0.5, Y_WINDOW + 0.5, w - 1, H_WINDOW - 1);
       const wx0 = Math.max(x0, X(view.t0));
       const wx1 = Math.min(x0 + w, X(view.t1));
-      ctx.fillStyle = withAlpha(p.focusRing, view.follow ? 0.3 : 0.18);
+      // 8% / 12%：這是一個橫貫全寬的矩形，0.18 乘上這個面積就是一整片橘，
+      // 直接吃掉「全頁橘色像素預算 < 2%」。邊界由 1px 的框線負責，不是由底色。
+      ctx.fillStyle = withAlpha(p.focusRing, view.follow ? 0.12 : 0.08);
       ctx.fillRect(wx0, Y_WINDOW + 1, Math.max(2, wx1 - wx0), H_WINDOW - 2);
       ctx.strokeStyle = view.follow ? p.ok : p.focusRing;
       ctx.strokeRect(Math.round(wx0) + 0.5, Y_WINDOW + 1.5, Math.max(2, Math.round(wx1 - wx0)) - 1, H_WINDOW - 3);
@@ -260,14 +326,18 @@ export function TimeBar({
       const span = tMax - tMin;
       const step = niceStep(span, Math.max(3, Math.floor(w / 90)));
       ctx.fillStyle = p.textDim;
-      ctx.font = "10px ui-monospace, Consolas, monospace";
+      ctx.font = numFont();
       ctx.textBaseline = "top";
       ctx.textAlign = "center";
       let lastTickX = -Infinity;
+      // 最小間距以「最長的一個標籤」為準：t 跑到 9048.520 時一個標籤就 58 px，
+      // 只靠 niceStep 的格數推估會在很短的全長（例如剛開機的 1 秒）下疊成一條黑線。
+      const minGap = ctx.measureText(fmtT(tMax, span)).width + 14;
       for (let t = Math.ceil(tMin / step) * step; t <= tMax; t += step) {
         const x = X(t);
         // 右端留給總長標籤；不夠遠就不畫這一格，免得兩個數字疊在一起
         if (x > x0 + w - 46) break;
+        if (x - lastTickX < minGap) continue;
         ctx.fillText(fmtT(t, span), x, Y_AXIS + 1);
         lastTickX = x;
       }

@@ -10,7 +10,7 @@
 // 不自己造等間隔網格——造網格等於在資料裡插入機器人從來沒送過的時刻。
 
 import type { LogStore } from "../../lib/LogStore";
-import { K, TUNABLES, paramKey, shortName } from "../../lib/fgcKeys";
+import { K, TUNABLES, paramKey, shortName, tuneKey } from "../../lib/fgcKeys";
 import { summarize } from "../../lib/stats";
 import { copyText } from "../../lib/clipboard";
 import type { LogEvent } from "../../lib/eventDetect";
@@ -109,8 +109,12 @@ function keySamples(log: LogStore, key: string, t0: number, t1: number): TimedVa
  * 原始串流是 diff，直接剪一段出來的話，剪點之前就沒變過的 key 在新檔案裡永遠不存在，
  * 收到檔案的隊友會看到一堆「無此埋點」。多這一行，剪輯就是自給自足的一份 log。
  */
-export function toJsonlClip(log: LogStore, r: Range): string {
-  const keys = log.keys();
+export function toJsonlClip(log: LogStore, r: Range, allowKey?: (k: string) => boolean): string {
+  // M11 時間閘：閘關著時 coachRisk 欄位一個都不能出現在剪輯裡。
+  // 閘擋住了折線圖、色帶與訊號樹，卻讓一顆按鈕就能把同一份資料印在螢幕上
+  // （ExportMenu 的預覽區），成本是一次點擊、零警告——那正是 M11 要擋的
+  // 「回放退化成即時教練工具」。
+  const keys = allowKey ? log.keys().filter(allowKey) : log.keys();
   const snap: Record<string, NtValue> = {};
   for (const k of keys) {
     const kind = log.kindOf(k);
@@ -287,8 +291,10 @@ function num(v: number): string {
  * 有就直接用它——那是機器人自己說的話，比前端拼的可信。
  * 沒有（舊 build / 這份 log 沒錄到）才依 21 項白名單的 /FGC/Param/* 回讀值重組，並標明來源。
  */
-export function toConstantsSnippet(log: LogStore, t: number): string {
-  const snip = log.stringAt(K.snippet, t);
+export function toConstantsSnippet(log: LogStore, t: number, allowKey?: (k: string) => boolean): string {
+  // 機器人端組好的整份 _Snippet 含 AIM_KP 這類 coachRisk 參數，閘關著時不可以整包吐出來
+  const gated = allowKey ? !allowKey(tuneKey("AIM_KP")) : false;
+  const snip = gated ? null : log.stringAt(K.snippet, t);
   if (snip && snip.trim()) {
     return "// 來源：/FGC/Param/_Snippet @ " + t.toFixed(3) + " s（機器人端組好的）\n" + snip.trim() + "\n";
   }
@@ -296,7 +302,12 @@ export function toConstantsSnippet(log: LogStore, t: number): string {
   L.push("// 來源：儀表板依 /FGC/Param/* 回讀值重組 @ " + t.toFixed(3) + " s");
   L.push("// （這份 log 裡沒有 /FGC/Param/_Snippet；貼回去之前請逐行核對）");
   let missing = 0;
+  let hidden = 0;
   for (const tn of TUNABLES) {
+    if (allowKey && !allowKey(tuneKey(tn.name))) {
+      hidden++;
+      continue;
+    }
     const v = log.valueAt(paramKey(tn.name), t);
     if (v === null) {
       missing++;
@@ -310,6 +321,7 @@ export function toConstantsSnippet(log: LogStore, t: number): string {
     }
   }
   if (missing > 0) L.push("// 共 " + missing + " 項沒有回讀值");
+  if (hidden > 0) L.push("// 共 " + hidden + " 項被 M11 時間閘濾掉（coachRisk）");
   return L.join("\n") + "\n";
 }
 

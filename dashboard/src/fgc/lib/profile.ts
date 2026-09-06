@@ -33,10 +33,26 @@ export interface Profile {
   readonly lockdownBackoffMs: number;
   /** 頂欄 ws age 的 stale 門檻；推播週期 PERIOD_MS=50。 */
   readonly staleMs: number;
+  /**
+   * 模式保鮮期：推播靜默超過這麼久就主動送一次 ws `sync`（DashWs.java:56）。
+   * 真機 PIT→MATCH 在**已開的 socket 上是靜默的**：DashPublisher.java:46 的廣播被
+   * `pit()` 擋掉，而剛變成 MATCH 的那筆已經被同一圈的 drainDirty() 取走餵給 DashRec，
+   * 下一圈 DashHub.put 值沒變直接 return —— 那個 key 再也不會進 dirty。
+   * 所以「模式」必須是有保鮮期的事實，不能是鎖存。推播週期 50 ms 的 20 倍。
+   */
+  readonly modeStaleMs: number;
+  /** sync 送出後還是沒有任何下行：模式視為過期 → UNKNOWN（未知即鎖）。 */
+  readonly modeGraceMs: number;
+  /** 模式看門狗的取樣週期。 */
+  readonly modeWatchMs: number;
   /** /dash/health 輪詢週期（8080 燈）。 */
   readonly healthMs: number;
+  /** lockdown（規則性靜默）時的 health 輪詢週期：唯一還在打的端點，放寬。 */
+  readonly lockdownHealthMs: number;
   /** 退回 /dash/state.json 時的輪詢週期。 */
   readonly pollMs: number;
+  /** /dash/state.json 單次請求的逾時（賽場 Wi-Fi 掉封包時不可以無限掛著）。 */
+  readonly pollTimeoutMs: number;
   /** 送出後多久沒回讀就轉橘 / 轉紅（§5.6）。 */
   readonly echoWarnMs: number;
   readonly echoFailMs: number;
@@ -55,8 +71,13 @@ export const FGC: Profile = {
   backoffMs: [1000, 2000, 5000, 10000],
   lockdownBackoffMs: 15000,
   staleMs: 250,
+  modeStaleMs: 1000,
+  modeGraceMs: 2500,
+  modeWatchMs: 250,
   healthMs: 3000,
+  lockdownHealthMs: 15000,
   pollMs: 500,
+  pollTimeoutMs: 4000,
   echoWarnMs: 300,
   echoFailMs: 1000,
   setThrottleMs: 50,
@@ -68,10 +89,26 @@ export const PATHS = {
   state: "/dash/state.json",
   set: "/dash/set",
   recList: "/dash/rec.json",
-  recFile: "/dash/rec.jsonl",
   stream: "/dash/stream.mjpg",
   snapshot: "/dash/snapshot.jpg",
 } as const;
+
+/**
+ * 錄影檔下載路徑。**刻意不放在 PATHS 裡**：`?name=live` 會回這一場的即時遙測
+ * （§8 M01 措施 6「永不呼叫」），而那條自律如果只寫在呼叫點的 if 裡，第三個呼叫端
+ * 不會被任何東西擋。收口成一支函式，違規在這裡就 throw，不必靠人記得複製那個 if。
+ */
+const REC_FILE_PATH = "/dash/rec.jsonl";
+
+/** 只給「畫在畫面上告訴使用者路徑長什麼樣」用的字串，不可拿去組請求。 */
+export const REC_FILE_LABEL = REC_FILE_PATH;
+
+export function recFileUrl(host: string, name: string): string {
+  if (name === "live") {
+    throw new Error("?name=live 是即時遙測旁路（§8 M01 措施 6），前端永不呼叫");
+  }
+  return httpUrl(host, REC_FILE_PATH, { name });
+}
 
 /** Control Hub 的原廠位址。志工可能在檢錄時改名或改 5 GHz，所以 host 一律可輸入。 */
 export const DEFAULT_HOST = "192.168.43.1";

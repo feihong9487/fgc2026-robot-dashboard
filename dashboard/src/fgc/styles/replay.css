@@ -28,17 +28,8 @@
 .rp-top .spacer {
   flex: 1 1 auto;
 }
-.rp-badge {
-  padding: 2px 8px;
-  border-radius: 4px;
-  background: var(--surface-3);
-  border: 1px solid var(--accent);
-  color: var(--accent);
-  font-weight: 700;
-  letter-spacing: var(--ls-state);
-}
 .rp-file {
-  font-family: var(--mono);
+  font-family: var(--font-num);
   max-width: 34ch;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -50,9 +41,6 @@
 .rp-ab {
   color: var(--stale);
   font-size: var(--fs-xs);
-  border: 1px dashed var(--border-c);
-  border-radius: 4px;
-  padding: 1px 6px;
 }
 .rp-note {
   color: var(--warn);
@@ -81,7 +69,7 @@
 }
 .rp-gate .basis {
   color: var(--stale);
-  font-family: var(--mono);
+  font-family: var(--font-num);
 }
 
 /* ── 主區三欄 ────────────────────────────────────────────────────── */
@@ -150,22 +138,29 @@
   margin: 0 2px;
 }
 .rp-sel {
-  background: var(--surface-1);
+  background: var(--surface-3);
   color: var(--text);
-  border: 1px solid var(--border-c);
-  border-radius: 3px;
+  border: var(--bw) solid var(--border-c);
+  border-radius: var(--r-chip);
+  font-family: inherit;
   font-size: var(--fs-xs);
   padding: 1px 2px;
   max-width: 14ch;
 }
+.rp-sel:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
 
-/* ── 底部狀態列 ──────────────────────────────────────────────────── */
+/* ── 底部狀態列：標籤在上、值在下的兩行對照表 ────────────────────────
+   不是「A · B · C」的中點 meta 串。中點串的問題不是醜，是每一段都要先讀完
+   標籤才知道那個數字是什麼；拆成兩行之後，眼睛掃的是下面那一排數字。 */
 .rp-status {
   display: flex;
-  align-items: center;
-  gap: calc(var(--u) * 2);
+  align-items: flex-end;
+  gap: calc(var(--u) * 2.5);
   flex-wrap: wrap;
-  padding: calc(var(--u) * 0.5) calc(var(--u) * 1.5);
+  padding: calc(var(--u) * 0.75) calc(var(--u) * 1.5);
   border-top: 1px solid var(--border-c);
   background: var(--surface-2);
   color: var(--text-dim);
@@ -175,11 +170,41 @@
 .rp-status .spacer {
   flex: 1 1 auto;
 }
-.rp-status b {
-  color: var(--text);
+.rp-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
-.rp-status .bad {
+.rp-stat .k {
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+  white-space: nowrap;
+}
+/* 窄欄的值靠左貼齊標籤左緣：右對齊會讓標籤與值離太遠，眼睛連不起來。 */
+.rp-stat .v {
+  color: var(--text);
+  font-size: var(--fs-xs);
+  text-align: left;
+}
+.rp-stat .v.bad {
   color: var(--err);
+}
+/* 一行一句、靠右：兩句話疊起來剛好與左邊的標籤/值兩行同高。 */
+.rp-status-note {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: right;
+  min-width: 0;
+}
+.rp-status-note p {
+  margin: 0;
+  color: var(--stale);
+  line-height: var(--lh-ui);
+}
+.rp-status-note p.warn {
+  color: var(--warn);
 }
 
 /* ═══ 事件清單（#33）════════════════════════════════════════════ */
@@ -199,15 +224,17 @@
 .ev-search {
   flex: 1 1 auto;
   min-width: 0;
-  background: var(--surface-1);
-  border: 1px solid var(--border-c);
-  border-radius: 3px;
+  background: var(--surface-3);
+  border: var(--bw) solid var(--border-c);
+  border-radius: var(--r-chip);
   color: var(--text);
+  font-family: inherit;
   font-size: var(--fs-xs);
-  padding: 2px 6px;
+  padding: 2px var(--u);
 }
 .ev-search:focus {
-  outline: none;
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
   border-color: var(--focus-ring);
 }
 .ev-kinds {
@@ -218,32 +245,53 @@
   border-bottom: 1px solid var(--border-c);
   flex: 0 0 auto;
 }
+/* 九個 chip 一套系統（§5.2）：未選無框、已選橘框、這份 log 裡沒有的再降一階。
+   原本九種顏色是獨立於 series-* 與 tone 之外的第三套色彩系統。 */
 .ev-chip {
   display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  padding: 1px 5px;
-  border-radius: 3px;
-  border: 1px solid var(--border-c);
-  background: var(--surface-1);
-  color: var(--stale);
+  align-items: baseline;
+  gap: 4px;
+  padding: 2px var(--u);
+  border-radius: var(--r-chip);
+  border: var(--bw) solid transparent;
+  background: none;
+  color: var(--text-dim);
+  font-family: inherit;
   font-size: var(--fs-xs);
   cursor: pointer;
 }
-.ev-chip.on {
+.ev-chip:hover {
   color: var(--text);
-  border-color: var(--accent);
+  border-color: var(--border-hi);
+}
+.ev-chip.on {
+  background: var(--surface-3);
+  border-color: var(--focus-ring);
+  color: var(--text);
+}
+/* 這一類在這份 log 裡是 0 筆：開關它不會改變任何東西，所以不給框。 */
+.ev-chip.empty,
+.ev-chip.empty.on {
+  background: none;
+  border-color: transparent;
+  color: var(--stale);
+  cursor: default;
 }
 .ev-chip .n {
-  font-family: var(--mono);
   color: var(--text-dim);
 }
+.ev-chip.empty .n {
+  color: var(--stale);
+}
 .ev-count {
-  padding: 2px 6px;
+  padding: 2px var(--u);
   font-size: var(--fs-xs);
   color: var(--text-dim);
   border-bottom: 1px solid var(--border-c);
   flex: 0 0 auto;
+}
+.ev-count .fgc-num {
+  color: var(--text);
 }
 .ev-rows {
   flex: 1 1 auto;
@@ -257,7 +305,7 @@
 }
 .ev-row {
   display: grid;
-  grid-template-columns: 14px 46px 40px minmax(0, 1fr) auto;
+  grid-template-columns: 16px 46px 40px minmax(0, 1fr) auto;
   align-items: baseline;
   gap: 4px;
   width: 100%;
@@ -265,7 +313,7 @@
   padding: 2px 6px;
   background: none;
   border: none;
-  border-bottom: 1px solid var(--surface-3);
+  border-bottom: var(--bw) solid var(--border-c);
   color: var(--text);
   font-size: var(--fs-xs);
   cursor: pointer;
@@ -273,12 +321,20 @@
 .ev-row:hover {
   background: var(--surface-3);
 }
+/* 游標落在這一列 —— 橘，因為游標是使用者的操作而不是資料的狀態。 */
 .ev-row.active {
   background: var(--surface-3);
-  box-shadow: inset 2px 0 0 var(--accent);
+  box-shadow: inset 2px 0 0 var(--focus-ring);
 }
+/* 形狀語彙固定寬容器：多數等寬字體沒有 ●▲■○，fallback 之後四個字元寬度
+   不一致，整欄就對不齊。本設計最小字級是 12px，沒有 10px。 */
 .ev-row .g {
-  font-size: 10px;
+  font-family: var(--font-ui);
+  display: inline-block;
+  width: 1.25em;
+  text-align: center;
+  font-size: var(--fs-xs);
+  line-height: 1;
   color: var(--text-dim);
 }
 .ev-row.ok .g {
@@ -293,12 +349,14 @@
 .ev-row.info .g {
   color: var(--stale);
 }
+/* 書籤是人自己放進去的記號，跟時間軸上那顆倒三角同色。 */
 .ev-row.mark .g {
-  color: var(--accent);
+  color: var(--focus-ring);
 }
 .ev-row .t {
   color: var(--text-dim);
   text-align: right;
+  font-family: var(--font-num);
 }
 .ev-row .k {
   color: var(--text-dim);
@@ -332,11 +390,10 @@
   z-index: 40;
   width: 640px;
   max-width: 90vw;
-  padding: var(--u);
+  padding: calc(var(--u) * 1.5);
   background: var(--surface-2);
-  border: 1px solid var(--border-c);
-  border-radius: 6px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  border: var(--bw) solid var(--border-c);
+  border-radius: var(--r-card);
 }
 .ex-row {
   display: flex;
@@ -361,8 +418,8 @@
   margin-bottom: 6px;
 }
 .ex-result {
-  padding: 4px 6px;
-  border-radius: 4px;
+  padding: 4px var(--u);
+  border-radius: var(--r-card);
   font-size: var(--fs-xs);
   background: var(--surface-1);
   border-left: 3px solid var(--ok);
@@ -378,9 +435,9 @@
   margin: 0;
   padding: 6px;
   background: var(--surface-1);
-  border: 1px solid var(--border-c);
-  border-radius: 4px;
-  font-family: var(--mono);
+  border: var(--bw) solid var(--border-c);
+  border-radius: var(--r-card);
+  font-family: var(--font-num);
   font-size: var(--fs-xs);
   color: var(--text-dim);
   white-space: pre;
@@ -399,10 +456,10 @@
 .bm-box {
   width: 460px;
   max-width: 92vw;
-  padding: calc(var(--u) * 2);
+  padding: calc(var(--u) * 2.5);
   background: var(--surface-2);
-  border: 1px solid var(--accent);
-  border-radius: 8px;
+  border: var(--bw) solid var(--border-c);
+  border-radius: var(--r-card);
 }
 .bm-head {
   font-size: var(--fs-sm);
@@ -412,19 +469,23 @@
 .bm-input {
   width: 100%;
   box-sizing: border-box;
-  background: var(--surface-1);
-  border: 1px solid var(--border-c);
-  border-radius: 4px;
+  background: var(--surface-3);
+  border: var(--bw) solid var(--border-c);
+  border-radius: var(--r-chip);
   color: var(--text);
+  font-family: inherit;
   font-size: var(--fs-md);
-  padding: 6px 8px;
+  padding: var(--u) calc(var(--u) * 1.5);
 }
 .bm-input:focus {
-  outline: none;
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
   border-color: var(--focus-ring);
 }
 .bm-foot {
-  margin-top: 6px;
+  margin-top: calc(var(--u) * 1.5);
+  line-height: var(--lh-prose);
+  max-width: var(--measure);
   color: var(--stale);
   font-size: var(--fs-xs);
 }

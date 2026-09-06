@@ -22,10 +22,21 @@ export const K = {
   lastSet: "/FGC/Bridge/Last Set",
   lastSetRejected: "/FGC/Bridge/Last Set Rejected",
   lastError: "/FGC/Bridge/Last Error",
+  /** DashNotify.java:58 —— 不管哪一種模式一律留一筆 "level:title"。
+      MATCH 期間 notify 不推播，這個埋點是那一段時間唯一「機器人剛剛喊了什麼」的痕跡。 */
+  lastNotify: "/FGC/Bridge/Last Notify",
 
   // /FGC/Status/*
   battery: "/FGC/Status/Battery V",
   loopMs: "/FGC/Status/Loop ms",
+  /**
+   * 機器人端算好的尾端統計（FGC2026_TeleOp_Match.java:485-498，nearest-rank）。
+   * **一定優先用這兩個**：DashPublisher.PERIOD_MS=50 而 OpMode 迴圈約 12 ms，
+   * 前端手上的 Loop ms 是「每 4 圈只看得到 1 圈、而且偏向有變動的那些圈」的樣本，
+   * 用它算出來的 p95 結構性地看不到尾巴（那支檔案第 90 行的註解就是在說這件事）。
+   */
+  loopP95: "/FGC/Status/Loop p95",
+  loopMax: "/FGC/Status/Loop Max",
   opMode: "/FGC/Status/OpMode",
   matchS: "/FGC/Status/Match s",
   hubs: "/FGC/Status/Hubs",
@@ -277,6 +288,35 @@ export function isLockdownSafeKey(key: string): boolean {
   if (key.startsWith("/FGC/Bridge/")) return true;
   if (key.startsWith("/FGC/Rec/")) return true;
   return key === K.opMode;
+}
+
+/**
+ * Lockdown 子樹**唯一**准許取值的 key 集合。
+ *
+ * 這個常數存在的理由：以前 isLockdownSafeKey() 是死碼（零呼叫點），而
+ * LockdownCards.tsx 的檔頭卻寫著「這條線寫在旗標裡，不靠記憶」——那比沒有註解更糟，
+ * 因為它會讓 code review 略過那一頁。現在 Lockdown 的每一次取值都走 lockdownValue()，
+ * 而 tools/fgc-check-2a.ts 會斷言這個集合 ⊆ isLockdownSafeKey。
+ * 往 Lockdown 加一格而忘了想 M11 的人，會在 npm run check 就被擋下來。
+ */
+export const LOCKDOWN_KEYS: readonly string[] = [
+  K.build,
+  K.gen,
+  K.threads,
+  K.mode,
+  K.opMode,
+  K.recFile,
+  K.recLines,
+  K.lastNotify,
+];
+
+/**
+ * Lockdown 頁取值的唯一入口。不在白名單就回 null（不是「顯示空字串」——
+ * 呼叫端拿到 null 會整格不 render，而不是畫一個空框讓人以為機器人壞了）。
+ */
+export function lockdownValue<T>(key: string, read: (k: string) => T): T | null {
+  if (!isLockdownSafeKey(key)) return null;
+  return read(key);
 }
 
 /** 依 /FGC/<子系統>/<名稱> 取子系統名（訊號樹用）。 */

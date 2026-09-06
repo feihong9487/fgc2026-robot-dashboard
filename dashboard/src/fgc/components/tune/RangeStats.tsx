@@ -34,6 +34,18 @@ const RANGE_LABEL: Record<RangeMode, string> = {
 };
 
 const BIN_CHOICES = [10, 20, 40];
+
+/**
+ * 直方圖的顏色跟著被統計的 key 走（§6.5 固定綁定：SL 青、SR 琥珀、Way 冷紫）。
+ * 以前不論統計誰都畫 --series-1 的青色——選了 SR 之後，同一個量在射手頁是琥珀、
+ * 在這裡是青，那條「一個訊號一個顏色」的保證就在這一格默默失效。
+ * 沒有綁定的 key 用中性灰：分布圖不屬於任何一條時間序列，硬給它一個 series 色是說謊。
+ */
+const HIST_COLOR: Record<string, string> = {
+  [K.sl]: "var(--series-1)",
+  [K.sr]: "var(--series-2)",
+  [K.way]: "var(--series-4)",
+};
 const RECALC_MS = 1000;
 
 function concat(parts: Float64Array[]): Float64Array {
@@ -81,7 +93,9 @@ export function RangeStats({ log = liveLog, allowInputs }: Props) {
   // 預設「最近 10 s」而不是「可見視窗」：參數頁上沒有時間軸，view 的視窗可能還停在
   // 開機值 0–20 s（那一段通常一個樣本都沒有）。跨頁的正解是在射手頁框選再切過來，
   // 但那要使用者先做一件事；預設值必須是「打開就有數字」的那一個。
-  const [mode, setMode] = useState<RangeMode>("last10");
+  // 刻意不叫 mode / setMode：store 的模式是 §8 M01 的核心（「這一行寫錯，其他全部
+  // 是裝飾」），grep "setMode(" 的結果不該包含一個統計區間的區域 state。
+  const [range, setRange] = useState<RangeMode>("last10");
   const [bins, setBins] = useState(20);
   const [tick, setTick] = useState(0);
 
@@ -98,9 +112,9 @@ export function RangeStats({ log = liveLog, allowInputs }: Props) {
   );
 
   const { v, label } = useMemo(
-    () => gather(log, key, mode),
+    () => gather(log, key, range),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [log, key, mode, tick, cursor.getVersion()],
+    [log, key, range, tick, cursor.getVersion()],
   );
   const s = useMemo(() => summarize(v), [v]);
   const hist = useMemo(() => histogram(v, bins), [v, bins]);
@@ -108,7 +122,7 @@ export function RangeStats({ log = liveLog, allowInputs }: Props) {
   return (
     <PanelShell
       title="區間統計"
-      note={"範圍 " + RANGE_LABEL[mode] + "（" + label + "）"}
+      note={"範圍 " + RANGE_LABEL[range] + "（" + label + "）"}
       tools={
         allowInputs ? (
           <select className="rs-sel" value={key} onChange={(e) => setKey(e.target.value)} title="統計對象">
@@ -128,7 +142,7 @@ export function RangeStats({ log = liveLog, allowInputs }: Props) {
         {allowInputs && (
           <div className="rs-tabs">
             {(Object.keys(RANGE_LABEL) as RangeMode[]).map((m) => (
-              <button key={m} className={m === mode ? "tb-btn on" : "tb-btn"} onClick={() => setMode(m)}>
+              <button key={m} className={m === range ? "tb-btn on" : "tb-btn"} onClick={() => setRange(m)}>
                 {RANGE_LABEL[m]}
               </button>
             ))}
@@ -155,13 +169,16 @@ export function RangeStats({ log = liveLog, allowInputs }: Props) {
 
         <div className="rs-hist" title="直方圖">
           {s.count === 0 ? (
-            <span className="rs-empty">這個範圍內沒有樣本</span>
+            <span className="rs-empty">這個範圍內沒有樣本。換一個區間，或到射手頁框選一段再切回來。</span>
           ) : (
             Array.from(hist.counts).map((c, i) => (
               <span
                 key={i}
                 className="bar"
-                style={{ height: (hist.max ? (c / hist.max) * 100 : 0) + "%" }}
+                style={{
+                  height: (hist.max ? (c / hist.max) * 100 : 0) + "%",
+                  background: HIST_COLOR[key] ?? "var(--border-hi)",
+                }}
                 title={fmt(hist.edges[i]) + "–" + fmt(hist.edges[i + 1]) + "：" + c}
               />
             ))

@@ -45,7 +45,7 @@ export function BallRhythm() {
   return (
     <PanelShell
       title="球節奏"
-      note={`dip 為前端推估（深度 > ${DIP_DEPTH} tps）· 解析度 ±50 ms`}
+      note={`dip 為前端推估：跌破深度大於 ${DIP_DEPTH} tps 才算一顆，解析度 ±50 ms`}
       flush
       className="drive-rhythm"
     >
@@ -54,7 +54,9 @@ export function BallRhythm() {
           <span className="rl-label">本輪</span>
           <span className="rl-dots" title="空心圓只是版面留位，不代表球倉容量">
             {Array.from({ length: SLOTS }, (_, i) => (
-              <span key={i} className={i < n ? "dot on" : "dot"}>
+              // fgc-glyph：●○ 一律走 --font-ui 的 1.25em 固定寬容器。
+              // 等寬字體多半沒有這兩個 CJK 符號，fallback 後寬度不一致，整排就對不齊。
+              <span key={i} className={i < n ? "fgc-glyph dot on" : "fgc-glyph dot"}>
                 {i < n ? "●" : "○"}
               </span>
             ))}
@@ -71,10 +73,15 @@ export function BallRhythm() {
           <b className="fgc-num">{cur === null ? "—" : Math.round(cur)}</b>
           <span className="fgc-unit">ms</span>
           <span className="rl-stat">
-            中位 <span className="fgc-num">{Number.isFinite(med) ? Math.round(med) : "—"}</span>
-            {" · 最大 "}
-            <span className="fgc-num">{Number.isFinite(mx) ? Math.round(mx) : "—"}</span>
-            {`（${ups.length} 輪）`}
+            <span className="rs-item">
+              中位 <span className="fgc-num">{Number.isFinite(med) ? Math.round(med) : "—"}</span>
+            </span>
+            <span className="rs-item">
+              最大 <span className="fgc-num">{Number.isFinite(mx) ? Math.round(mx) : "—"}</span>
+            </span>
+            <span className="rs-item">
+              <span className="fgc-num">{ups.length}</span> 輪
+            </span>
           </span>
         </div>
       </div>

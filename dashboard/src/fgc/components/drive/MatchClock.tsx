@@ -8,6 +8,12 @@
 // 我們不假裝比賽還在進行，直接顯示「超時 +m:ss」並轉灰——把倒數扭曲成 0:00
 // 會讓人以為練習跑跟比賽一樣長。
 //
+// **沒有進度條**：練習跑沒有終點，那條灰軌永遠是 0%，它存在的唯一理由是讓卡片
+// 「看起來完整」。區間改由左側一道色條承擔——它不佔高度，也不假裝自己在前進。
+//
+// 讀數本身永遠是 --text：全頁只有巨燈可以同時「> --fs-lg」且填飽和色（設計原則 1）。
+// 剩多少時間是「哪一區間」的問題，那由色條與副行回答。
+//
 // 門檻的意義：黃 = 剩下的時間剛好夠爬升 +5 秒緩衝、紅 = 只剩爬升時間。
 // 爬升耗時是隊伍自己量出來的，存 localStorage（參數頁之後會給一個地方改）。
 
@@ -53,7 +59,6 @@ export function MatchClock() {
   const box = useRef<HTMLDivElement>(null);
   const big = useRef<HTMLSpanElement>(null);
   const sub = useRef<HTMLSpanElement>(null);
-  const bar = useRef<HTMLDivElement>(null);
   const last = useRef({ txt: "", zone: "" as string });
 
   // 秒級解析度，8 Hz 就夠；沒有必要一秒重排 60 次版面。
@@ -63,13 +68,11 @@ export function MatchClock() {
     const zone = hasT ? clockZone(el, cfg) : "none";
     const left = cfg.matchSec - el;
     const txt = !hasT || !Number.isFinite(el) ? "—:—" : left >= 0 ? mmss(left) : `+${mmss(-left)}`;
-    const frac = !Number.isFinite(el) ? 0 : Math.max(0, Math.min(1, el / cfg.matchSec));
 
     if (big.current && last.current.txt !== txt) {
       big.current.textContent = txt;
       last.current.txt = txt;
     }
-    if (bar.current) bar.current.style.width = `${(frac * 100).toFixed(1)}%`;
     if (box.current && last.current.zone !== zone) {
       box.current.className = `clock-box z-${zone}`;
       last.current.zone = zone;
@@ -92,12 +95,8 @@ export function MatchClock() {
     <PanelShell title="比賽計時" note="來源 /FGC/Status/Match s（OpMode START 起算）" flush className="drive-clock">
       <div ref={box} className="clock-box z-none">
         <div className="clock-row">
-          <span className="clock-glyph">⏱</span>
           <span ref={big} className="clock-big fgc-num">—:—</span>
           <span ref={sub} className="clock-sub">尚未收到 Match s</span>
-        </div>
-        <div className="clock-track">
-          <div ref={bar} className="clock-fill" style={{ width: "0%" }} />
         </div>
       </div>
     </PanelShell>

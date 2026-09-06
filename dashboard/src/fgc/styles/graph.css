@@ -21,15 +21,29 @@
 .lg-wrap .u-wrap {
   font-family: inherit;
 }
+/* 繪圖區底比卡片深一階：三張堆疊的畫布（折線 / 色帶 / 電流）共用同一個凹槽色，
+   所以它們讀起來是同一台儀器上的三層，而不是三張卡。 */
+.lg-wrap .u-under {
+  background: var(--surface-1);
+}
 .lg-wrap .u-legend {
   font-size: var(--fs-xs);
   color: var(--text-dim);
-  padding: 2px 0 0;
+  padding: calc(var(--u) * 0.5) 0 0;
   text-align: left;
 }
+/* 圖例色塊：10×10、--r-chip。uPlot 把線寬與線型畫在 marker 的 border 上，
+   所以 series 5-8 的虛線在這裡也看得到——這是「色塊要畫出 dash 圖樣」的實作。 */
 .lg-wrap .u-legend .u-marker {
   width: 10px;
   height: 10px;
+  border-width: 2.5px !important;
+  border-radius: var(--r-chip);
+  margin-right: 5px;
+}
+/* 圖例標籤不加粗：uPlot 預設 600，而本案只有 400 / 700 兩檔，圖例是 400 */
+.lg-wrap .u-legend th {
+  font-weight: var(--fw-normal);
 }
 .lg-wrap .u-legend .u-series > * {
   padding: 1px 5px;
@@ -73,7 +87,7 @@
   font-size: var(--fs-xs);
   color: transparent;
   border: 1px dashed transparent;
-  border-radius: 4px;
+  border-radius: var(--r-card);
 }
 .lg-zone.over {
   background: color-mix(in srgb, var(--focus-ring) 12%, transparent);
@@ -175,9 +189,9 @@
   gap: 5px;
   padding: 2px calc(var(--u));
   min-height: calc(var(--u) * 4);
-  border: 1px solid var(--border-c);
-  border-radius: 4px;
-  background: var(--surface-3);
+  border: var(--bw) solid var(--border-c);
+  border-radius: var(--r-chip);
+  background: none;
   color: var(--text-dim);
   font-family: inherit;
   font-size: var(--fs-xs);
@@ -277,16 +291,22 @@
 }
 .insp-row .age {
   color: var(--stale);
-  font-family: var(--mono);
-  font-size: 0.85em;
+  font-family: var(--font-num);
   margin-left: 5px;
 }
+/* 移除鈕平常不畫：一整欄常駐的灰色 × 是第三套圖示語彙，而移除是每小時零次的
+   動作。欄寬照樣留著（grid 的第四欄），所以滑過去的時候不會有位移。 */
 .insp-x {
   border: none;
   background: transparent;
   color: var(--text-dim);
   cursor: pointer;
   padding: 0 3px;
+  opacity: 0;
+}
+.insp-row:hover .insp-x,
+.insp-x:focus-visible {
+  opacity: 1;
 }
 .insp-x:hover {
   color: var(--err);
@@ -312,20 +332,21 @@
   padding: 3px 6px;
   background: var(--surface-3);
   color: var(--text);
-  border: 1px solid var(--border-c);
-  border-radius: 4px;
+  border: var(--bw) solid var(--border-c);
+  border-radius: var(--r-chip);
   font-family: inherit;
   font-size: var(--fs-xs);
 }
 .st-search:focus {
   outline: 2px solid var(--focus-ring);
   outline-offset: -1px;
+  border-color: var(--focus-ring);
 }
 .st-seg {
   padding: 2px 5px;
-  border: 1px solid var(--border-c);
-  border-radius: 4px;
-  background: var(--surface-3);
+  border: var(--bw) solid var(--border-c);
+  border-radius: var(--r-chip);
+  background: none;
   color: var(--text-dim);
   font-family: inherit;
   font-size: var(--fs-xs);
@@ -334,6 +355,7 @@
 }
 .st-seg.on {
   color: var(--text);
+  background: var(--surface-3);
   border-color: var(--focus-ring);
 }
 .st-ro {
@@ -347,9 +369,10 @@
   color: var(--text-dim);
   flex: 0 0 auto;
 }
+/* 「已釘選 3」是一個計數，不是一個可寫的東西——橘只表示可寫。 */
 .st-count .pinned {
   margin-left: 4px;
-  color: var(--focus-ring);
+  color: var(--text-dim);
 }
 .st-body {
   flex: 1 1 auto;
@@ -372,7 +395,7 @@
   color: var(--text-dim);
   font-family: inherit;
   font-size: var(--fs-xs);
-  font-weight: 600;
+  font-weight: var(--fw-normal);
   text-align: left;
   cursor: pointer;
 }
@@ -386,11 +409,13 @@
 .st-ghead .n {
   margin-left: auto;
   color: var(--stale);
-  font-weight: 400;
+  font-family: var(--font-num);
 }
 .st-row {
   display: grid;
-  grid-template-columns: 14px 1fr auto 10px auto;
+  /* 四欄：釘選點 / 名稱 / 值 / 可調記號。型別欄（# ◧ A）已刪——它沒有圖例，
+     而值本身就說了型別（true / 1965 / PIT）。 */
+  grid-template-columns: 14px 1fr auto 9px;
   align-items: center;
   gap: 4px;
   padding: 0 calc(var(--u) * 0.5) 0 calc(var(--u) * 1.5);
@@ -432,15 +457,12 @@
 .st-pin.slot {
   border-color: transparent;
 }
-.st-kind {
-  color: var(--stale);
-  font-family: var(--mono);
-  text-align: center;
-}
+/* T = /FGC/Tune/* 白名單。這是全案唯一一個「橘色的字」，而它的意思與其他所有
+   橘色像素完全一致：這一列連著機器人，寫得回去。 */
 .st-tune {
   color: var(--danger);
-  font-family: var(--mono);
-  font-size: 0.9em;
+  font-family: var(--font-num);
+  text-align: center;
 }
 
 /* ═══ GraphDemoPage 版面 ════════════════════════════════════════════ */

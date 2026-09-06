@@ -45,10 +45,12 @@ export function HeadingChip() {
   return (
     <PanelShell title="車頭" flush className="drive-heading">
       <div className={`head-box${flash ? " flash" : ""}${reversed ? " intake" : " shooter"}`}>
-        <span className="head-arrow">{reversed ? "◀◀" : "▶▶"}</span>
+        <span className="head-arrow" aria-hidden>{reversed ? "◀◀" : "▶▶"}</span>
         <span className="head-word">{reversed ? "吸取端為前" : "射手端為前"}</span>
+        {/* 兩段獨立的讀值，不是一句話：用間距分開，不用中點串起來。 */}
         <span className="head-sub fgc-num">
-          前後 <span ref={fwdRef}>0.00</span> · 轉向 <span ref={turnRef}>0.00</span>
+          <span className="hs-item">前後 <span ref={fwdRef}>0.00</span></span>
+          <span className="hs-item">轉向 <span ref={turnRef}>0.00</span></span>
         </span>
       </div>
     </PanelShell>

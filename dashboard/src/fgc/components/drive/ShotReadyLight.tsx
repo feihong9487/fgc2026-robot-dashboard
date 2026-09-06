@@ -1,10 +1,11 @@
 // #7 ShotReadyLight —— 巨燈。DRIVE 分頁唯一「1.5 公尺外瞥 0.5 秒」的元件。
 //
-// 佔左欄上方約 45% 面積不是浮誇：駕駛的眼睛在場上，餘光只解析得了「一大塊是什麼顏色」。
-// 所以這裡沒有任何小字是必要資訊——字級 >= 96 px 的那個單字自己就是答案。
+// 全頁唯一置中的東西，也是全頁唯一填飽和色的東西（設計原則 1）。
+// 版面是直立堆疊：燈 → 狀態字 → 副行，三者共用同一條垂直中線。
+// 整頁只有這一次置中，所以那必然是視線落點。
 //
-// 進度環回答 SPINUP 時「還要等多久」。只給 READY / NOT READY 的二值燈會讓駕駛
-// 在等待期間反覆瞄螢幕，那正是我們想省掉的那幾次分心。
+// **狀態色只填燈本體**：卡片不洗底色、不畫外框。舊版把整張卡染成狀態色的
+// 淡洗色再描一圈同色框，1.5 公尺外看到的是「一片紅」而不是「哪一格出事」。
 //
 // 形狀語彙（§6.3）：綠 ●／黃 ▲／紅 ■／灰 ○。約 8% 男性有紅綠色覺辨異，
 // 而遠距離時形狀比顏色更快被解析——顏色不是唯一通道。
@@ -16,7 +17,15 @@ import { liveLog } from "../../lib/LogStore";
 import { K } from "../../lib/fgcKeys";
 import { palette } from "../../lib/theme";
 import { PanelShell } from "../shell/PanelShell";
-import { useCanvasFrame, approach, alpha, UI_FONT, MONO_FONT, type Frame } from "./canvas";
+import {
+  useCanvasFrame,
+  approach,
+  alpha,
+  setTracking,
+  UI_FONT,
+  MONO_FONT,
+  type Frame,
+} from "./canvas";
 import { shotStateOf, spinProgress, type ShotState } from "./driveModel";
 
 const WORD: Record<ShotState, string> = {
@@ -95,88 +104,119 @@ export function ShotReadyLight({ full }: { full?: boolean }) {
     anim.sl = approach(anim.sl, sl, dt, 3000);
     anim.sr = approach(anim.sr, sr, dt, 3000);
 
-    // 底：狀態色的極淡洗色 + 同色細框。不做漸層、不做陰影。
-    ctx.fillStyle = alpha(c, st === "IDLE" ? 0.04 : 0.09);
-    ctx.fillRect(0, 0, w, h);
-    ctx.strokeStyle = alpha(c, 0.45);
-    ctx.lineWidth = 2;
-    ctx.strokeRect(1, 1, w - 2, h - 2);
+    const word = WORD[st];
+    const tgtTxt =
+      Number.isFinite(tgtL) && Number.isFinite(tgtR)
+        ? `目標 ${Math.round(tgtL)} / ${Math.round(tgtR)}`
+        : "目標 —";
+    const subTxt = `SL ${Math.round(anim.sl)}   SR ${Math.round(anim.sr)}   ${tgtTxt} tps`;
+    // 百分比只在 SPINUP 有話要說。IDLE 底下那個永遠的「0%」是裝飾，不是資訊。
+    const pctTxt = st === "SPINUP" && progRaw !== null ? `${Math.round(anim.prog * 100)}%` : "";
 
-    const pad = Math.max(12, Math.min(w, h) * 0.05);
-    const vertical = w < 560;
+    const pad = Math.max(10, Math.min(w, h) * 0.045);
+    // 直立堆疊 = 全頁唯一的置中構圖。只有卡片被壓到很扁時才退回左燈右字。
+    const stacked = h >= 140;
 
-    // ── 進度環 ──
-    const ringR = vertical ? Math.min(h * 0.2, w * 0.17) : Math.min(h * 0.33, w * 0.135);
-    const ringX = vertical ? w / 2 : pad + ringR + ringR * 0.14;
-    const ringY = vertical ? pad + ringR + ringR * 0.14 : h / 2;
-    const lw = Math.max(4, ringR * 0.16);
-
-    ctx.lineCap = "butt";
-    ctx.lineWidth = lw;
-    ctx.strokeStyle = alpha(p.border, 0.9);
-    ctx.beginPath();
-    ctx.arc(ringX, ringY, ringR, 0, Math.PI * 2);
-    ctx.stroke();
-
-    if (progRaw !== null) {
-      ctx.strokeStyle = c;
+    /** 燈：底環（--border）+ 進度弧（狀態色）+ 中央形狀（狀態色實心）。 */
+    const lamp = (cx: number, cy: number, r: number) => {
+      const lw = Math.max(4, r * 0.15);
+      ctx.lineCap = "butt";
+      ctx.lineWidth = lw;
+      ctx.strokeStyle = alpha(p.border, 0.9);
       ctx.beginPath();
-      ctx.arc(ringX, ringY, ringR, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * anim.prog);
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
       ctx.stroke();
-    }
+      if (progRaw !== null) {
+        ctx.strokeStyle = c;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * anim.prog);
+        ctx.stroke();
+      }
+      drawShape(ctx, st, cx, cy, r * 0.6, c);
+    };
 
-    drawShape(ctx, st, ringX, ringY, ringR * 0.5, c);
+    if (stacked) {
+      const availW = w - pad * 2;
+      // 狀態字先拿走固定的一份高度（--fs-hero 的等價物），**剩下的全給燈**。
+      // 反過來（先切燈再切字）會讓卡片一變矮就兩個一起縮，最後兩個都不夠大。
+      // 0.62 em/字 是這套 bold sans 的實測平均；先估再用 measureText 收斂一次。
+      let fs = Math.min(h * 0.3, availW / (word.length * 0.62));
+      setTracking(ctx, "0.02em");
+      ctx.font = `700 ${Math.round(fs)}px ${UI_FONT}`;
+      const mw = ctx.measureText(word).width;
+      if (mw > availW) fs = Math.max(24, fs * (availW / mw));
+      fs = Math.round(fs);
 
-    // 環下的百分比：SPINUP 才有意義；目標為 0 時不畫（除以零的 100% 是假的）
-    if (progRaw !== null && st !== "EJECT") {
-      ctx.fillStyle = st === "READY" ? p.textDim : c;
-      ctx.font = `600 ${Math.round(ringR * 0.42)}px ${MONO_FONT}`;
+      const subFs = Math.max(12, Math.min(28, Math.round(fs * 0.21)));
+      const g1 = Math.max(10, h * 0.06);
+      const g2 = Math.max(6, h * 0.03);
+      const ringR = Math.max(24, Math.min((h * 0.95 - fs - subFs - g1 - g2) / 2, w * 0.22));
+      const blockH = ringR * 2 + g1 + fs + g2 + subFs;
+      const top = Math.max(0, (h - blockH) / 2);
+      const cx = w / 2;
+
+      lamp(cx, top + ringR, ringR);
+
+      // 狀態字：--text，不是狀態色。字距 .02em 是全案唯一的例外，
+      // 理由是 READY/SHOOT/EJECT 是狀態機的字面值，不是設計師挑的大寫標籤。
+      ctx.font = `700 ${fs}px ${UI_FONT}`;
+      ctx.fillStyle = p.text;
       ctx.textAlign = "center";
       ctx.textBaseline = "top";
-      ctx.fillText(`${Math.round(anim.prog * 100)}%`, ringX, ringY + ringR + lw * 0.8);
+      ctx.fillText(word, cx, top + ringR * 2 + g1);
+      setTracking(ctx, "0px");
+
+      if (pctTxt) {
+        ctx.font = `700 ${Math.round(ringR * 0.34)}px ${MONO_FONT}`;
+        ctx.fillStyle = c;
+        ctx.textBaseline = "middle";
+        ctx.fillText(pctTxt, cx, top + ringR * 2 + g1 * 0.5);
+        ctx.textBaseline = "top";
+      }
+
+      ctx.font = `${subFs}px ${MONO_FONT}`;
+      let sw = ctx.measureText(subTxt).width;
+      if (sw > availW) {
+        const shrunk = Math.max(12, Math.floor((subFs * availW) / sw));
+        ctx.font = `${shrunk}px ${MONO_FONT}`;
+        sw = ctx.measureText(subTxt).width;
+      }
+      ctx.fillStyle = p.textDim;
+      ctx.fillText(subTxt, cx, top + ringR * 2 + g1 + fs + g2);
+      return;
     }
 
-    // ── 巨字 ──
-    const textX = vertical ? w / 2 : ringX + ringR + pad;
-    const avail = vertical ? w - pad * 2 : w - textX - pad;
-    const word = WORD[st];
-    // 0.62 em/字 是這套 bold sans 的實測平均；先估再用 measureText 收斂一次。
-    let fs = Math.min(vertical ? h * 0.34 : h * 0.5, avail / (word.length * 0.62));
-    ctx.font = `800 ${Math.round(fs)}px ${UI_FONT}`;
+    // ── 扁卡退路：左燈右字（< 140 px 高的降級版面）──
+    const ringR = Math.min(h * 0.36, w * 0.12);
+    const ringX = pad + ringR;
+    lamp(ringX, h / 2, ringR);
+
+    const textX = ringX + ringR + pad;
+    const availW = w - textX - pad;
+    let fs = Math.min(h * 0.46, availW / (word.length * 0.62));
+    setTracking(ctx, "0.02em");
+    ctx.font = `700 ${Math.round(fs)}px ${UI_FONT}`;
     const mw = ctx.measureText(word).width;
-    if (mw > avail) fs = Math.max(28, fs * (avail / mw));
+    if (mw > availW) fs = Math.max(20, fs * (availW / mw));
     fs = Math.round(fs);
+    ctx.font = `700 ${fs}px ${UI_FONT}`;
+    ctx.fillStyle = p.text;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillText(word, textX, h / 2 + fs * 0.12);
+    setTracking(ctx, "0px");
 
-    const textY = vertical ? ringY + ringR + Math.max(28, ringR * 0.7) : h / 2;
-    ctx.font = `800 ${fs}px ${UI_FONT}`;
-    ctx.fillStyle = c;
-    ctx.textAlign = vertical ? "center" : "left";
-    ctx.textBaseline = vertical ? "top" : "alphabetic";
-    ctx.fillText(word, textX, vertical ? textY : h / 2 + fs * 0.14);
-
-    // ── 副行：實測 / 目標。小字，但一律等寬，值變動時整行不重排 ──
-    const tgtTxt = Number.isFinite(tgtL) && Number.isFinite(tgtR)
-      ? `目標 ${Math.round(tgtL)} / ${Math.round(tgtR)}`
-      : "目標 —";
-    const subTxt = `SL ${Math.round(anim.sl)}   SR ${Math.round(anim.sr)}   ${tgtTxt} tps`;
-    let sub = Math.max(11, Math.min(30, Math.round(fs * 0.2)));
-    ctx.font = `${sub}px ${MONO_FONT}`;
-    // 全螢幕時巨字會撐到 300 px 以上，副行照比例算會直接溢出右邊界——量一次再收
-    const sw = ctx.measureText(subTxt).width;
-    if (sw > avail) {
-      sub = Math.max(10, Math.floor((sub * avail) / sw));
-      ctx.font = `${sub}px ${MONO_FONT}`;
-    }
+    const subFs = Math.max(12, Math.min(24, Math.round(fs * 0.24)));
+    ctx.font = `${subFs}px ${MONO_FONT}`;
     ctx.fillStyle = p.textDim;
     ctx.textBaseline = "top";
-    const subY = vertical ? textY + fs * 1.12 : h / 2 + fs * 0.28;
-    ctx.fillText(subTxt, textX, subY);
+    ctx.fillText(subTxt, textX, h / 2 + fs * 0.26);
   });
 
   return (
     <PanelShell
       title="射擊就緒"
-      note={full ? "Esc 或 F 還原" : "F 全螢幕"}
+      note={full ? "Esc 或 F 還原" : undefined}
       flush
       className={`drive-hero${full ? " full" : ""}`}
     >

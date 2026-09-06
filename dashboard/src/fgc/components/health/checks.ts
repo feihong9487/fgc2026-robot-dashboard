@@ -73,9 +73,15 @@ export interface CheckCtx {
   helloAt: number;
   recTrend: RecTrend;
   log: LogStore;
-  /** 最近 20 秒的 loop p50 / p95（ms）；NaN = 沒資料。 */
+  /**
+   * loop 統計。p95 / max 一律優先取機器人算好的 /FGC/Status/Loop p95 與 Loop Max
+   * （見 stats.loopStats）；fromRobot = false 表示這台機器人是舊 Build，
+   * 前端只好用 1/4 取樣的 Loop ms 自己估——那個 p95 看不到尾端，detail 要說出來。
+   */
   loopP50: number;
   loopP95: number;
+  loopMax: number;
+  loopFromRobot: boolean;
 }
 
 // ── 小工具 ─────────────────────────────────────────────────────────────
@@ -86,9 +92,13 @@ function num(log: LogStore, key: string): number {
   return log.has(key) ? log.latestNum(key, NaN) : NaN;
 }
 
-/** 這個 key 在整份 log 裡有沒有變過。編碼器沒插線的特徵就是「一直是同一個值」。 */
+/**
+ * 這個 key 在整份 log 裡有沒有變過。編碼器沒插線的特徵就是「一直是同一個值」。
+ * 走 LogStore.hasChanged（只掃不配置）——問一個布林值不該付兩次 Float64Array 的
+ * 配置成本，而這支函式在燈牆的 render body 裡被呼叫。
+ */
 function everChanged(log: LogStore, key: string): boolean {
-  return log.changePoints(key).length > 1;
+  return log.hasChanged(key);
 }
 
 // ── 15 項 ──────────────────────────────────────────────────────────────
@@ -231,18 +241,27 @@ export function buildChecks(ctx: CheckCtx): Check[] {
   }
 
   // (7) loop p95 —— 驗收線 25 ms
+  //
+  // 這一格是整面燈牆裡唯一「數字看起來很篤定」的判定，所以它的來源不能是估的。
+  // p95 走機器人端的 /FGC/Status/Loop p95（每一圈都進 ring，nearest-rank）；
+  // Max 一起顯示，因為「p95 25 ms 但 Max 300 ms」與「p95 25 ms 且 Max 30 ms」
+  // 是完全不同的故障。
   {
     const p95 = ctx.loopP95;
     const state: CheckState = toneByThreshold(p95, LIMITS.loopWarnMs, LIMITS.loopErrMs);
+    const p50s = Number.isFinite(ctx.loopP50) ? ctx.loopP50.toFixed(0) : "—";
+    const maxs = Number.isFinite(ctx.loopMax) ? `　max ${ctx.loopMax.toFixed(0)}` : "";
     out.push({
       id: "loop",
       name: "loop p95",
       ok: state === "ok",
       state,
       detail: Number.isFinite(p95)
-        ? `${p95.toFixed(0)} ms　(p50 ${Number.isFinite(ctx.loopP50) ? ctx.loopP50.toFixed(0) : "—"})`
+        ? `${p95.toFixed(0)} ms　(p50 ${p50s}${maxs})${ctx.loopFromRobot ? "" : "　本機估算"}`
         : "沒有讀數",
-      hint: "平均 12 ms 但 p95 40 ms 的機器人手感是頓的。先關 MJPEG 串流，再看視覺 decimation",
+      hint: ctx.loopFromRobot
+        ? "平均 12 ms 但 p95 40 ms 的機器人手感是頓的。先關 MJPEG 串流，再看視覺 decimation"
+        : "這台機器人沒有發布 /FGC/Status/Loop p95（舊 Build）：這裡是用 1/4 取樣的 Loop ms 估的，看不到尾端。先更新機器人端",
     });
   }
 

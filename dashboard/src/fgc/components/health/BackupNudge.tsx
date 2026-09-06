@@ -56,7 +56,7 @@ export function BackupNudge() {
           {next && <span className="next"> · 下一場 {next}</span>}
         </div>
         <div className="sub">
-          <code>/sdcard/FIRST/settings</code> —— 9 個裝置重建 20 分鐘，志工可能在檢錄時重設 Hub
+          <code>/sdcard/FIRST/settings</code>：9 個裝置重建 20 分鐘，志工可能在檢錄時重設 Hub
         </div>
       </div>
       {editing ? (

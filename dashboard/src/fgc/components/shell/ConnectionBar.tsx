@@ -1,4 +1,11 @@
-// FGC 頂欄（44 px，永遠存在；MATCH 只剩四項）。
+// FGC 頂欄（44 px，永遠存在）。
+//
+// MATCH（lockedDown）時只剩六欄：徽章 / Build / 8080 燈 + 埠 / 錄影行數 / Thr。
+// §8 M06 寫「只 render 徽章」，但同一份 §8 的 M11 又明確劃線授權了
+// 「build / mode / 錄影行數 / threads / gen」——規格自己前後不一致。**已拍板**：
+// 以 M11 的劃線為準（README §8 記了這個決定）。理由是那幾項正是「封鎖 vs 死亡」
+// 的判別依據，而且全部是機器人自身的健康狀態，零比賽資料，沒有一個可以被轉述給
+// 場上駕駛。recpending 不在 M11 的清單裡，所以 lockdown 下不 render。
 //
 //   [模式徽章] [Build] [OpMode] │ ws age · 8080 燈 │ ⌁電壓 · loop p50/p95 │ ⏺錄影行數 │ Thr │ [分頁]
 //
@@ -17,7 +24,7 @@ import { client } from "../../../lib/RobotClient";
 import { K } from "../../lib/fgcKeys";
 import { liveLog } from "../../lib/LogStore";
 import { FGC, httpPort } from "../../lib/profile";
-import { percentiles } from "../../lib/stats";
+import { loopStats } from "../../lib/stats";
 import { useAppMode, useLink, useLogVersion, useTick } from "../../lib/hooks";
 import { LIMITS, toneByThreshold } from "../../lib/tone";
 import { SettingsMenu } from "./SettingsMenu";
@@ -96,11 +103,17 @@ export function ConnectionBar({ host, setHost, tabs, onPortsChanged }: Props) {
   const recLines = healthOk ? health.info.recLines : liveLog.latestNum(K.recLines, NaN);
   const recPending = healthOk ? health.info.recPending : NaN;
 
-  // loop p50 / p95：最近 20 秒的滾動視窗。平均 12 ms 但 p95 40 ms 的機器人手感是頓的，
-  // 只看即時數字會被平均值騙過去。
+  // loop p50 / p95。**p95 一律優先用機器人算好的那一個**（/FGC/Status/Loop p95，
+  // 每一圈都進 ring）——前端手上的 Loop ms 是 1/4 取樣，自己算的 p95 看不到尾巴。
+  // p50 沒得選（機器人沒發布），仍用最近 20 秒的滾動視窗估。
   const tMax = liveLog.tMax;
   const loops = liveLog.valuesInWindow(K.loopMs, tMax - 20, tMax);
-  const [p50, p95] = loops.length > 0 ? percentiles(loops, [0.5, 0.95]) : [NaN, NaN];
+  const loop = loopStats(
+    liveLog.has(K.loopP95),
+    liveLog.latestNum(K.loopP95, NaN),
+    liveLog.latestNum(K.loopMax, NaN),
+    loops,
+  );
 
   const badge =
     replay
@@ -207,12 +220,22 @@ export function ConnectionBar({ host, setHost, tabs, onPortsChanged }: Props) {
           <Stat
             label="loop"
             value={
-              Number.isFinite(p50) ? `${p50.toFixed(0)}/${p95.toFixed(0)}` : "—"
+              Number.isFinite(loop.p95) || Number.isFinite(loop.p50)
+                ? `${Number.isFinite(loop.p50) ? loop.p50.toFixed(0) : "—"}/${
+                    Number.isFinite(loop.p95) ? loop.p95.toFixed(0) : "—"
+                  }`
+                : "—"
             }
             unit="ms"
             width={6}
-            tone={statTone(toneByThreshold(p95, LIMITS.loopWarnMs, LIMITS.loopErrMs))}
-            title={`/FGC/Status/Loop ms 的 p50 / p95（最近 20 秒滾動視窗）。驗收線 ${LIMITS.loopErrMs} ms`}
+            tone={statTone(toneByThreshold(loop.p95, LIMITS.loopWarnMs, LIMITS.loopErrMs))}
+            title={
+              loop.fromRobot
+                ? `p50（本機估）/ p95（機器人端 /FGC/Status/Loop p95，每圈都進 ring）` +
+                  `${Number.isFinite(loop.max) ? `　Max ${loop.max.toFixed(0)} ms` : ""}。驗收線 ${LIMITS.loopErrMs} ms`
+                : `本機估算（這台機器人沒有發布 /FGC/Status/Loop p95）：Loop ms 是 1/4 取樣，` +
+                  `這個 p95 看不到尾端。驗收線 ${LIMITS.loopErrMs} ms`
+            }
           />
         </>
       )}
@@ -227,7 +250,7 @@ export function ConnectionBar({ host, setHost, tabs, onPortsChanged }: Props) {
         tone={Number.isFinite(recLines) ? undefined : "stale"}
         title="/dash/health 的 reclines —— 比賽日唯一有價值的產出就是那個 jsonl，行數在動是它活著的唯一證據"
       />
-      {Number.isFinite(recPending) && (
+      {Number.isFinite(recPending) && !lockedDown && (
         // 1200 以下讓位給分頁列：待寫是「行數為什麼還沒跳」的註腳，
         // 而行數本身還在。分頁列被擠掉的話滑鼠就換不了頁了。
         <Stat

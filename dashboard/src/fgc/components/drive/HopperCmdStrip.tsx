@@ -24,7 +24,7 @@ export function HopperCmdStrip() {
       <div className="hopper-box">
         <span className="hop-bar" aria-hidden />
         <span className="hop-cmd">{known ? CN[cmd] : "—"}</span>
-        <span className="hop-raw fgc-num">{cmd || "（尚無資料）"}</span>
+        <span className="hop-raw fgc-num">{cmd || "尚無資料"}</span>
       </div>
     </PanelShell>
   );

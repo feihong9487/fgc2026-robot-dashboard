@@ -1,9 +1,10 @@
 // #10 StateRibbon —— 狀態機膠囊，三格橫排。
 //
-// **刻意做成「按鈕的樣子但無 hover、無 active、不可點、不可聚焦」**：
-// G13 要求前端沒有任何射擊控制路徑，而下拉選單在 pit 裡選錯了畫面上看不出來。
-// 所以它長得像 Elastic 的 Split Button Chooser，但它是 <div>，沒有 onClick，
-// 也沒有 cursor:pointer——視覺上就不像可點。
+// **刻意不長得像按鈕**：G13 要求前端沒有任何射擊控制路徑，而舊版做成等寬圓角
+// 三格、現態綠底黑字反白，版面語彙說「可點」，所以才需要用標題文字澄清
+// 「唯讀顯示，不是選單」。要靠文字澄清的版面就是錯的版面。
+// 現在：無框、無圓角、無等寬三格——現態占 1.4 份寬並落進凹槽（--surface-3），
+// 其餘兩格退成 --stale 的裸字。寬度差本身就說明了「這是現在的狀態」。
 //
 // 色彩與 DiscreteBand、事件軌共用同一組 --state-* token：同一個 SHOOT
 // 在膠囊、色帶、事件清單裡永遠是同一個綠。
@@ -33,7 +34,7 @@ export function StateRibbon() {
   const cur = liveLog.latestStr(K.driveState, "");
 
   return (
-    <PanelShell title="狀態機" note="唯讀顯示，不是選單" flush className="drive-ribbon">
+    <PanelShell title="狀態機" flush className="drive-ribbon">
       <div className="ribbon-row">
         {DRIVE_STATES.map((s) => (
           <div

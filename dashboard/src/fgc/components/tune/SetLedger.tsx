@@ -64,7 +64,7 @@ export function SetLedger({ log = liveLog, allowInputs, rows = 20 }: Props) {
   return (
     <PanelShell
       title={"寫回帳本（最近 " + rows + " 筆）"}
-      note={all.length ? okN + " 成功 / " + (all.length - okN) + " 失敗" : "尚無寫回"}
+      note={all.length ? okN + " 成功、" + (all.length - okN) + " 失敗" : undefined}
       tools={
         allowInputs && all.length > 0 ? (
           <button className="tb-btn" onClick={() => setLedger.clear()} title="只清畫面，不影響機器人">
@@ -81,8 +81,8 @@ export function SetLedger({ log = liveLog, allowInputs, rows = 20 }: Props) {
             {shown.length === 0 && (
               <tr>
                 <td colSpan={5} className="empty">
-                  還沒有任何 set。被硬閘擋下的（MATCH／未連線／不在白名單）也會記在這裡——
-                  絕不靜默丟棄。
+                  {/* 空狀態是一個邀請，不是一則公告：先說發生了什麼，再說下一步怎麼做。 */}
+                  還沒送出參數。左欄改一個值按 Enter，送出、回讀、被擋下的原因都會記在這裡。
                 </td>
               </tr>
             )}
@@ -98,9 +98,10 @@ export function SetLedger({ log = liveLog, allowInputs, rows = 20 }: Props) {
                   {fmtV(r.to)}
                 </td>
                 <td className="ms">{r.echoMs === null ? "——" : "回讀 " + r.echoMs + "ms"}</td>
-                <td className="rs">
-                  {r.ok ? "✓" : "✗"}
-                  {!r.ok && r.why && <div className="why">why: {r.why}</div>}
+                <td className="sl-rs">
+                  {/* 形狀 + 顏色兩條通道：● 成功 / ■ 被拒。灰階列印與紅綠色覺辨異下都讀得出來。 */}
+                  <span className={r.ok ? "fgc-glyph ok" : "fgc-glyph err"}>{r.ok ? "●" : "■"}</span>
+                  {!r.ok && r.why && <div className="why">{r.why}</div>}
                 </td>
               </tr>
             ))}
@@ -108,12 +109,14 @@ export function SetLedger({ log = liveLog, allowInputs, rows = 20 }: Props) {
         </table>
       </div>
 
+      {/* 交叉驗證：機器人自己記的最後一筆。兩邊不一致 = 我們送出去的東西根本沒到。
+          標籤是中文比例字體，值才是等寬——等寬給值，不給標籤。 */}
       <div className="sl-foot">
         <span title="/FGC/Bridge/Last Set：機器人自己記的最後一筆">
-          機器人：{log.latestStr(K.lastSet, "—")}
+          機器人 <b>{log.latestStr(K.lastSet, "—")}</b>
         </span>
         <span className="rej" title="/FGC/Bridge/Last Set Rejected">
-          被拒：{log.latestStr(K.lastSetRejected, "—")}
+          被拒 <b>{log.latestStr(K.lastSetRejected, "—")}</b>
         </span>
       </div>
     </PanelShell>

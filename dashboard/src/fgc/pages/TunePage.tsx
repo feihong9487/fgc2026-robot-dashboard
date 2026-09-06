@@ -17,7 +17,7 @@ import { SetLedger } from "../components/tune/SetLedger";
 import { TuneTable } from "../components/tune/TuneTable";
 import { liveLog } from "../lib/LogStore";
 import { client } from "../../lib/RobotClient";
-import { useAppMode } from "../lib/hooks";
+import { useAppMode, useWindowWidth } from "../lib/hooks";
 import type { PageDef } from "./registry";
 import "../styles/tune.css";
 
@@ -33,12 +33,13 @@ function Tune() {
   const canWrite = mode === "PIT" && !replay;
   const canView = mode === "PIT" || replay;
 
-  const [ledgerOpen, setLedgerOpen] = useState(() => window.innerWidth >= LEDGER_DRAWER_W);
+  // 寬度走共用的 useWindowWidth（100 ms debounce），不再自己掛一個 resize 監聽器。
+  const winW = useWindowWidth();
+  const wide = winW >= LEDGER_DRAWER_W;
+  const [ledgerOpen, setLedgerOpen] = useState(wide);
   useEffect(() => {
-    const on = () => setLedgerOpen((o) => (window.innerWidth >= LEDGER_DRAWER_W ? o : false));
-    window.addEventListener("resize", on);
-    return () => window.removeEventListener("resize", on);
-  }, []);
+    if (!wide) setLedgerOpen(false);
+  }, [wide]);
 
   return (
     <div className="tp">

@@ -82,8 +82,8 @@ export function ClimbLadder() {
 
     const padT = 14;
     const padB = 22;
-    const labelW = 34;
-    const barW = Math.max(26, Math.min(58, w * 0.26));
+    const labelW = 36;
+    const barW = Math.max(26, Math.min(52, w * 0.24));
     const bx = labelW + 6;
     const by0 = padT;
     const by1 = h - padB;
@@ -93,8 +93,11 @@ export function ClimbLadder() {
     ctx.fillStyle = alpha(p.border, 0.45);
     ctx.fillRect(bx, by0, barW, by1 - by0);
 
-    // 已達高度
-    const fillC = over ? p.err : holding ? p.ok : p.series[2];
+    // 已達高度。**柱身是中性的骨白**，不是綠也不是第三條資料色：
+    // 全頁能填飽和色的只有巨燈（設計原則 1），而這根柱子的面積比巨燈還大，
+    // 一染綠就變成第二個搶眼的東西。保持中由柱底的鎖頭與「● HOLD 保持中」承擔。
+    // 唯一的例外是過流——那是警報，值得整根紅。
+    const fillC = over ? p.err : alpha(p.text, 0.5);
     const yc = yOf(anim.score);
     ctx.fillStyle = alpha(fillC, 0.85);
     ctx.fillRect(bx, yc, barW, by1 - yc);
@@ -111,16 +114,16 @@ export function ClimbLadder() {
       ctx.lineTo(bx + barW + 5, y);
       ctx.stroke();
 
-      ctx.font = `${m.score === SCORE_MAX ? 600 : 400} 11px ${MONO_FONT}`;
+      ctx.font = `${m.score === SCORE_MAX ? 700 : 400} 12px ${MONO_FONT}`;
       ctx.fillStyle = passed ? p.text : p.textDim;
       ctx.textAlign = "right";
       ctx.fillText(String(m.score), labelW, y);
     }
 
     // 現在位置指標
-    ctx.fillStyle = fillC;
+    ctx.fillStyle = over ? p.err : p.text;
     ctx.textAlign = "left";
-    ctx.font = `600 11px ${MONO_FONT}`;
+    ctx.font = `700 12px ${MONO_FONT}`;
     ctx.fillText(`◀ ${Math.round(anim.score)}`, bx + barW + 8, yc);
 
     // 柱底鎖頭：Holding 才亮
@@ -135,51 +138,54 @@ export function ClimbLadder() {
     ctx.fillRect(lockX - 5, lockY - 3, 10, 7);
 
     // ── 右欄文字 ──
-    const tx = bx + barW + 54;
+    // 分數是這張卡真正要讀的數字，所以它吃 --fs-2xl（63px）那一階，不是 46。
+    // 隊長要的是「再上一格值 20 分」，沒有人在賽末 15 秒還能把 counts 換算成分數。
+    const tx = bx + barW + 52;
     const avail = w - tx - 6;
     if (avail > 60) {
       const got = achievedScore(counts);
       const nx = nextMark(counts);
-      let y = by0 + 6;
+      let y = by0 + 4;
+      /** 畫一行，並且只在畫得下的時候畫——寫到卡片外面的字等於沒寫。 */
+      const line = (txt: string, font: string, fill: string, lh: number) => {
+        if (y + lh > h - 2) return false;
+        ctx.font = font;
+        ctx.fillStyle = fill;
+        ctx.fillText(txt, tx, y);
+        y += lh;
+        return true;
+      };
 
       ctx.textAlign = "left";
       ctx.textBaseline = "top";
-      ctx.fillStyle = p.textDim;
-      ctx.font = `11px ${UI_FONT}`;
-      ctx.fillText("已達", tx, y);
-      y += 14;
+      line("已達", `12px ${UI_FONT}`, p.textDim, 15);
 
-      const fs = Math.min(46, Math.max(26, avail * 0.42));
-      ctx.font = `700 ${Math.round(fs)}px ${MONO_FONT}`;
-      ctx.fillStyle = over ? p.err : p.text;
-      ctx.fillText(String(got), tx, y);
-      const gw = ctx.measureText(String(got)).width;
-      ctx.font = `${Math.round(fs * 0.38)}px ${UI_FONT}`;
-      ctx.fillStyle = p.textDim;
-      ctx.fillText("分", tx + gw + 4, y + fs * 0.5);
-      y += fs + 8;
-
-      ctx.font = `12px ${UI_FONT}`;
-      ctx.fillStyle = nx ? p.warn : p.ok;
-      ctx.fillText(nx ? `再上一格 +${nx.score - got} 分` : "已達頂格", tx, y);
-      y += 17;
-
-      ctx.font = `11px ${MONO_FONT}`;
-      ctx.fillStyle = p.textDim;
-      ctx.fillText(`counts ${Math.round(counts)}`, tx, y);
-      y += 15;
-      if (nx) {
-        ctx.fillText(`還差 ${Math.max(0, Math.round(nx.counts - counts))}`, tx, y);
-        y += 15;
+      const fs = Math.round(Math.min(63, Math.max(28, avail * 0.5)));
+      if (y + fs <= h - 2) {
+        ctx.font = `700 ${fs}px ${MONO_FONT}`;
+        ctx.fillStyle = over ? p.err : p.text;
+        ctx.fillText(String(got), tx, y);
+        const gw = ctx.measureText(String(got)).width;
+        ctx.font = `${Math.max(12, Math.round(fs * 0.32))}px ${UI_FONT}`;
+        ctx.fillStyle = p.textDim;
+        ctx.fillText("分", tx + gw + 5, y + fs * 0.55);
+        y += fs + 9;
       }
+
+      // 「再上一格 +60 分」是提示不是警告：舊版用 --warn 的黃，
+      // 讓一句中性的建議在 1.5 公尺外看起來像一則故障。
+      line(
+        nx ? `再上一格 +${nx.score - got} 分` : "已達頂格",
+        `13px ${UI_FONT}`,
+        p.text,
+        19,
+      );
+      line(`counts ${Math.round(counts)}`, `12px ${MONO_FONT}`, p.textDim, 16);
+      if (nx) line(`還差 ${Math.max(0, Math.round(nx.counts - counts))}`, `12px ${MONO_FONT}`, p.textDim, 16);
       if (Number.isFinite(cur)) {
-        ctx.fillStyle = over ? p.err : p.textDim;
-        ctx.fillText(`${cur.toFixed(1)} A${over ? " 過流" : ""}`, tx, y);
-        y += 15;
+        line(`${cur.toFixed(1)} A${over ? " 過流" : ""}`, `12px ${MONO_FONT}`, over ? p.err : p.textDim, 16);
       }
-      ctx.fillStyle = holding ? p.ok : p.stale;
-      ctx.font = `11px ${UI_FONT}`;
-      ctx.fillText(holding ? "● HOLD 保持中" : "○ 未保持", tx, y);
+      line(holding ? "● HOLD 保持中" : "○ 未保持", `12px ${UI_FONT}`, holding ? p.ok : p.stale, 16);
     }
   });
 

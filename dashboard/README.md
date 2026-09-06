@@ -221,8 +221,34 @@ MATCH 進來時自動套 `lockdown` 主題（灰階 + 一個橘徽章）。它**
 ### M01 / M09 — 第二控制路徑（最高 RED CARD）
 
 `client.set()` 有三行全域硬閘，**不在 PIT、沒連線、或不是 `/FGC/Tune/*` 一律拒絕並回饋**
-（`src/lib/RobotClient.ts`）。被擋下來一定會出現在寫回帳本裡，不會靜默丟棄——
+（`src/lib/RobotClient.ts` 的 `gate()`）。被擋下來一定會出現在寫回帳本裡，不會靜默丟棄——
 「使用者以為存好了其實沒送出去」比拒絕更危險。
+
+**前端通往 `/dash/set` 的出口只有兩支，而且共用同一個 `gate()`**：`client.set()`（21 項白名單）
+與 `client.command("_save" | "_load")`。`_save` / `_load` 以前是 `ParamDiffCard` 自己 `fetch` 的
+第二條路徑——沒有模式檢查、沒有連線檢查、被拒也不進帳本。它有一個真實競態：按下「存到機器人」
+的同一秒機器人切進 MATCH，請求已經送出去了而前端沒有留下任何紀錄說它送過。現在兩支都進帳本。
+
+**模式是「有保鮮期的事實」，不是鎖存。** 這是本節最容易寫錯的一行：
+
+- **授權**：只有 ws 的 `hello` / `nt` 裡的 `/FGC/Bridge/Mode` 能把前端切成 PIT。
+  `/dash/state.json` 的備援輪詢與 `/dash/health` 都**只准降級，不准授予**。
+- **保鮮期**：真機的 PIT→MATCH 在**已經開著的 socket 上是完全靜默的**——
+  `DashPublisher.java:37` 的 `drainDirty()` 一定會被呼叫（要餵 `DashRec.addLine`），
+  把剛變成 `"MATCH"` 的那筆取走並清空 dirty，而第 46 行的廣播被 `pit()` 擋住，
+  所以那一批永遠不會送出去；下一圈 `DashHub.put` 值沒變直接 return，這個 key 再也不會進 dirty。
+  也就是說「ws 開著但不推播」正是 MATCH 的常態，而「斷線即鎖」擋不住它。
+  推播靜默超過 `FGC.modeStaleMs`（1 s）就主動送一則 ws `sync`（`DashWs.java:56` 支援，
+  MATCH 的 hello 白名單一定帶 `/FGC/Bridge/Mode`）；再過 `modeGraceMs`（2.5 s）
+  仍然沒有任何下行就降成 `UNKNOWN`。**未知即鎖，不是未知即開放。**
+- **matchLatch**：`/dash/health` 回 `mode=MATCH` 之後就閂上，ws 說 PIT 也不算數，
+  要等 health 回 `mode=PIT` 才解開。授權要兩條通道都同意，降級任一條說了算。
+  這擋的是「8080 說 MATCH、8081 說 PIT」的分腦——症狀就是 `Thr != 1` 的殭屍推播執行緒
+  推著上一場的遙測（實測過：修之前那個情境會出現約 800 ms 的完整可寫 PIT 介面）。
+
+⚠ **假伺服器必須跟真機一樣殘忍**：`fake-hub.mjs` 以前在切 MATCH 的當下額外推一則帶
+`Mode/Gen/OpMode` 的 nt，而且 `hello` 不分模式一律回全量快照。兩者真機都沒有，而前者正好
+把上面那個 fatal 遮起來（在那個版本的假伺服器上永遠測不出來）。兩處都已修正。
 
 - `sendPath()` 已**整支刪除**，不是不呼叫。VMX 的 `RunPanel` / `DebugPanel` / `LockerPanel` /
   `PathPlanPanel` / `PathTestPanel` 也整批刪掉，連引誘都不留。
@@ -234,9 +260,27 @@ MATCH 進來時自動套 `lockdown` 主題（灰階 + 一個橘徽章）。它**
 ### M11 — 場外教練式通訊（YELLOW CARD）
 
 - `fgcKeys.ts` 對每個 key 標 `coachRisk`（`/FGC/Vision/Best/*`、`/FGC/Aim/*`、任何建議射速）。
-- Lockdown 頁可以顯示機器人**自身的健康狀態**（build / mode / 錄影行數 / threads / gen），
-  因為它不含任何可轉述給駕駛的比賽資訊；**`/FGC/Shooter`、`/FGC/Vision`、`/FGC/Drive`、
-  `/FGC/Aim` 的值一律不顯示**。Driver Hub 導覽卡只列名稱不列數值。
+- Lockdown 頁可以顯示機器人**自身的健康狀態**（build / mode / 錄影行數 / threads / gen /
+  `/FGC/Bridge/Last Notify`），因為它不含任何可轉述給駕駛的比賽資訊；
+  **`/FGC/Shooter`、`/FGC/Vision`、`/FGC/Drive`、`/FGC/Aim` 的值一律不顯示**。
+  Driver Hub 導覽卡只列名稱不列數值。
+
+  這條線**由程式保證，不靠記憶**：Lockdown 子樹的每一次取值都走 `fgcKeys.lockdownValue()`
+  （不在白名單就回 `null`，呼叫端整格不 render），而 `tools/fgc-check-2a.ts` 斷言
+  `LOCKDOWN_KEYS ⊆ isLockdownSafeKey` 且其中沒有任何 `coachRisk` 欄位。往這一頁加一格而
+  忘了想 M11 的人，會在 `npm run check` 就被擋下來。
+
+  **頂欄拍板（§8 M06 與 M11 的衝突）**：規格 §8 M06 寫「ConnectionBar 只 render 徽章」，
+  但同一份 §8 的 M11 明確劃線授權了「build / mode / 錄影行數 / threads / gen」。
+  **結論：以 M11 的劃線為準**——M06 那句被它取代。Lockdown 頂欄只顯示
+  **徽章 / Build / 8080 燈（含實際在連的埠）/ ⏺ 錄影行數 / Thr** 這五項，理由是它們正是
+  「封鎖 vs 死亡」的判別依據，而且全部是機器人自身的健康狀態，沒有一個可以被轉述給場上駕駛。
+  `recpending`（待寫）不在 M11 的清單裡，所以 lockdown 下不 render。
+
+- **匯出也吃同一道閘**：`ExportMenu` 收 `gateOpen`，`toJsonlClip()` 與 `toConstantsSnippet()`
+  都收 `allowKey`。閘關著時 JSONL 剪輯不含任何 `coachRisk` 欄位、Constants 片段不吐 `AIM_*`，
+  而且匯出面板上會寫明濾掉了幾個欄位。閘擋住折線圖卻讓一顆按鈕把同一份資料印在預覽區裡，
+  成本是一次點擊、零警告——那正是 M11 要擋的事。
 - **REPLAY 也有閘**：log 最後一批的時戳距現在不到 5 分鐘時，`coachRisk` 欄位整批不 render，
   並在畫面上寫明還要等幾分鐘。回放本身可以退化成即時教練工具，這條堵的是那個。
 
@@ -354,9 +398,10 @@ src/
   App.tsx                       模式路由 · 分頁 · ErrorBoundary · 快捷鍵
   styles.css                    三層 token · 三主題 · 三檔密度 · 斷點
   lib/
-    RobotClient.ts              ws / health / 輪詢 / set 硬閘 / 回放載入
-    store.ts                    連線五態 + mode（VMX 沿用）
-  components/                   VMX 沿用（AllSignalsPanel / Chart / controls）
+    RobotClient.ts              ws / health / 輪詢 / set 硬閘 / 模式看門狗 / 回放載入
+    store.ts                    連線五態 + mode + 最新值鏡射（VMX 沿用；時間序列在 LogStore）
+  components/
+    AllSignalsPanel.tsx         全 key 自動列表（VMX 沿用；釘選圖已換成 LineGraph）
   fgc/
     lib/
       profile.ts                埠 · 八條路徑 · 時間門檻 · URL 參數 · 埠覆寫
@@ -366,7 +411,8 @@ src/
       eventDetect.ts            八類事件 + 通知第九類（純函式）
       theme.ts                  CSS 變數 → JS 色票（Canvas / uPlot 取色唯一來源）
       tone.ts                   形狀語彙 ●▲■○ 與警戒色語意（全專案唯一一份）
-      persist.ts / clipboard.ts / stats.ts / jsonl.ts / health.ts / hooks.ts
+      persist.ts / clipboard.ts / stats.ts / jsonl.ts / health.ts
+      hooks.ts                  useLogKeys（per-key snapshot）· useReplayLog · useWindowWidth · useFlash
     components/
       shell/                    ConnectionBar · PanelShell · SettingsMenu · ErrorBoundary · Glyph
       drive/                    巨燈 · 雙環 · 膠囊 · 車頭 · 爬升柱 · 計時 · 節奏 · 按鍵 · 警報
@@ -388,3 +434,16 @@ tools/                          fgc-check{,-2a,-3e}.ts —— 純函式驗證，
    因為色盲使用者看到形狀對不上，其他人看到顏色是對的。
 3. **判定與畫面分離。** 燈牆、關閉路徑、事件、dip、匯出全部是純函式，
    所以 `fgc-check*` 可以用假資料直接驗，不必靠人盯畫面。新增判定請照這個模式。
+
+**已刪除的兩支 VMX 遺留檔**（`git log` 找得回來，但不要復活它們）
+
+- `components/Chart.tsx` —— 每 100 ms 用 `Set` 收時戳再 `sort`、只有一個 y 軸、硬編色、
+  `series` 不在 effect 相依裡（靠呼叫端 `key=` 強制 remount 才正確）。
+  它的位置由 `fgc/components/graph/LineGraph.tsx` 取代。
+- `components/controls.tsx` —— 沒有任何檔案 import 它。它的價值（草稿-送出輸入模式、
+  `draft: string | null`）已經被 `TuneTable` 與 `AllSignalsPanel` 的 `NumberRow` / `StringRow`
+  吸收。留著的成本是「下一個要做視覺分頁的人會先看到它並直接用」。
+
+同時，`store.ts` 的 `history` ring buffer 也整份移除了：那是同一份遙測的第二份拷貝，
+而且每一批對每個變動的 key 各做一次 `splice(0,1)`（3000 點 × 約 20 個 key × 20 Hz
+≈ 每秒 240 萬次元素搬移）。時間序列只有 `LogStore` 一份。

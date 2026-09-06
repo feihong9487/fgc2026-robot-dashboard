@@ -7,3 +7,6 @@ vite.log
 .fgc-check.mjs
 .fgc-check-2a.mjs
 .fgc-check-3e.mjs
+vite*.log
+.vite-*.log
+tune-states.html

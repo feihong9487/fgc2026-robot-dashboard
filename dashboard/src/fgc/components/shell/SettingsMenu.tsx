@@ -17,6 +17,7 @@ import * as persist from "../../lib/persist";
 import { getDensity, getTheme, setDensity, setTheme, type Density, type ThemeName } from "../../lib/theme";
 import { FGC, httpPort, portsOverridden, RELAY_PORTS, setPorts, wsPort } from "../../lib/profile";
 import { copyText } from "../../lib/clipboard";
+import { useFlash } from "../../lib/hooks";
 
 const THEMES: { id: ThemeName; label: string; why: string }[] = [
   { id: "dark", label: "暗色", why: "pit 帳篷、賽後分析" },
@@ -32,7 +33,7 @@ const DENSITIES: { id: Density; label: string; why: string }[] = [
 export function SettingsMenu({ onPortsChanged }: { onPortsChanged?: () => void }) {
   const [open, setOpen] = useState(false);
   const [, force] = useState(0);
-  const [msg, setMsg] = useState("");
+  const [msg, flash] = useFlash(3000);
   const [httpDraft, setHttpDraft] = useState(String(httpPort()));
   const [wsDraft, setWsDraft] = useState(String(wsPort()));
   const fileRef = useRef<HTMLInputElement>(null);
@@ -55,10 +56,9 @@ export function SettingsMenu({ onPortsChanged }: { onPortsChanged?: () => void }
     };
   }, [open]);
 
-  const flash = useCallback((s: string) => {
-    setMsg(s);
-    window.setTimeout(() => setMsg(""), 3000);
-  }, []);
+  // flash 走 useFlash：會在 unmount 時清掉 timer，也會在下一次 flash 時取消前一個。
+  // 六個地方本來各自寫了一份沒存 id 的 setTimeout，連按兩次時第一個 timer 會提前
+  // 把第二則訊息清掉——在賽場上會被讀成「按了沒反應」。
 
   const applyPorts = useCallback(
     (http: number | null, ws: number | null) => {

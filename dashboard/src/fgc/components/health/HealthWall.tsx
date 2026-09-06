@@ -1,125 +1,178 @@
-// #28 HealthWall：Go/No-Go 全螢幕燈牆（5 欄 × 3 列）。
+// #28 HealthWall：Go/No-Go 驗機清單。
 //
 // 這一頁的使用情境是「上場前 30 秒」與「檢錄」，兩者的共同點是：看的人站著、
 // 距離一公尺以上、而且很急。所以：
 //   · 一次看完，不捲動
-//   · 每一格只有三行：名稱 / 值 / （沒過才有的）處置提示
+//   · **依 tone 排序（err → warn → stale → ok）**：要修的永遠在最上面。
+//     15 張一模一樣的卡片鋪成 5×3 時，掃描成本 = 讀 15 個色點；改成一條清單之後，
+//     位置本身就是資訊——第一列就是第一件要做的事
+//   · 通過的收成 40px 一行（名稱 + 值），不佔版面也不消失
 //   · 顏色不是唯一通道（●▲■○），約 8% 男性有紅綠色覺辨異
 //   · 每秒強制刷新，讓「年齡」持續變舊——遙測斷流時畫面不可以凍在最後一個
 //     看起來很健康的數字上（沿用 StatusPanel.tsx:12-20）
 //
 // 判定全部在 checks.ts 的純函式裡，這個檔案只負責畫。
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Glyph } from "../shell/Glyph";
 import { client } from "../../../lib/RobotClient";
 import { store } from "../../../lib/store";
 import { K } from "../../lib/fgcKeys";
 import { liveLog } from "../../lib/LogStore";
-import { percentiles } from "../../lib/stats";
-import { useLink, useLogVersion, useTick } from "../../lib/hooks";
+import { loopStats } from "../../lib/stats";
+import { useLink, useTickN, useFlash } from "../../lib/hooks";
+import { type Tone } from "../../lib/tone";
 import { buildChecks, checksToMarkdown, summarizeChecks, type Check } from "./checks";
 import { ShutdownStrip } from "./ShutdownStrip";
 import { useRecTrend } from "./useRecTrend";
 import { copyText } from "../../lib/clipboard";
 
-function Cell({ c }: { c: Check }) {
+/** 清單順序 = 處理順序。這是「顏色不是唯一通道」的第三個通道：位置。 */
+const TONE_ORDER: Record<Tone, number> = { err: 0, warn: 1, stale: 2, ok: 3 };
+
+function Row({ c }: { c: Check }) {
   return (
-    <div className={`hw-cell ${c.state}`} title={c.hint}>
-      <div className="hw-name">
-        <Glyph tone={c.state} />
-        {c.name}
-        {c.fingerprint && (
-          <span className="hw-fp" title="指紋燈：這一格直接指向一個具體的機器人端故障，不必再猜">
-            指紋
-          </span>
-        )}
-      </div>
-      <div className="hw-detail">{c.detail}</div>
-      {!c.ok && c.hint && <div className="hw-hint">{c.hint}</div>}
+    <div className={`hw-row ${c.state}${c.ok ? " pass" : ""}`} title={c.hint}>
+      <Glyph tone={c.state} />
+      <span className="hw-row-name">{c.name}</span>
+      <span className="hw-row-detail">{c.detail}</span>
+      {!c.ok && c.hint ? <span className="hw-row-hint">{c.hint}</span> : <span />}
+      {!c.ok && c.fingerprint && (
+        <span className="hw-row-fp" title="這一格直接指向一個具體的機器人端故障，處置寫在左邊，不必再猜">
+          直指故障
+        </span>
+      )}
     </div>
   );
 }
 
 export function HealthWall() {
-  useLogVersion();
-  useTick(1000);
+  // 這一頁的每一格判定都不需要 20 Hz：使用情境是「上場前 30 秒瞄一眼」與「檢錄」。
+  // 以前掛 useLogVersion() 每秒重繪約 20 次，而每一次都在 render body 裡跑
+  // buildChecks（15 格，含 valuesInWindow 與三次 everChanged 的配置）——
+  // 光這一頁就在製造每秒數 MB 的垃圾。
+  const tickN = useTickN(500);
   const link = useLink();
   const recTrend = useRecTrend(0);
-  const [copied, setCopied] = useState("");
+  const [copied, flashCopied] = useFlash(2500);
 
   const wsAgeMs = store.lastBatchAt >= 0 ? (store.now() - store.lastBatchAt) * 1000 : -1;
-  const tMax = liveLog.tMax;
-  const loops = liveLog.valuesInWindow(K.loopMs, tMax - 20, tMax);
-  const [loopP50, loopP95] = loops.length > 0 ? percentiles(loops, [0.5, 0.95]) : [NaN, NaN];
 
-  const checks = buildChecks({
-    now: Date.now(),
-    linkState: link.state,
-    health: link.health,
-    healthAgeMs: link.healthAt > 0 ? Date.now() - link.healthAt : -1,
-    wsAgeMs,
-    helloAt: link.helloAt,
-    recTrend,
-    log: liveLog,
-    loopP50,
-    loopP95,
-  });
+  const checks = useMemo(() => {
+    const tMax = liveLog.tMax;
+    const loops = liveLog.valuesInWindow(K.loopMs, tMax - 20, tMax);
+    // p95 一律優先取機器人算好的 /FGC/Status/Loop p95（見 stats.loopStats）：
+    // 前端手上的 Loop ms 是 1/4 取樣，自己算的 p95 看不到尾端，而這一格會做
+    // 25 ms 的 NO GO 判定——整面燈牆裡唯一「數字看起來很篤定」的那一個。
+    const loop = loopStats(
+      liveLog.has(K.loopP95),
+      liveLog.latestNum(K.loopP95, NaN),
+      liveLog.latestNum(K.loopMax, NaN),
+      loops,
+    );
+    return buildChecks({
+      now: Date.now(),
+      linkState: link.state,
+      health: link.health,
+      healthAgeMs: link.healthAt > 0 ? Date.now() - link.healthAt : -1,
+      wsAgeMs,
+      helloAt: link.helloAt,
+      recTrend,
+      log: liveLog,
+      loopP50: loop.p50,
+      loopP95: loop.p95,
+      loopMax: loop.max,
+      loopFromRobot: loop.fromRobot,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tickN, link, recTrend]);
   const sum = summarizeChecks(checks);
   const build = liveLog.latestStr(K.build) || (link.health?.kind === "ok" ? link.health.info.build : "");
+
+  // Array#sort 是穩定的，所以同 tone 內維持 checks.ts 的原始順序（= 檢查的邏輯順序）。
+  const [open, pass] = useMemo(() => {
+    const s = [...checks].sort((a, b) => TONE_ORDER[a.state] - TONE_ORDER[b.state]);
+    return [s.filter((c) => !c.ok), s.filter((c) => c.ok)];
+  }, [checks]);
 
   const onCopy = useCallback(() => {
     const md = checksToMarkdown(checks, build, Date.now());
     void copyText(md).then((r) => {
-      setCopied(r === "failed" ? "複製失敗（瀏覽器兩條路徑都被擋）" : "已複製 Markdown");
-      window.setTimeout(() => setCopied(""), 2500);
+      // 動作全程同名：按鈕寫「複製檢錄記錄」，回饋就寫「已複製檢錄記錄」。
+      flashCopied(r === "failed" ? "複製失敗，瀏覽器兩條路徑都被擋" : "已複製檢錄記錄");
     });
-  }, [checks, build]);
+  }, [checks, build, flashCopied]);
 
-  // 綠必須是真的綠。有 warn 就不給綠字——「READY TO PLAY」配一顆 11.7 V 的電池
+  // 綠必須是真的綠。有 warn 就不給綠字——「全部通過」配一顆 11.7 V 的電池
   // 是在教人忽略黃燈，而黃燈被忽略一次之後就永遠是裝飾。
-  // 字距不寫在字串裡（也不寫在 CSS 裡）：拉開後的「N O G O」第一眼會被讀成
-  // 四個獨立字母，而漢字本來就是等寬方塊，拉開只會變鬆散。
-  const banner =
+  //
+  // 字面值全部是中文：頁面上唯一該出現的大寫是 READY / SHOOT / EJECT 這種
+  // 狀態機自己的詞彙，「NO GO」「READY TO PLAY」是設計師選的標籤，不是資料。
+  const verdict: { tone: Tone; text: string } =
     sum.errs > 0
-      ? { cls: "nogo", text: "NO GO" }
+      ? { tone: "err", text: "不通過" }
       : sum.stales > 0
-        ? { cls: "hold", text: "資料不足" }
+        ? { tone: "stale", text: "資料不足" }
         : sum.warns > 0
-          ? { cls: "hold", text: `READY，${sum.warns} 項要注意` }
-          : { cls: "go", text: "READY TO PLAY" };
+          ? { tone: "warn", text: "可以上場" }
+          : { tone: "ok", text: "全部通過" };
+
+  // 計數用形狀語彙自己說，不串一條「· A · B · C」的中點 meta 字串。
+  const tally: [Tone, number][] = [
+    ["err", sum.errs],
+    ["warn", sum.warns],
+    ["stale", sum.stales],
+    ["ok", sum.passed],
+  ];
 
   return (
     <div className="hw">
-      <div className={`hw-banner ${banner.cls}`}>
-        <div className="hw-banner-text">{banner.text}</div>
-        <div className="hw-banner-sub">
-          {sum.passed}/{sum.total} 通過
-          {sum.errs > 0 && <> · {sum.errs} 項不合格</>}
-          {sum.warns > 0 && <> · {sum.warns} 項接近界線</>}
-          {sum.stales > 0 && <> · {sum.stales} 項沒有資料</>}
-          {" · "}
-          <code>{build || "沒有 Build tag"}</code>
-          <button className="hw-btn" onClick={onCopy} title="產生一份帶時間的 Markdown，貼進隊內群組就是檢錄記錄">
-            複製結果
-          </button>
-          {copied && <span className="hw-copied">{copied}</span>}
-        </div>
+      <div className={`hw-verdict ${verdict.tone}`}>
+        <Glyph tone={verdict.tone} />
+        <span className="hw-verdict-head">{verdict.text}</span>
+        <span className="hw-tally">
+          {tally.map(([tone, n]) =>
+            n > 0 ? (
+              <span className="item" key={tone}>
+                <Glyph tone={tone} />
+                <span className="fgc-num">{n}</span>
+              </span>
+            ) : null,
+          )}
+        </span>
+        <span className="spacer" />
+        {copied && <span className="hw-copied">{copied}</span>}
+        <button className="hw-btn" onClick={onCopy} title="產生一份帶時間與 Build 的 Markdown，貼進隊內群組就是檢錄記錄">
+          複製檢錄記錄
+        </button>
       </div>
 
-      <div className="hw-grid">
-        {checks.map((c) => (
-          <Cell key={c.id} c={c} />
-        ))}
+      {/* 上半 = 要處理的（依 err → warn → stale 排序，一列一件事，值 28px）。
+          下半 = 通過的，兩欄 40px 一行——它們不需要動作，所以不需要版面。
+          兩塊的欄數不同，所以「有沒有事」不必讀顏色也不必數，掃一眼版面就知道。 */}
+      <div className="hw-list">
+        {open.length > 0 && (
+          <div className="hw-open">
+            {open.map((c) => (
+              <Row key={c.id} c={c} />
+            ))}
+          </div>
+        )}
+        {pass.length > 0 && (
+          <div className="hw-pass">
+            {pass.map((c) => (
+              <Row key={c.id} c={c} />
+            ))}
+          </div>
+        )}
       </div>
 
       <ShutdownStrip ctx={{ health: link.health, wsAgeMs, recTrend }} />
 
-      <div className="hw-foot">
-        判定全部來自可觀測狀態：8081 的最後一批、8080 的 <code>/dash/health</code>、以及 log
-        裡這些 key 有沒有變過。沒有任何一格是靠前端自己記得的旗標。
-        {client.link.state === "polling" && " · 目前走 state.json 輪詢（8081 握手三次失敗）"}
-      </div>
+      <p className="hw-foot">
+        判定來自可觀測狀態：8081 的最後一批、8080 的 <code>/dash/health</code>、log 裡這些 key 有沒有變過。
+        {client.link.state === "polling" && "目前走 state.json 輪詢（8081 握手三次失敗）。"}
+      </p>
     </div>
   );
 }

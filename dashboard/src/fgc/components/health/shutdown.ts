@@ -4,11 +4,11 @@
 // ENABLED 常數摺疊那個坑證明了「我以為關了」與「真的關了」是兩件事，
 // 所以這三格全部從外部現象反推，沒有任何一格是靠前端自己記得的旗標。
 //
-//   (1) 未連筆電        8080 與 8081 都沒有回應 → 這台筆電現在對機器人沒有任何路徑
-//   (2) Z-DASH-OFF 生效  GET /dash/health 回 404（DashBridge.java:143-149，薄殼對所有
+//   · 未連筆電          8080 與 8081 都沒有回應 → 這台筆電現在對機器人沒有任何路徑
+//   · Z-DASH-OFF 生效    GET /dash/health 回 404（DashBridge.java:143-149，薄殼對所有
 //                       註冊路徑回 404 "dash disabled"）。這一格同時是 8080 連通性燈，
 //                       不必再寫第二個輪詢
-//   (3) Z-FALLBACK-v2    這一格沒有直接證據可用：FGC2026_TeleOp_v2 完全不碰 DashHub
+//   · Z-FALLBACK-v2      這一格沒有直接證據可用：FGC2026_TeleOp_v2 完全不碰 DashHub
 //                       （它的存在理由就是「不吃儀表板」），所以它不會回報自己。
 //                       能觀測到的是「橋接活著（health 200、enabled=1）但沒有人在推
 //                       遙測、錄影行數也停了」。任何不吃儀表板的 OpMode（含根本沒有
@@ -24,7 +24,6 @@ import { REC_WINDOW_S, type RecTrend } from "./checks";
 
 export interface ShutdownCell {
   id: string;
-  n: string;
   name: string;
   /** 這條關閉路徑目前是否生效。null = 判斷不出來（樣本不足或缺證據）。 */
   active: boolean | null;
@@ -55,7 +54,6 @@ export function buildShutdown(ctx: ShutdownCtx): ShutdownCell[] {
   return [
     {
       id: "unplugged",
-      n: "(1)",
       name: "未連筆電",
       active: hDead && wsDead,
       basis: `8080 ${hDead ? "無回應" : hDisabled ? "404" : "200"} · 8081 ${wsDead ? "無資料" : "推播中"}`,
@@ -63,7 +61,6 @@ export function buildShutdown(ctx: ShutdownCtx): ShutdownCell[] {
     },
     {
       id: "dashoff",
-      n: "(2)",
       name: "Z-DASH-OFF 已生效",
       active: !!hDisabled,
       basis: hDisabled
@@ -75,7 +72,6 @@ export function buildShutdown(ctx: ShutdownCtx): ShutdownCell[] {
     },
     {
       id: "fallback",
-      n: "(3)",
       name: "Z-FALLBACK-v2 執行中",
       active: hOk && hOk.enabled ? (trendKnown ? wsDead && recStopped : null) : false,
       basis: !hOk

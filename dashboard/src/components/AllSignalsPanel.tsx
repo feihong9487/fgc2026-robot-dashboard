@@ -2,22 +2,26 @@
 // 機器人端 tab.Add(...) 加什麼，這裡立刻出現什麼，App 端零修改。
 // 數字可編輯（Enter/失焦寫回）、布林是開關、字串可編輯、陣列唯讀；
 // 數字訊號可釘選成波形圖（釘選清單記在 localStorage，重開 App 仍在）。
-import { useEffect, useState } from "react";
+//
+// 重繪節奏（§7.5）：這一頁的用途是「找一個我沒想到的 key」，不是盯波形，所以
+// **不跟著 20 Hz 的推播重繪**。key 集合（store.latest.size）變了才重排分組，
+// 值本身每 250 ms 刷新一次。以前是 store.subscribe + useState(0) 強制重繪，
+// 每秒 20 次重建 Map、兩層 localeCompare 排序、reconcile 126 列 DOM——
+// 在 1366x768 的舊筆電上只要開著這一頁，主執行緒就被它吃掉，而頂欄的 ws age
+// 與所有 Canvas 面板都在同一條執行緒上（症狀是「儀表板看起來卡住了」）。
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { store, NtValue } from "../lib/store";
 import { client } from "../lib/RobotClient";
 import { isTunableKey } from "../fgc/lib/fgcKeys";
-import { seriesColor, subscribeTheme } from "../fgc/lib/theme";
+import { useAppMode, useTick } from "../fgc/lib/hooks";
 import * as persist from "../fgc/lib/persist";
-import { Chart } from "./Chart";
+import { LineGraph, type GraphSeries } from "../fgc/components/graph/LineGraph";
+import { SPAN_CHOICES, view } from "../fgc/components/graph/viewWindow";
 
 // §3.35 改造 (2)：釘選上限原本是「色盤長度 6」，現在無上限——
 // 超過 8 條時色序循環，並用線型（實線 / 長虛 / 短虛）區分，
 // 所以第 9 條與第 1 條同色但不同線型，仍分得出來。
 const DASHES: (number[] | undefined)[] = [undefined, [8, 4], [2, 3]];
-
-function pinStyle(i: number): { color: string; dash?: number[] } {
-  return { color: seriesColor(i), dash: DASHES[Math.floor(i / 8) % DASHES.length] };
-}
 
 function loadPinned(): string[] {
   const v = persist.get<unknown>(persist.KEYS.pinned, []);
@@ -85,8 +89,8 @@ function StringRow({ ntKey, value }: { ntKey: string; value: string }) {
  * 現在唯一會 render 輸入元件的情況是「PIT 模式 + key 在 21 項白名單內」；
  * 其餘一律純文字（不是 disabled input）——唯讀就該長得像唯讀。
  */
-function ValueCell({ ntKey, value }: { ntKey: string; value: NtValue }) {
-  const writable = store.mode === "PIT" && isTunableKey(ntKey);
+function ValueCell({ ntKey, value, pit }: { ntKey: string; value: NtValue; pit: boolean }) {
+  const writable = pit && isTunableKey(ntKey);
   if (!writable) {
     const text =
       typeof value === "number"
@@ -119,16 +123,20 @@ function ValueCell({ ntKey, value }: { ntKey: string; value: NtValue }) {
 }
 
 export function AllSignalsPanel() {
-  const [, force] = useState(0);
-  useEffect(() => store.subscribe(() => force((n) => n + 1)), []);
-  // 換主題時釘選線的顏色要跟著換（顏色來自 --series-* token）
-  const [themeV, setThemeV] = useState(0);
-  useEffect(() => subscribeTheme(() => setThemeV((v) => v + 1)), []);
+  // key 集合變了才重排（snapshot 一律回 primitive）；值刷新交給 250 ms 的 tick。
+  const keyCount = useSyncExternalStore(
+    store.subscribe,
+    () => store.latest.size,
+    () => store.latest.size,
+  );
+  useTick(250);
+  // 寫回閘走 useAppMode()，不在 render 期間讀模組變數：那個值目前只因為父層
+  // 20 Hz 重繪才「碰巧」新鮮，任何一次 memo 化都會讓它變成陳舊值。
+  const pit = useAppMode() === "PIT";
 
   const [filter, setFilter] = useState("");
   const [showHidden, setShowHidden] = useState(false);
   const [pinned, setPinned] = useState<string[]>(loadPinned);
-  const [windowSec, setWindowSec] = useState(30);
 
   const togglePin = (key: string) => {
     const next = pinned.includes(key) ? pinned.filter((k) => k !== key) : [...pinned, key];
@@ -136,26 +144,40 @@ export function AllSignalsPanel() {
     persist.set(persist.KEYS.pinned, next);
   };
 
-  // 蒐集 + 過濾 + 依上層路徑分組
-  const needle = filter.trim().toLowerCase();
-  const groups = new Map<string, { key: string; value: NtValue }[]>();
-  let total = 0;
-  for (const [key, value] of store.latest) {
-    total++;
-    if (!showHidden && isHidden(key)) continue;
-    if (needle && !key.toLowerCase().includes(needle)) continue;
-    const slash = key.lastIndexOf("/");
-    const group = slash > 0 ? key.slice(0, slash) : "/";
-    let list = groups.get(group);
-    if (!list) {
-      list = [];
-      groups.set(group, list);
+  // 蒐集 + 過濾 + 依上層路徑分組。相依只有「key 集合的指紋」——值變動不重排，
+  // 126 個 key 的兩層 localeCompare 不該每秒跑 20 次（SignalTree.tsx:78-99 同樣寫法）。
+  const sortedGroups = useMemo(() => {
+    const needle = filter.trim().toLowerCase();
+    const groups = new Map<string, string[]>();
+    for (const key of store.latest.keys()) {
+      if (!showHidden && isHidden(key)) continue;
+      if (needle && !key.toLowerCase().includes(needle)) continue;
+      const slash = key.lastIndexOf("/");
+      const group = slash > 0 ? key.slice(0, slash) : "/";
+      let list = groups.get(group);
+      if (!list) {
+        list = [];
+        groups.set(group, list);
+      }
+      list.push(key);
     }
-    list.push({ key, value });
-  }
-  const sortedGroups = Array.from(groups.entries()).sort(([a], [b]) => a.localeCompare(b));
-  for (const [, list] of sortedGroups) list.sort((a, b) => a.key.localeCompare(b.key));
+    const out = Array.from(groups.entries()).sort(([a], [b]) => a.localeCompare(b));
+    for (const [, list] of out) list.sort((a, b) => a.localeCompare(b));
+    return out;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keyCount, filter, showHidden]);
 
+  const pinnedSeries = useMemo<GraphSeries[]>(
+    () =>
+      pinned.map((k, i) => ({
+        key: k,
+        label: k.split("/").slice(-2).join("/"),
+        dash: DASHES[Math.floor(i / 8) % DASHES.length],
+      })),
+    [pinned],
+  );
+
+  const total = store.latest.size;
   const disconnected = store.connState === "disconnected" || store.connState === "connecting";
 
   return (
@@ -176,11 +198,11 @@ export function AllSignalsPanel() {
         {pinned.length > 0 && (
           <>
             <span className="spacer" />
-            {[10, 30, 120].map((w) => (
+            {SPAN_CHOICES.map((w) => (
               <button
                 key={w}
-                className={windowSec === w ? "seg active" : "seg"}
-                onClick={() => setWindowSec(w)}
+                className={view.span === w ? "seg active" : "seg"}
+                onClick={() => view.setSpan(w)}
               >
                 {w}s
               </button>
@@ -192,18 +214,12 @@ export function AllSignalsPanel() {
         )}
       </div>
 
+      {/* 釘選圖用的是 LineGraph（左右軸、主題感知、min/max decimation、缺口斷開），
+          不是已刪除的 Chart.tsx——同一份遙測只有 LogStore 一條時間序列。 */}
       {pinned.length > 0 && (
-        <Chart
-          key={pinned.join("|") + "#" + themeV} // 釘選或主題變動時重建 uPlot 序列
-          title="釘選訊號"
-          series={pinned.map((k, i) => ({
-            key: k,
-            label: k.split("/").slice(-2).join("/"),
-            ...pinStyle(i),
-          }))}
-          windowSec={windowSec}
-          height={240}
-        />
+        <div className="chart-box">
+          <LineGraph series={pinnedSeries} height={240} showTargets={false} showThreshold={false} />
+        </div>
       )}
 
       <div className="sig-list">
@@ -220,7 +236,10 @@ export function AllSignalsPanel() {
           sortedGroups.map(([group, list]) => (
             <section key={group}>
               <h3>{group}</h3>
-              {list.map(({ key, value }) => (
+              {list.map((key) => {
+                const value = store.latest.get(key);
+                if (value === undefined) return null;
+                return (
                 <div className="sig-row" key={key}>
                   {typeof value === "number" ? (
                     <button
@@ -236,9 +255,10 @@ export function AllSignalsPanel() {
                   <span className="sig-name" title={key}>
                     {key.slice(group.length + 1)}
                   </span>
-                  <ValueCell ntKey={key} value={value} />
+                  <ValueCell ntKey={key} value={value} pit={pit} />
                 </div>
-              ))}
+                );
+              })}
             </section>
           ))
         )}

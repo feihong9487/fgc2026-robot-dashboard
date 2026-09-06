@@ -3,12 +3,17 @@
 // M11 對這一頁劃了一條明確的線：
 //   可以顯示　機器人自身的健康狀態（build / mode / 錄影行數 / threads / gen）
 //   一律不顯示 任何 /FGC/Shooter、/FGC/Vision、/FGC/Drive、/FGC/Aim 的值
-// 這條線寫在 fgcKeys.ts 的 coachRisk / isLockdownSafeKey 旗標裡，不靠記憶。
+// 這條線由程式保證，不是靠記憶：Lockdown 子樹的每一次取值都走
+// fgcKeys.lockdownValue()（不在白名單就回 null，整格不 render），而
+// tools/fgc-check-2a.ts 斷言 LOCKDOWN_KEYS ⊆ isLockdownSafeKey。
+// 往這一頁加一格而忘了想 M11 的人，會在 npm run check 就被擋下來。
+// （以前這句註解是假的：isLockdownSafeKey 當時是零呼叫點的死碼，
+// 而假的保證比沒有保證更糟，因為它會讓 code review 略過這一頁。）
 //
 // 導覽卡刻意只列名稱不列數值：它是導覽不是顯示器。寫上「READY / SPINUP」是在告訴
 // 隊員「那三個判斷去 Driver Hub 上看」，寫上實際數值就變成了場外遙測。
 
-import { PATHS } from "../../lib/profile";
+import { PATHS, REC_FILE_LABEL } from "../../lib/profile";
 
 /** 場上的三個判斷都在 Driver Hub —— 只列名稱。 */
 export function DriverHubCard() {
@@ -34,7 +39,7 @@ export function PostMatchCard() {
       <h3>賽後取檔（比賽結束、切 B1-PIT 之後）</h3>
       <ul className="lockdown-list">
         <li>
-          8080　<code>GET {PATHS.recList}</code> → <code>{PATHS.recFile}?name=&lt;檔名&gt;</code>
+          8080　<code>GET {PATHS.recList}</code> → <code>{REC_FILE_LABEL}?name=&lt;檔名&gt;</code>
         </li>
         <li>
           備援　OnBotJava 檔案樹 <code>/sdcard/FIRST/fgc-rec</code>

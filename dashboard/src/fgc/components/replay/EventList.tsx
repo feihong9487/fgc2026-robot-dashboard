@@ -24,6 +24,12 @@ import type { Bookmark } from "./bookmarks";
 interface Props {
   events: readonly LogEvent[];
   bookmarks?: readonly Bookmark[];
+  /**
+   * 被關掉的類別。**由呼叫端持有**：時間軸的篩選刻痕要吃同一份篩選，
+   * 否則 chip 說「只看退球」而軌上還畫著全部 582 筆，兩個地方在講不同的事。
+   */
+  off: ReadonlySet<EventKind>;
+  onToggleKind: (k: EventKind) => void;
   /** 點一列要做的事；預設是把游標搬過去（並脫離 live lock）。 */
   onSeek?: (t: number) => void;
   onRemoveBookmark?: (t: number) => void;
@@ -42,10 +48,17 @@ interface Row {
   bookmark: boolean;
 }
 
-export function EventList({ events, bookmarks = [], onSeek, onRemoveBookmark, hotkeys = true }: Props) {
+export function EventList({
+  events,
+  bookmarks = [],
+  off,
+  onToggleKind,
+  onSeek,
+  onRemoveBookmark,
+  hotkeys = true,
+}: Props) {
   useCursor();
   const [query, setQuery] = useState("");
-  const [off, setOff] = useState<Set<EventKind>>(() => new Set());
   const [follow, setFollow] = useState(true);
   const boxRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -98,7 +111,7 @@ export function EventList({ events, bookmarks = [], onSeek, onRemoveBookmark, ho
       .map((b) => ({
         id: "bm:" + b.t.toFixed(3),
         t: b.t,
-        glyph: "⚑",
+        glyph: "▼",
         level: "mark",
         kind: "書籤",
         label: b.label,
@@ -155,6 +168,9 @@ export function EventList({ events, bookmarks = [], onSeek, onRemoveBookmark, ho
         </button>
       </div>
 
+      {/* 九個 chip 一套系統：未選無框、已選橘框、這份 log 裡沒有的那幾類再降一階。
+          原本九種顏色是獨立於 series-* 與 tone 之外的第三套色彩系統——
+          類別的輕重由旁邊的形狀字元與數字承擔，不由 chip 底色承擔。 */}
       <div className="ev-kinds">
         {EVENT_KINDS.map((k) => {
           const n = counts.get(k) ?? 0;
@@ -162,26 +178,26 @@ export function EventList({ events, bookmarks = [], onSeek, onRemoveBookmark, ho
           return (
             <button
               key={k}
-              className={on ? "ev-chip on" : "ev-chip"}
-              title={KIND_LABEL[k] + "（" + n + " 筆）"}
-              onClick={() =>
-                setOff((prev) => {
-                  const next = new Set(prev);
-                  if (next.has(k)) next.delete(k);
-                  else next.add(k);
-                  return next;
-                })
+              className={"ev-chip" + (on ? " on" : "") + (n === 0 ? " empty" : "")}
+              title={
+                n === 0
+                  ? KIND_LABEL[k] + "：這份 log 裡沒有這一類"
+                  : KIND_LABEL[k] + " " + n + " 筆" + (on ? "（點一下收起來）" : "（點一下顯示）")
               }
+              onClick={() => onToggleKind(k)}
             >
               {KIND_LABEL[k]}
-              <span className="n">{n}</span>
+              <span className="n fgc-num">{n}</span>
             </button>
           );
         })}
       </div>
 
       <div className="ev-count">
-        {rows.length} / {events.length + bookmarks.length} 筆　·　Ctrl+↓ / Ctrl+↑ 跳事件　·　Ctrl+B 打書籤
+        <span className="fgc-num">{rows.length}</span> / <span className="fgc-num">
+          {events.length + bookmarks.length}
+        </span>{" "}
+        筆
       </div>
 
       <div className="ev-rows" ref={boxRef}>
@@ -189,7 +205,7 @@ export function EventList({ events, bookmarks = [], onSeek, onRemoveBookmark, ho
           <div className="ev-empty">
             {events.length + bookmarks.length === 0
               ? "這份 log 裡沒有偵測到事件（八類 + 通知）。"
-              : "沒有符合條件的事件。清空篩選或把類別重新打開。"}
+              : `這個篩選條件下沒有事件。清掉上面的篩選字串、或把類別重新打開，看全部 ${events.length + bookmarks.length} 筆。`}
           </div>
         )}
         {rows.map((r, i) => (

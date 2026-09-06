@@ -53,14 +53,16 @@ export function GamepadStrip() {
         : log.latestBool(c.key, false);
       const col = on ? p.ok : p.textDim;
 
-      ctx.fillStyle = alpha(p.surface3, 0.85);
-      roundRect(ctx, x, top, cw, ch, 4);
+      // 凹槽（--surface-3）+ --r-card 3px。這是唯讀顯示，不是按鍵，
+      // 所以不給它 --r-chip 的按鍵方角，也不給它任何邊框。
+      ctx.fillStyle = p.surface3;
+      roundRect(ctx, x, top, cw, ch, 3);
       ctx.fill();
 
       // 標籤
       ctx.textAlign = "center";
       ctx.textBaseline = "top";
-      ctx.font = `600 ${Math.max(10, Math.round(ch * 0.24))}px ${UI_FONT}`;
+      ctx.font = `700 ${Math.max(12, Math.round(ch * 0.24))}px ${UI_FONT}`;
       ctx.fillStyle = on ? p.text : p.textDim;
       ctx.fillText(c.label, x + cw / 2, top + ch * 0.08);
 
@@ -82,7 +84,7 @@ export function GamepadStrip() {
         ctx.lineTo(bx + bw * TRIGGER_TH, by + bh + 2);
         ctx.stroke();
 
-        ctx.font = `${Math.max(9, Math.round(ch * 0.2))}px ${MONO_FONT}`;
+        ctx.font = `${Math.max(12, Math.round(ch * 0.2))}px ${MONO_FONT}`;
         ctx.fillStyle = on ? p.text : p.textDim;
         ctx.textBaseline = "bottom";
         ctx.fillText(v.toFixed(2), x + cw / 2, top + ch - 1);
@@ -92,12 +94,12 @@ export function GamepadStrip() {
         ctx.fillStyle = on ? col : "transparent";
         ctx.strokeStyle = on ? col : alpha(p.textDim, 0.55);
         ctx.lineWidth = 1.6;
-        roundRect(ctx, x + cw / 2 - r, cy - r * 0.8, r * 2, r * 1.6, 3);
+        roundRect(ctx, x + cw / 2 - r, cy - r * 0.8, r * 2, r * 1.6, 2);
         if (on) ctx.fill();
         else ctx.stroke();
 
         if (c.hint) {
-          ctx.font = `${Math.max(9, Math.round(ch * 0.17))}px ${UI_FONT}`;
+          ctx.font = `${Math.max(12, Math.round(ch * 0.17))}px ${UI_FONT}`;
           ctx.fillStyle = p.textDim;
           ctx.textBaseline = "bottom";
           ctx.fillText(c.hint, x + cw / 2, top + ch - 2);

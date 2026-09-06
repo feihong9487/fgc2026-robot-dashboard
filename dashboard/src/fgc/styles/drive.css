@@ -1,11 +1,18 @@
-/* DRIVE 分頁（§4.1 線框）。
+/* DRIVE 分頁（§4.1 線框 + 設計計畫步驟 5）。
    左 62% 全給「現在能不能射」，右 38% 給時間 / 車頭 / 爬升 / 警報。
+
+   這一頁的三條硬規則：
+   1. **唯一醒目的是巨燈。** 全頁只有它可以同時「> --fs-lg」且填飽和色。
+      狀態機、車頭、爬升柱、計時全部退回 --text，狀態色只留在 3-4 px 的色條上。
+   2. **狀態色只填燈本體，不填卡。** 舊版 EJECT 會把整張卡染紅，1.5 公尺外
+      只看到一片紅，讀不出是哪一格出事。
+   3. **這一頁沒有任何可寫的東西，所以沒有任何邊框。** 邊框只表示可寫。
 
    外層是 CSS Grid（62/38 兩欄），欄內是 flex column——因為降級時會真的把元件
    unmount 掉，grid-template-rows 的固定列數對不上，flex 才不會留下一排空洞。
 
-   密度：駕駛用 --u: 6px（styles.css 的預設）。所有 padding/gap 一律
-   calc(var(--u) * n)，換密度時整頁一起呼吸。 */
+   密度：駕駛用 --u: 6px（normal）。所有 padding/gap 一律 calc(var(--u) * n)，
+   換密度時整頁一起呼吸。 */
 
 .drive {
   height: 100%;
@@ -37,23 +44,27 @@
 }
 
 /* ── 左欄配額 ──
-   巨燈拿最大的一塊：駕駛的眼睛在場上，餘光只解析得了「一大塊是什麼顏色」。
+   巨燈拿走左欄過半的高度：駕駛的眼睛在場上，餘光只解析得了「一大塊是什麼顏色」。
+   燈直徑與狀態字都是從卡片高度算出來的，所以這裡每讓出 40 px，1.5 公尺外那個
+   單字就小一階——其餘四張卡壓到剛好放得下內容為止。
 
    選擇器一律帶 .drive 前綴（0,2,0）而不是裸類別（0,1,0）：styles.css 的
    .panel-shell { min-height: 0 } 與這裡同特異性，而 CSS 的載入順序取決於
    import 順序——裸類別會在窄視窗下被它蓋掉，巨燈直接塌成 0 高。 */
-.drive .drive-hero { flex: 1.5 1 0; min-height: 168px; }
-.drive .drive-gauge { flex: 1 1 0; min-height: 132px; }
+.drive .drive-hero { flex: 2 1 0; min-height: 190px; }
+.drive .drive-gauge { flex: 1.35 1 0; min-height: 140px; }
 .drive .drive-ribbon { flex: 0 0 auto; }
 .drive .drive-rhythm { flex: 0 0 auto; }
 .drive .drive-pad { flex: 0 0 auto; }
-.drive .drive-pad > .body { height: 84px; }
+.drive .drive-pad > .body { height: calc(var(--u) * 11); }
 
 /* ── 右欄配額 ── */
 .drive .drive-clock { flex: 0 0 auto; }
 .drive .drive-heading { flex: 0 0 auto; }
-.drive .drive-climb { flex: 1.25 1 0; min-height: 190px; }
-.drive .drive-alerts { flex: 1 1 0; min-height: 118px; }
+/* 爬升柱比警報 rail 值錢：rail 大多數時間是空的（那正是它該有的樣子），
+   而爬升柱要同時放得下五條分數線、分數、counts 與 HOLD 燈。 */
+.drive .drive-climb { flex: 1.6 1 0; min-height: 190px; }
+.drive .drive-alerts { flex: 1 1 0; min-height: 108px; }
 .drive .drive-hopper { flex: 0 0 auto; }
 
 /* 巨燈最大化（F）：填滿頁面區，刻意不蓋掉頂欄——
@@ -70,74 +81,82 @@
   min-height: 0;
 }
 
-/* ── #10 StateRibbon：按鈕的樣子，但不可點、無 hover、無 active ──
-   G13 要求前端沒有任何射擊控制路徑，所以它連 cursor: pointer 都沒有。 */
+/* ── #10 StateRibbon：狀態讀數，不是分段控制器 ──
+   舊版是三格等寬圓角卡、現態綠底黑字反白——版面語彙說「可點」，所以才需要
+   在標題後面掛一句「唯讀顯示，不是選單」。要靠文字澄清的版面就是錯的版面。
+
+   現在：無框、無圓角、不等寬。現態占 1.4 份寬、落進凹槽、底下一道 3 px 狀態色；
+   其餘兩格是 --stale 的裸字。寬度差本身就說明了「這是現在的狀態」，
+   而三格仍然連成一條橫帶，看得出是同一個狀態機的三種值。 */
 .ribbon-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: calc(var(--u) * 1.25);
-  padding: calc(var(--u) * 1.25);
+  display: flex;
+  align-items: stretch;
+  gap: 1px;
+  padding: calc(var(--u) * 0.5) var(--u) var(--u);
 }
 .ribbon-cell {
+  flex: 1 1 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  padding: calc(var(--u) * 0.75) 0;
-  border: 1px solid var(--border-c);
-  border-radius: 5px;
-  background: var(--surface-3);
-  opacity: 0.3;
+  gap: 1px;
+  padding: calc(var(--u) * 0.9) 0 calc(var(--u) * 0.6);
+  border: none;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  background: none;
+  color: var(--stale);
   user-select: none;
+  /* 現態換格時寬度會變：0.15 s 線性，跟巨燈的緩動同一條規則。
+     ease 會讓人誤判「切換完成」的時間點。 */
+  transition: flex-grow 0.15s linear;
 }
-.ribbon-cell.on { opacity: 1; }
+.ribbon-cell.on {
+  flex-grow: 1.4;
+  background: var(--surface-3);
+  color: var(--text);
+}
 .ribbon-cell .rc-main {
-  font-family: var(--mono);
+  /* 狀態機字面值走 --font-ui（拉丁與漢字同一家族）。
+     字距 .02em 是全案唯一的例外：它們是機器的詞彙，不是設計師挑的大寫標籤。 */
+  font-family: var(--font-ui);
   font-size: var(--fs-lg);
-  line-height: 1.05;
+  font-weight: var(--fw-normal);
+  line-height: 1.1;
   letter-spacing: var(--ls-state);
 }
-.ribbon-cell.on .rc-main { font-weight: 700; }
-.ribbon-cell .rc-sub { font-size: var(--fs-xs); color: var(--text-dim); }
-.ribbon-cell.collect.on {
-  background: var(--state-collect);
-  border-color: var(--state-collect);
-  color: var(--on-fire);
-}
-.ribbon-cell.shoot.on {
-  background: var(--state-shoot);
-  border-color: var(--state-shoot);
-  color: var(--on-fire);
-}
-.ribbon-cell.eject.on {
-  background: var(--state-eject);
-  border-color: var(--state-eject);
-  color: var(--on-fire);
-}
-.ribbon-cell.on .rc-sub { color: var(--on-fire); opacity: 0.75; }
+.ribbon-cell.on .rc-main { font-weight: var(--fw-bold); }
+.ribbon-cell .rc-sub { font-size: var(--fs-xs); color: inherit; }
+.ribbon-cell.on .rc-sub { color: var(--text-dim); }
+.ribbon-cell.collect.on { border-bottom-color: var(--state-collect); }
+.ribbon-cell.shoot.on { border-bottom-color: var(--state-shoot); }
+.ribbon-cell.eject.on { border-bottom-color: var(--state-eject); }
 
-/* ── #11 HeadingChip ── */
+/* ── #11 HeadingChip ──
+   顏色只留在左邊 4 px 的直條上，箭頭與字都是 --text。
+   舊版 44 px 的亮綠雙箭頭是全頁第二醒目的東西，它跟巨燈搶同一道餘光。
+   箭頭改吃 --fs-lg，所以 field 主題（讀數音階 ×1.6）下它會跟著長大。 */
 .head-box {
   display: flex;
   align-items: center;
   gap: calc(var(--u) * 1.5);
   padding: calc(var(--u) * 1.25) calc(var(--u) * 1.5);
-  border-left: 4px solid var(--text-dim);
+  border-left: 4px solid var(--stale);
+  flex-wrap: wrap;
 }
 .head-box.intake { border-left-color: var(--state-collect); }
 .head-box.shooter { border-left-color: var(--state-shoot); }
 .head-arrow {
-  font-size: 44px;
+  font-family: var(--font-ui);
+  font-size: var(--fs-lg);
   line-height: 1;
-  font-family: var(--mono);
   color: var(--text);
+  letter-spacing: 0;
 }
-.head-box.intake .head-arrow { color: var(--state-collect); }
-.head-box.shooter .head-arrow { color: var(--state-shoot); }
 .head-word {
   font-size: var(--fs-lg);
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   letter-spacing: 0;
   white-space: nowrap;
 }
@@ -146,14 +165,18 @@
   font-size: var(--fs-xs);
   color: var(--text-dim);
   text-align: right;
-  /* field 主題（字級 1.6 倍）下三段擠不進同一列，會把「轉向 x.xx」切掉一半。
+  /* field 主題（讀數 1.6 倍）下三段擠不進同一列，會把「轉向 x.xx」切掉一半。
      六個大字才是這張卡的重點，前後/轉向是佐證——寬度不夠時讓它換行，
      切一半的數字比換行的數字更糟（會被讀成別的值）。 */
   white-space: normal;
   flex: 0 1 auto;
   min-width: 0;
+  display: flex;
+  gap: calc(var(--u) * 1.75);
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
-.head-box { flex-wrap: wrap; }
+.hs-item { white-space: nowrap; }
 /* 全 App 只有三處動態之一（§6.7）：車頭切換是「你按了 □ 而且它生效了」的唯一回饋 */
 .head-box.flash { animation: head-flash 300ms steps(1, end) 1; }
 @keyframes head-flash {
@@ -161,21 +184,27 @@
   100% { background: transparent; }
 }
 
-/* ── #13 MatchClock ── */
+/* ── #13 MatchClock ──
+   **沒有進度條。** 練習跑沒有終點，那條灰軌永遠停在 0%，它唯一的功能是讓卡片
+   看起來完整。區間改由左邊一道色條承擔：它不佔高度，也不假裝自己在前進。
+
+   讀數永遠是 --text。剩多少時間是「哪一區間」的問題，那由色條與副行回答——
+   一個 63 px 的飽和色數字會直接跟巨燈搶走那 0.5 秒。 */
 .clock-box {
   padding: calc(var(--u) * 1.25) calc(var(--u) * 1.5);
   display: flex;
   flex-direction: column;
-  gap: calc(var(--u));
+  gap: calc(var(--u) * 0.5);
+  border-left: calc(var(--u) * 0.8) solid var(--border-c);
 }
-/* field 下讀數是 63 x 1.6 = 101px，一列裝不下「讀數 + 說明」。
+/* field 下讀數是 63 × 1.6 = 101 px，一列裝不下「讀數 + 說明」。
    讓說明換行而不是疊到數字上：被遮住的數字比換行的說明危險得多。 */
-.clock-row { display: flex; align-items: baseline; gap: calc(var(--u) * 1.25); flex-wrap: wrap; }
-.clock-glyph { font-size: var(--fs-md); color: var(--text-dim); }
+.clock-row { display: flex; align-items: baseline; gap: calc(var(--u) * 1.5); flex-wrap: wrap; }
 .clock-big {
   font-size: var(--fs-2xl);
-  font-weight: 700;
-  line-height: 1;
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-num);
+  color: var(--text);
   min-width: 4.5ch;
 }
 .clock-sub {
@@ -185,72 +214,75 @@
   text-align: right;
   min-width: 0;
 }
-.clock-track {
-  height: 8px;
-  background: var(--surface-3);
-  border-radius: 2px;
-  overflow: hidden;
-}
-.clock-fill { height: 100%; background: var(--text-dim); }
-.clock-box.z-early .clock-big { color: var(--series-7); }
-.clock-box.z-early .clock-fill { background: var(--series-7); }
-.clock-box.z-mid .clock-big { color: var(--ok); }
-.clock-box.z-mid .clock-fill { background: var(--ok); }
-.clock-box.z-climb .clock-big { color: var(--warn); }
-.clock-box.z-climb .clock-fill { background: var(--warn); }
-.clock-box.z-last .clock-big { color: var(--err); }
-.clock-box.z-last .clock-fill { background: var(--err); }
-.clock-box.z-over .clock-big { color: var(--stale); }
-.clock-box.z-over .clock-fill { background: var(--stale); }
+.clock-box.z-early { border-left-color: var(--series-3); }
+.clock-box.z-mid { border-left-color: var(--ok); }
+.clock-box.z-climb { border-left-color: var(--warn); }
+.clock-box.z-climb .clock-sub { color: var(--warn); }
+.clock-box.z-last { border-left-color: var(--err); }
+.clock-box.z-last .clock-sub { color: var(--err); }
+.clock-box.z-over .clock-big,
 .clock-box.z-none .clock-big { color: var(--stale); }
 
 /* ── #14 BallRhythm ── */
 .rhythm-box {
-  padding: calc(var(--u)) calc(var(--u) * 1.5);
+  padding: calc(var(--u) * 0.75) calc(var(--u) * 1.5) var(--u);
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: calc(var(--u) * 0.5);
 }
 .rhythm-line {
   display: flex;
   align-items: baseline;
-  gap: calc(var(--u));
+  gap: var(--u);
   white-space: nowrap;
 }
 .rhythm-line.dim { color: var(--text-dim); font-size: var(--fs-sm); }
 .rl-label { color: var(--text-dim); font-size: var(--fs-xs); min-width: 4.5em; }
-.rl-dots { font-family: var(--mono); letter-spacing: 0.16em; font-size: 17px; color: var(--band-off); }
+/* ●○ 走 .fgc-glyph 的 1.25em 固定寬容器（tokens.css）：等寬字體多半沒有這兩個
+   CJK 符號，fallback 之後每顆點寬度不一樣，整排就對不齊。 */
+.rl-dots { font-size: var(--fs-md); color: var(--band-off); line-height: 1; }
 .rl-dots .dot.on { color: var(--state-shoot); }
-.rl-count { font-size: var(--fs-lg); font-weight: 700; min-width: 2ch; }
+.rl-count { font-size: var(--fs-lg); font-weight: var(--fw-bold); min-width: 2ch; line-height: var(--lh-num); }
 .rl-gap { margin-left: auto; font-size: var(--fs-sm); color: var(--text-dim); }
-.rl-gap b { color: var(--text); font-size: var(--fs-md); }
-.rl-stat { margin-left: auto; font-size: var(--fs-xs); }
-.rhythm-line.dim b { color: var(--text); font-size: var(--fs-md); }
+.rl-gap b { color: var(--text); font-size: var(--fs-md); font-weight: var(--fw-bold); }
+/* 中位／最大／輪數是三段獨立的讀值，不是一句話：用間距分開，
+   不用 skill 點名的中點串（A · B · C）。 */
+.rl-stat {
+  margin-left: auto;
+  font-size: var(--fs-xs);
+  display: inline-flex;
+  gap: calc(var(--u) * 1.75);
+}
+.rs-item { white-space: nowrap; }
+.rhythm-line.dim b { color: var(--text); font-size: var(--fs-md); font-weight: var(--fw-bold); }
 
-/* ── #16 HopperCmdStrip：灰底、無圖示，刻意與有回授的爬升柱區隔 ── */
+/* ── #16 HopperCmdStrip：凹槽、無圖示，刻意與有回授的爬升柱區隔 ── */
 .hopper-box {
   display: flex;
   align-items: center;
   gap: calc(var(--u) * 1.25);
-  padding: calc(var(--u)) calc(var(--u) * 1.5);
+  padding: calc(var(--u) * 0.75) calc(var(--u) * 1.5);
   background: var(--surface-3);
   color: var(--text-dim);
 }
 .hop-bar {
-  width: 5px;
-  height: 20px;
+  width: 3px;
+  height: 1.1em;
   background: var(--text-dim);
   display: inline-block;
 }
-.hop-cmd { font-size: var(--fs-lg); font-weight: 700; color: var(--text); }
+.hop-cmd { font-size: var(--fs-lg); font-weight: var(--fw-bold); color: var(--text); line-height: var(--lh-num); }
 .hop-raw { font-size: var(--fs-xs); margin-left: auto; }
 
-/* ── #17 AlertRail ── */
+/* ── #17 AlertRail ──
+   一條 rail，不是三張卡。每列只有左邊 3 px 的直條著色，其餘全是文字。
+   舊版「1 px 框 + 4 px 左框 + 圓角 + 凹槽底」在「無框 = 唯讀」的規則下
+   看起來像三個可以點開的東西。 */
 .alert-rail {
   display: flex;
   flex-direction: column;
-  gap: calc(var(--u));
-  padding: calc(var(--u));
+  gap: calc(var(--u) * 0.75);
+  padding: calc(var(--u) * 0.5) var(--u) var(--u);
   height: 100%;
   box-sizing: border-box;
   overflow: hidden;
@@ -260,12 +292,12 @@
 .alert-card {
   display: flex;
   align-items: flex-start;
-  gap: calc(var(--u));
-  padding: calc(var(--u) * 0.75) calc(var(--u));
-  border: 1px solid var(--border-c);
-  border-left-width: 4px;
-  border-radius: 4px;
-  background: var(--surface-3);
+  gap: var(--u);
+  padding: calc(var(--u) * 0.4) 0 calc(var(--u) * 0.4) var(--u);
+  border: none;
+  border-left: 3px solid var(--border-c);
+  border-radius: 0;
+  background: none;
   animation: alert-in 150ms ease-out 1;
 }
 @keyframes alert-in {
@@ -274,22 +306,37 @@
 }
 .alert-card.error { border-left-color: var(--err); }
 .alert-card.warn { border-left-color: var(--warn); }
-.alert-card.info { border-left-color: var(--series-7); }
-.ac-glyph { font-family: var(--mono); line-height: 1.35; }
+.alert-card.info { border-left-color: var(--ok); }
+.ac-glyph { font-size: var(--fs-sm); line-height: 1.4; }
 .alert-card.error .ac-glyph { color: var(--err); }
 .alert-card.warn .ac-glyph { color: var(--warn); }
-.alert-card.info .ac-glyph { color: var(--series-7); }
+.alert-card.info .ac-glyph { color: var(--ok); }
 .ac-body { display: flex; flex-direction: column; min-width: 0; }
-.ac-title { font-size: var(--fs-sm); font-weight: 600; }
+.ac-title { font-size: var(--fs-sm); font-weight: var(--fw-normal); color: var(--text); }
 .ac-desc {
   font-size: var(--fs-xs);
   color: var(--text-dim);
-  font-family: var(--mono);
+  font-family: var(--font-num);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .ac-age { margin-left: auto; font-size: var(--fs-xs); color: var(--text-dim); white-space: nowrap; }
+
+/* ── field 主題（賽場、站著、1.5 公尺）──
+   讀數音階 ×1.6 之後，計時與車頭這兩張「內容固定」的卡會長高很多，
+   把爬升與警報擠出卡片外。這裡只調配額，不調字級：放大的必須是數字，不是版面。 */
+:root[data-profile="fgc"][data-theme="field"] .drive .drive-climb {
+  flex: 1.9 1 0;
+  min-height: 150px;
+}
+:root[data-profile="fgc"][data-theme="field"] .drive .drive-alerts {
+  flex: 1 1 0;
+  min-height: 96px;
+}
+:root[data-profile="fgc"][data-theme="field"] .ribbon-cell {
+  padding: calc(var(--u) * 0.6) 0 calc(var(--u) * 0.4);
+}
 
 /* ── 降級（§4.7）。元件的增減由 DrivePage 用 matchMedia 決定，
        這裡只調比例——隱藏的 canvas 一樣會跑 rAF，所以不用 display:none。 ── */
@@ -297,9 +344,8 @@
   .drive { grid-template-columns: 68fr 32fr; }
 }
 @media (max-width: 1199px) {
-  .drive .drive-hero { min-height: 150px; }
+  .drive .drive-hero { min-height: 170px; }
   .drive .drive-climb { min-height: 168px; }
-  .head-arrow { font-size: 34px; }
 }
 @media (max-width: 1023px) {
   /* 單欄垂直堆疊。列高由內容決定，所以兩個 canvas 面板改成固定高——
@@ -309,6 +355,6 @@
     grid-auto-rows: min-content;
     overflow: auto;
   }
-  .drive .drive-hero { flex: 0 0 auto; height: 240px; }
+  .drive .drive-hero { flex: 0 0 auto; height: 270px; }
   .drive .drive-climb { flex: 0 0 auto; height: 300px; }
 }

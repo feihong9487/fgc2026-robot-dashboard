@@ -105,10 +105,14 @@ export function CamPane({ log = liveLog, allowInputs }: Props) {
 
   const fps = Math.round(log.valueAt(paramKey("MJPEG_FPS"), log.tMax) ?? 10);
   const q = Math.round(log.valueAt(paramKey("MJPEG_Q"), log.tMax) ?? 40);
+  // 相依放真正會影響結果的東西。以前放的是 log.getVersion()——每一批（20 Hz）都會變，
+  // 所以這個 memo 從來沒生效過，streamUrlFrom() 每秒被呼叫 20 次、裡面還有一次
+  // new URL() 解析。產出的字串相同所以看不出 bug，但那正是陷阱：下一個人會相信它有 memo。
+  const camKey = log.latestStr(K.bridgeCamera, "");
   const { url, from } = useMemo(
     () => streamUrlFrom(log, link.host || "127.0.0.1", fps, q),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [log, link.host, fps, q, log.getVersion()],
+    [log, link.host, fps, q, camKey],
   );
 
   // 代價：暫停時持續採基線，開啟時算差值。兩個數字都來自機器人自己回報的量測，
@@ -149,33 +153,41 @@ export function CamPane({ log = liveLog, allowInputs }: Props) {
       ? url
       : httpUrl(link.host, PATHS.snapshot, { q, t: snapTs });
 
+  // 每一句都先講發生了什麼，再講下一步或為什麼。不用中點串接短語——
+  // 「暫停中 · 省 CPU」讀起來像兩個標籤，「暫停中，不佔機器人 CPU」才是一句話。
   const gateWhy = !allowInputs
-    ? "非 PIT：相機不可用"
+    ? "非 PIT：相機不可用。"
     : cam === "off"
-      ? "暫停中 · 省 CPU"
+      ? "暫停中，不佔機器人 CPU。"
       : !visible
-        ? "分頁不可見 → 已斷連"
+        ? "分頁不在前景，已斷連。切回這個分頁就會重連。"
         : !inView
-          ? "捲出視窗 → 已斷連"
+          ? "面板捲出視窗，已斷連。捲回來就會重連。"
           : !link.host
-            ? "尚未連線"
+            ? "尚未連線。頂欄填 Control Hub 的位址再開串流。"
             : "";
 
   return (
     <PanelShell
       title="相機"
-      note={cam === "stream" ? "來源 " + from + " · fps " + fps + " · q " + q : "併發上限 1"}
+      note={
+        cam === "stream"
+          ? "串流來源 " + from + "，fps " + fps + "，q " + q + "。"
+          : "機器人同時只接受一個串流：第二處要看會拿到 503。"
+      }
       tools={
         allowInputs ? (
           <>
+            {/* 三顆同源：以前 ▶ 開串流 / 單張 / ◉ 暫停 是三套圖示語彙（有三角、沒有、有實心圓），
+                三個字元加起來沒有回答任何問題。文字自己說得完，圖示就是噪音。 */}
             <button className={cam === "stream" ? "tb-btn on" : "tb-btn"} onClick={() => { setErr(""); setCam("stream"); }}>
-              ▶ 開串流
+              串流
             </button>
             <button className={cam === "snap" ? "tb-btn on" : "tb-btn"} onClick={() => { setErr(""); setCam("snap"); }}>
               單張
             </button>
             <button className={cam === "off" ? "tb-btn on" : "tb-btn"} onClick={() => { setErr(""); setCam("off"); }}>
-              ◉ 暫停
+              暫停
             </button>
           </>
         ) : undefined
@@ -201,12 +213,16 @@ export function CamPane({ log = liveLog, allowInputs }: Props) {
               <div className="big">{gateWhy || "已斷連"}</div>
               {allowInputs && cam === "off" && (
                 <div className="hint">
-                  開串流預估：loop p95{" "}
-                  {baseRef.current && Number.isFinite(baseRef.current.p95)
-                    ? "目前 " + baseRef.current.p95.toFixed(1) + " ms"
-                    : "尚無基線"}
-                  {" · 視覺 fps "}
-                  {baseRef.current && Number.isFinite(baseRef.current.fps) ? baseRef.current.fps.toFixed(0) : "—"}
+                  現在的基線：loop p95{" "}
+                  <b>
+                    {baseRef.current && Number.isFinite(baseRef.current.p95)
+                      ? baseRef.current.p95.toFixed(1) + " ms"
+                      : "尚無基線"}
+                  </b>
+                  <span className="k">視覺 fps</span>
+                  <b>
+                    {baseRef.current && Number.isFinite(baseRef.current.fps) ? baseRef.current.fps.toFixed(0) : "—"}
+                  </b>
                 </div>
               )}
               {err && <div className="cam-err">{err}</div>}
@@ -225,13 +241,17 @@ export function CamPane({ log = liveLog, allowInputs }: Props) {
                 視覺 fps {Number.isFinite(cost.dFps) ? (cost.dFps >= 0 ? "+" : "") + cost.dFps.toFixed(0) + "%" : "—"}
               </span>
               <span className="sub">
-                相機 clients {log.latestNum(K.camClients, 0)} · frame {fmtKB(log.latestNum(K.camFrameKB, NaN))}
+                連線數 <b>{log.latestNum(K.camClients, 0)}</b>
+                <span className="k">每格</span>
+                <b>{fmtKB(log.latestNum(K.camFrameKB, NaN))}</b>
               </span>
             </>
           ) : (
             <span className="sub">
               基線量測中（最近 {COST_WIN_S} s 的 /FGC/Status/Loop ms）
-              {log.latestStr(K.camLastError, "") ? " · 相機錯誤：" + log.latestStr(K.camLastError, "") : ""}
+              {log.latestStr(K.camLastError, "") ? (
+                <span className="err">　相機錯誤：{log.latestStr(K.camLastError, "")}</span>
+              ) : null}
             </span>
           )}
         </div>

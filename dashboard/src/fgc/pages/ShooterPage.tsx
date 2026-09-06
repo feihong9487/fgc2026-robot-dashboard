@@ -194,7 +194,7 @@ function Shooter() {
 
   return (
     <div className="sp">
-      <div className="sp-narrow">射手工作台需要 ≥ 1200 寬的視窗（目前太窄）。請用「訊號」或「駕駛」分頁。</div>
+      <div className="sp-narrow">射手工作台需要 1200 px 以上的視窗。把視窗拉寬，或改用「訊號」分頁。</div>
 
       <div className="gd-tools sp-tools">
         <span>窗</span>
@@ -213,17 +213,34 @@ function Shooter() {
             if (next) view.setFollow(false);
           }}
         >
-          {paused ? "⏸ 已凍結視窗" : "凍結視窗"}
+          {paused ? "已凍結視窗" : "凍結視窗"}
         </button>
         <button className="tb-btn" title="清掉選區" onClick={() => cursor.setSelection(null)}>
           清除選區
         </button>
         <span className="spacer" />
+        {/* 中點串的 meta 改成標籤／值：三段各有各的標籤，不是同級並列 */}
         <span className="sp-cursor">
-          游標 {cursor.cursorT.toFixed(3)} s
-          {hoverT !== null && <> · Δ {(hoverT - cursor.cursorT >= 0 ? "+" : "") + (hoverT - cursor.cursorT).toFixed(3)} s</>}
-          {" · "}
-          {log.tSource === "robot" ? "t=robot" : log.tSource === "client" ? "t=client（±50 ms）" : "尚無資料"}
+          <span className="tb-read">
+            <span className="k">游標</span>
+            <span className="fgc-num">{cursor.cursorT.toFixed(3)}</span>
+            <span className="fgc-unit">s</span>
+          </span>
+          {hoverT !== null && (
+            <span className="tb-read">
+              <span className="k">Δ</span>
+              <span className="fgc-num">
+                {(hoverT - cursor.cursorT >= 0 ? "+" : "") + (hoverT - cursor.cursorT).toFixed(3)}
+              </span>
+              <span className="fgc-unit">s</span>
+            </span>
+          )}
+          <span className="tb-read">
+            <span className="k">時基</span>
+            <span className="fgc-num">
+              {log.tSource === "robot" ? "robot" : log.tSource === "client" ? "client ±50 ms" : "尚無資料"}
+            </span>
+          </span>
         </span>
       </div>
 
@@ -243,7 +260,7 @@ function Shooter() {
         <div className="sp-center">
           <PanelShell
             title="射手三軌 + 階梯目標"
-            note="目標與實測同色虛線階梯 · FEED_THRESHOLD 讀 /FGC/Param 回讀值"
+            note="離散六列彼此沒有互鎖：「按了 RT 但 hopper 還關著」只有在這裡看得出錯開。"
             rate={series.some((s) => s.points) ? "含 ~2 Hz 散點" : undefined}
             flush
           >
@@ -252,15 +269,14 @@ function Shooter() {
               series={series}
               height={300}
               paused={paused}
+              // showTargets 的預設是 false（fail-closed）：TargetL/R 是 coachRisk 欄位。
+              // 這一頁只登記在 PIT_PAGES，MATCH 路由下不存在，所以這裡明示打開。
+              showTargets
               onGeom={setGeom}
               onDropKey={addKey}
-              emptyHint="從左邊訊號樹拖 SL / SR / Way 進來"
+              emptyHint="還沒選訊號。從左邊的訊號樹拖 SL / SR / Way 進來。"
             />
             <DiscreteBand log={log} rows={bandRows} padLeft={padLeft} padRight={geom.padRight} />
-            <div className="gd-note">
-              離散六列＝intake→hopper→way→shooter 這條時序管線的四段。它們彼此沒有互鎖，
-              「按了 RT 但 hopper 還關著」只有在這裡才看得出錯開。
-            </div>
           </PanelShell>
         </div>
 

@@ -19,7 +19,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { client } from "../../../lib/RobotClient";
-import { PATHS, httpBase, httpPort, httpUrl } from "../../lib/profile";
+import { PATHS, REC_FILE_LABEL, httpBase, httpPort, httpUrl, recFileUrl } from "../../lib/profile";
 import { useAppMode } from "../../lib/hooks";
 import { parseRecList, robotAcceptsName, fmtSize, fmtTime, type RecFileRow, type RecList } from "./recList";
 
@@ -89,16 +89,27 @@ export function RecBrowser({ host }: { host: string }) {
       setGot(0);
       setLoadErr("");
       try {
-        const res = await fetch(httpUrl(host, PATHS.recFile, { name: row.name }), { cache: "no-store" });
+        const res = await fetch(recFileUrl(host, row.name), { cache: "no-store" });
         if (res.status === 503) throw new Error("503：比賽模式，錄影端點已關閉");
         if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
+        // 進度條每 256 KB 才更新一次。fetch 的 chunk 通常是 16–64 KB，一份 20 MB
+        // 的錄影檔就是上千次 setState，而每一次都是一輪 React 重繪——那等於用進度條
+        // 去拖慢自己正在量的那件事。
         let n = 0;
+        let shown = 0;
+        const STEP = 256 * 1024;
         const counted = res.body.pipeThrough(
           new TransformStream<Uint8Array, Uint8Array>({
             transform(chunk, ctrl) {
               n += chunk.byteLength;
-              setGot(n);
+              if (n - shown >= STEP) {
+                shown = n;
+                setGot(n);
+              }
               ctrl.enqueue(chunk);
+            },
+            flush() {
+              setGot(n);
             },
           }),
         );
@@ -119,7 +130,7 @@ export function RecBrowser({ host }: { host: string }) {
       <div className="rec-head">
         <span className="rec-title">機器人上的錄影檔</span>
         <code className="rec-src">
-          GET {PATHS.recList} → {PATHS.recFile}?name=&lt;檔名&gt;
+          GET {PATHS.recList} → {REC_FILE_LABEL}?name=&lt;檔名&gt;
         </code>
         <span className="spacer" />
         {mode === "PIT" && (
@@ -237,7 +248,7 @@ export function RecBrowser({ host }: { host: string }) {
             GET {httpBase(host)}
             {PATHS.recList}
           </code>
-          <span className="why">再 <code>{PATHS.recFile}?name=&lt;檔名&gt;</code>。就是這一頁在做的事</span>
+          <span className="why">再 <code>{REC_FILE_LABEL}?name=&lt;檔名&gt;</code>。就是這一頁在做的事</span>
         </div>
         <div className="rec-path">
           <span className="n">路徑 2</span>

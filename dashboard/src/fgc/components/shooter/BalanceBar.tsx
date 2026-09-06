@@ -11,6 +11,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { PanelShell } from "../shell/PanelShell";
+import { Glyph } from "../shell/Glyph";
 import { LogStore, liveLog } from "../../lib/LogStore";
 import { K } from "../../lib/fgcKeys";
 import { useLogKeys } from "../../lib/hooks";
@@ -89,30 +90,44 @@ export function BalanceBar({ log = liveLog, threshold = 100, fullScale = 300 }: 
     >
       <div className="bal">
         <div className={`bal-now ${level(delta)}`}>
-          {hasLive ? (delta > 0 ? "+" : "") + delta.toFixed(0) : "—"}
-          <span className="unit">tps</span>
+          <span className="fgc-num">{hasLive ? (delta > 0 ? "+" : "") + delta.toFixed(0) : "—"}</span>
+          <span className="fgc-unit">tps</span>
+          {/* 顏色不是唯一通道：超過門檻時同時出現形狀 */}
+          {hasLive && level(delta) !== "ok" && <Glyph tone={level(delta)} />}
         </div>
 
-        <div className="bal-bar" title={`滿刻度 ±${fullScale} tps，虛線是 ±${threshold} 側旋門檻`}>
+        <div className="bal-bar">
           <span className="mid" />
           <span className="thr" style={{ left: `${50 - thrPct}%` }} />
           <span className="thr" style={{ left: `${50 + thrPct}%` }} />
           {hasLive && <span className={`knob ${level(delta)}`} style={{ left: `${pct}%` }} />}
         </div>
+        {/* 兩條黃虛線是 ±100 側旋門檻——刻度直接標在線的正下方，
+            不靠卡片底部的說明句去解釋畫面上的一根線。 */}
         <div className="bal-scale">
-          <span>−{fullScale}</span>
-          <span>0</span>
-          <span>+{fullScale}</span>
+          <span className="end l fgc-num">−{fullScale}</span>
+          <span className="thr-lbl fgc-num" style={{ left: `${50 - thrPct}%` }} title="側旋門檻">
+            −{threshold}
+          </span>
+          <span className="zero fgc-num">0</span>
+          <span className="thr-lbl fgc-num" style={{ left: `${50 + thrPct}%` }} title="側旋門檻">
+            +{threshold}
+          </span>
+          <span className="end r fgc-num">+{fullScale}</span>
         </div>
 
         <div className="bal-rms">
           <span className="lbl">SHOOT 期 RMS</span>
-          <span className={`val ${level(stat.rms)}`}>
+          <span className={`val fgc-num ${level(stat.rms)}`}>
             {Number.isFinite(stat.rms) ? stat.rms.toFixed(0) : "—"}
-            {Number.isFinite(stat.rms) && Math.abs(stat.rms) >= threshold && " ⚠"}
           </span>
           <span className="sub">
-            峰值 {Number.isFinite(stat.peak) ? (stat.peak > 0 ? "+" : "") + stat.peak.toFixed(0) : "—"} · n {stat.n}
+            <span className="k">峰值</span>
+            <span className="fgc-num">
+              {Number.isFinite(stat.peak) ? (stat.peak > 0 ? "+" : "") + stat.peak.toFixed(0) : "—"}
+            </span>
+            <span className="k">n</span>
+            <span className="fgc-num">{stat.n}</span>
           </span>
         </div>
       </div>

@@ -1,13 +1,11 @@
-// 遙測資料中心：最新值 + 波形歷史 ring buffer + 點雲，附簡單訂閱機制
+// 遙測資料中心：最新值鏡射 + 點雲，附簡單訂閱機制。
+//
+// **時間序列不在這裡**：那是 fgc/lib/LogStore.ts 的職責（機器人時戳、Float64Array、
+// 永不 splice、per-key 訂閱）。這個檔案以前另外維護一份 history ring buffer，
+// 每一批對每個變動的 key 各做一次 splice(0,1)（3000 點 × 約 20 個 key × 20 Hz
+// ≈ 每秒 240 萬次元素搬移），而且那是同一份遙測的第二份拷貝。已整份移除，
+// Chart.tsx 改讀 liveLog.sampleWindow()。
 export type NtValue = number | boolean | string | string[];
-
-const HISTORY_SEC = 120; // 保留 2 分鐘歷史
-const MAX_POINTS = HISTORY_SEC * 25;
-
-export interface Series {
-  t: number[]; // 秒（App 收到的時間）
-  v: number[];
-}
 
 export type ConnState = "disconnected" | "connecting" | "connected" | "sim" | "replay";
 
@@ -17,7 +15,6 @@ import type { AppMode } from "../fgc/lib/profile";
 
 class TelemetryStore {
   latest = new Map<string, NtValue>();
-  history = new Map<string, Series>();
   pointCloud: Float32Array = new Float32Array(0); // [x0,y0,x1,y1,...] 公尺
   pointCloudStamp = 0;
   fitLines: Float32Array = new Float32Array(0);   // 牆面擬合線段 [x1,y1,x2,y2,...] 公尺
@@ -60,31 +57,28 @@ class TelemetryStore {
     this.emit();
   }
 
-  setMode(m: AppMode) {
+  /**
+   * 模式的**唯一**寫入口。名字刻意不叫 setMode：這份程式裡還有別的元件有自己的
+   * 「模式」區域 state（統計區間之類），而 §8 M01 說「這一行寫錯，其他全部是裝飾」，
+   * 所以 grep "setRobotMode(" 的結果必須永遠只有一種意思。
+   *
+   * 呼叫者只有 RobotClient，而且它有自己的授權規則（ws 的 /FGC/Bridge/Mode 才准
+   * 授予 PIT；health 與輪詢只准降級）。任何 UI 元件都不該出現在這個函式的呼叫點裡。
+   */
+  setRobotMode(m: AppMode) {
     if (this.mode === m) return;
     this.mode = m;
     this.emit();
   }
 
-  applyBatch(d: Record<string, NtValue>) {
-    const t = this.now();
-    this.lastBatchAt = t;
-    for (const [k, v] of Object.entries(d)) {
-      this.latest.set(k, v);
-      if (typeof v === "number") {
-        let s = this.history.get(k);
-        if (!s) {
-          s = { t: [], v: [] };
-          this.history.set(k, s);
-        }
-        s.t.push(t);
-        s.v.push(v);
-        if (s.t.length > MAX_POINTS) {
-          s.t.splice(0, s.t.length - MAX_POINTS);
-          s.v.splice(0, s.v.length - MAX_POINTS);
-        }
-      }
-    }
+  /**
+   * @param inbound 這一批是不是真的從機器人收到的。樂觀更新（RobotClient.set 寫進
+   *   左欄的那一筆）傳 false：它不是遙測，不可以讓 lastBatchAt 變新鮮。
+   *   否則拖一下滑桿就會把頂欄的 ws age 歸零，而模式看門狗也會以為推播還在。
+   */
+  applyBatch(d: Record<string, NtValue>, inbound = true) {
+    if (inbound) this.lastBatchAt = this.now();
+    for (const [k, v] of Object.entries(d)) this.latest.set(k, v);
     this.emit();
   }
 
@@ -151,11 +145,6 @@ class TelemetryStore {
       out[i + 1] = sy * src[i + 1];
     }
     return out;
-  }
-
-  clearHistory() {
-    this.history.clear();
-    this.emit();
   }
 
   num(key: string, def = 0): number {
