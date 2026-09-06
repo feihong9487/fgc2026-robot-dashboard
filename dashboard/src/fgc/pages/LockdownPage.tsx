@@ -44,7 +44,8 @@ export function LockdownPage({ host }: { host: string }) {
       </div>
 
       <div className="lockdown-hero">
-        <div className="lockdown-slab">比 賽 模 式 鎖 定</div>
+        {/* 字距不寫在字串裡：漢字本來就是等寬方塊，拉開只會鬆散不會莊重。 */}
+        <div className="lockdown-slab">比賽模式鎖定</div>
         <div className="lockdown-rule">
           依 M01 / M09 / M11：遙測已封鎖，本機不存在任何控制路徑
           <br />

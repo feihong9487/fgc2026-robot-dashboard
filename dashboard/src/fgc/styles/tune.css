@@ -181,11 +181,59 @@
 .tt-slider td {
   padding-bottom: 3px;
 }
+/* §5.6 滑桿降級。原本 21 條全寬亮藍實心軌是整頁最強的視覺，
+   但調參是打數字，滑桿是這頁最不需要精確的輸入方式。
+   這裡把它降成「數字底下的一條刻度」：2px 軌、無握把，
+   已填的部分用 --border-hi（不是橘也不是藍），握把只在 hover / focus 才出現。
+   不能只靠 accent-color：Chromium 在 accent 是暗色時會把未填的那半段
+   換成白色作對比，結果是一條比原本更醮的白條。 */
 .tt-slider input[type="range"] {
   width: calc(100% - 96px);
   vertical-align: middle;
-  accent-color: var(--focus-ring);
+  -webkit-appearance: none;
+  appearance: none;
+  background: none;
   height: 12px;
+  cursor: pointer;
+}
+.tt-slider input[type="range"]::-webkit-slider-runnable-track {
+  height: 2px;
+  border-radius: 0;
+  background: var(--band-off);
+}
+.tt-slider input[type="range"]::-moz-range-track {
+  height: 2px;
+  background: var(--band-off);
+}
+.tt-slider input[type="range"]::-moz-range-progress {
+  height: 2px;
+  background: var(--border-hi);
+}
+.tt-slider input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 10px;
+  height: 10px;
+  margin-top: -4px;
+  border: none;
+  border-radius: var(--r-lamp);
+  background: var(--border-hi);
+}
+.tt-slider input[type="range"]::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
+  border: none;
+  border-radius: var(--r-lamp);
+  background: var(--border-hi);
+}
+/* 握把轉橘：正在拖它的時候它確實連著機器人。 */
+.tt-slider input[type="range"]:hover::-webkit-slider-thumb,
+.tt-slider input[type="range"]:focus-visible::-webkit-slider-thumb {
+  background: var(--focus-ring);
+}
+.tt-slider input[type="range"]:hover::-moz-range-thumb,
+.tt-slider input[type="range"]:focus-visible::-moz-range-thumb {
+  background: var(--focus-ring);
 }
 .tt-slider .lo,
 .tt-slider .hi {

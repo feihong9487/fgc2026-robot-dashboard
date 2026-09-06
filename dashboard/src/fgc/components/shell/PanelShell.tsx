@@ -53,10 +53,13 @@ export function PanelShell({
             {rate}
           </span>
         )}
-        {note && <span style={{ color: "var(--text-dim)", fontSize: "var(--fs-xs)" }}>{note}</span>}
         {tools && <span className="tools">{tools}</span>}
       </header>
       <div className="body">{children}</div>
+      {/* 說明句在卡片底部，不在標題後面。標題後掛一句灰色小字是「WORD — fragment」
+          模板 chrome 的變體：五張卡各掛一句，加起來就是 70 個字的噪音，
+          而 3 秒律的頁面上沒有人會讀它們。 */}
+      {note && <p className="note">{note}</p>}
     </section>
   );
 }

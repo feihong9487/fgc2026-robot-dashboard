@@ -168,7 +168,9 @@
   flex-direction: column;
   gap: calc(var(--u));
 }
-.clock-row { display: flex; align-items: baseline; gap: calc(var(--u) * 1.25); }
+/* field 下讀數是 63 x 1.6 = 101px，一列裝不下「讀數 + 說明」。
+   讓說明換行而不是疊到數字上：被遮住的數字比換行的說明危險得多。 */
+.clock-row { display: flex; align-items: baseline; gap: calc(var(--u) * 1.25); flex-wrap: wrap; }
 .clock-glyph { font-size: var(--fs-md); color: var(--text-dim); }
 .clock-big {
   font-size: var(--fs-2xl);
@@ -176,7 +178,13 @@
   line-height: 1;
   min-width: 4.5ch;
 }
-.clock-sub { font-size: var(--fs-xs); color: var(--text-dim); margin-left: auto; }
+.clock-sub {
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+  margin-left: auto;
+  text-align: right;
+  min-width: 0;
+}
 .clock-track {
   height: 8px;
   background: var(--surface-3);

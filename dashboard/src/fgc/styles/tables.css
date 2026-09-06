@@ -7,27 +7,32 @@
   border-collapse: collapse;
   font-size: var(--fs-sm);
 }
+/* 表頭：不加上框左右框，只有下面一條比其他格線亮一階的線。
+   標籤是中文比例字體（--fs-xs），等寬只給值。 */
 .fgc-table th {
   position: sticky;
   top: 0;
   z-index: 1;
   text-align: left;
-  font-weight: 600;
+  font-weight: var(--fw-normal);
+  font-size: var(--fs-xs);
   color: var(--text-dim);
   background: var(--surface-3);
-  border-bottom: 1px solid var(--border-c);
-  padding: 2px calc(var(--u) * 1.2);
+  border-bottom: var(--bw) solid var(--border-hi);
+  padding: calc(var(--u) * 0.8) calc(var(--u) * 1.5);
   white-space: nowrap;
 }
+/* 不用斑馬紋：1.6:1 的分隔線幾乎看不見，但眼睛跟得上。 */
 .fgc-table td {
-  padding: 2px calc(var(--u) * 1.2);
-  border-bottom: 1px solid var(--surface-3);
+  padding: calc(var(--u) * 0.8) calc(var(--u) * 1.5);
+  border-bottom: var(--bw) solid var(--border-c);
   white-space: nowrap;
 }
 .fgc-table td.num,
 .fgc-table th.num {
-  font-family: var(--mono);
+  font-family: var(--font-num);
   font-variant-numeric: tabular-nums;
+  letter-spacing: var(--ls-num);
   text-align: right;
 }
 .fgc-table td.empty {
@@ -36,8 +41,9 @@
   padding: calc(var(--u) * 1.5);
   line-height: 1.5;
 }
+/* hover 無 transition：比賽日的畫面每動一次都在偷駕駛的注意力。 */
 .fgc-table tbody tr:hover {
-  background: var(--surface-3);
+  background: var(--surface-2);
 }
 
 /* 語意色：與 §6.6 的全域警戒色一致，不因面板而異 */

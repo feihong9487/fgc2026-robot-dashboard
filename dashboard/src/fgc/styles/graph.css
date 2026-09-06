@@ -127,22 +127,26 @@
   min-width: 26px;
   min-height: calc(var(--u) * 4);
   padding: 2px calc(var(--u));
-  border: 1px solid var(--border-c);
-  border-radius: 4px;
-  background: var(--surface-3);
-  color: var(--text);
+  border: var(--bw) solid var(--border-c);
+  border-radius: var(--r-chip);
+  background: none;
+  color: var(--text-dim);
   font-family: inherit;
   font-size: var(--fs-xs);
   cursor: pointer;
 }
 .tb-btn:hover {
-  border-color: var(--focus-ring);
+  background: var(--surface-3);
+  border-color: var(--border-hi);
+  color: var(--text);
 }
+/* 已選 = 橘框 + 亮字，不是橘底（§5.2）。這顆按鈕在圖表 / 回放 / 射手 /
+   參數四頁都用，橘底乘以四頁就直接吃掉「全頁橘色像素預算 < 2%」。 */
 .tb-btn.on {
-  background: var(--focus-ring);
+  background: var(--surface-3);
   border-color: var(--focus-ring);
-  color: var(--surface-1);
-  font-weight: 600;
+  color: var(--text);
+  font-weight: var(--fw-normal);
 }
 .tb-rates {
   display: inline-flex;

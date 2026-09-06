@@ -1,4 +1,11 @@
-/* Lockdown 頁（MATCH 唯一一頁）。刻意灰、刻意空。 */
+/* Lockdown 頁（MATCH 唯一一頁）。刻意灰、刻意空。
+
+   「刻意不好看」的正確做法不是加一個很大的橘框，是把所有能量抽掉。
+   整頁最亮的東西是 --text 的 9.4:1（dark 的 62%），唯一有顏色的像素是
+   左上角那一顆錄影方塊。遠看是一台待機的機器，不是一個正在工作的控制台。
+
+   MATCH 下頁面上不存在任何有框的東西——所以「不能寫」是用看的就知道，
+   不需要試著點。 */
 
 .lockdown {
   height: 100%;
@@ -19,13 +26,15 @@
   padding: calc(var(--u) * 2) calc(var(--u) * 2);
 }
 
+/* 規格說 lockdown 要「像一台關著的機器」，而 650x110 的亮橘大框加亮橘大字
+   是「非常醒目」不是「關著」。改成一句普通的話：無框、無底、--text。 */
 .lockdown-slab {
-  padding: calc(var(--u) * 2) calc(var(--u) * 6);
-  border: 3px solid var(--danger);
-  background: #2a1a0c;
-  color: var(--danger);
-  font-size: var(--fs-xl);
-  font-weight: 700;
+  padding: calc(var(--u) * 2) 0;
+  border: none;
+  background: none;
+  color: var(--text);
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-normal);
   letter-spacing: 0;
   text-align: center;
 }
@@ -49,15 +58,15 @@
 }
 
 .lockdown-card {
-  border: 1px solid var(--border-c);
-  border-radius: 6px;
+  border: none;
+  border-radius: var(--r-card);
   background: var(--surface-2);
   padding: calc(var(--u) * 2);
 }
 .lockdown-card > h3 {
-  margin: 0 0 var(--u);
-  font-size: var(--fs-sm);
-  font-weight: 600;
+  margin: 0 0 calc(var(--u) * 1.5);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-normal);
   color: var(--text);
   display: flex;
   align-items: center;
@@ -76,10 +85,14 @@
   gap: calc(var(--u) * 3);
   align-items: baseline;
 }
+/* 下半頁原本是正常對比的深色卡、28px 亮白數字，跟上半頁是兩種能量。
+   讀數降到 --fs-lg 並吃 --text（9.4:1），整頁只剩一種亮度。 */
 .rec-line .big {
-  font-family: var(--mono);
+  font-family: var(--font-num);
   font-variant-numeric: tabular-nums;
+  letter-spacing: var(--ls-num);
   font-size: var(--fs-lg);
+  line-height: var(--lh-num);
   color: var(--text);
 }
 .rec-line .k {
@@ -111,7 +124,7 @@
   color: var(--text-dim);
   font-size: var(--fs-sm);
   padding-top: var(--u);
-  border-top: 1px solid var(--border-c);
+  border-top: var(--bw) solid var(--border-c);
 }
 
 /* REPLAY 佔位 */
@@ -147,15 +160,24 @@
   letter-spacing: 0;
   color: var(--text);
 }
+/* 全頁唯一的顏色：一顆 10px 的錄影方塊。徽章本身沒有框也沒有底色。 */
 .lockdown-top .badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  border: 1px solid var(--danger);
-  color: var(--danger);
-  border-radius: 4px;
-  padding: 2px calc(var(--u) * 1.5);
+  gap: var(--u);
+  border: none;
+  color: var(--text-dim);
+  border-radius: 0;
+  padding: 0;
   letter-spacing: 0;
+}
+.lockdown-top .badge .fgc-glyph {
+  width: 10px;
+  height: 10px;
+  overflow: hidden;
+  text-indent: -99em;
+  background: var(--danger);
+  border-radius: 0;
 }
 .lockdown-top .spacer { flex: 1 1 auto; }
 .lockdown-top .mono {

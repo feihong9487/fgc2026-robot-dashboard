@@ -78,14 +78,16 @@ export function HealthWall() {
 
   // 綠必須是真的綠。有 warn 就不給綠字——「READY TO PLAY」配一顆 11.7 V 的電池
   // 是在教人忽略黃燈，而黃燈被忽略一次之後就永遠是裝飾。
+  // 字距不寫在字串裡（也不寫在 CSS 裡）：拉開後的「N O G O」第一眼會被讀成
+  // 四個獨立字母，而漢字本來就是等寬方塊，拉開只會變鬆散。
   const banner =
     sum.errs > 0
-      ? { cls: "nogo", text: "N O   G O" }
+      ? { cls: "nogo", text: "NO GO" }
       : sum.stales > 0
-        ? { cls: "hold", text: "資 料 不 足" }
+        ? { cls: "hold", text: "資料不足" }
         : sum.warns > 0
-          ? { cls: "hold", text: `R E A D Y ・ ${sum.warns} 項 要 注 意` }
-          : { cls: "go", text: "R E A D Y   T O   P L A Y" };
+          ? { cls: "hold", text: `READY，${sum.warns} 項要注意` }
+          : { cls: "go", text: "READY TO PLAY" };
 
   return (
     <div className="hw">
