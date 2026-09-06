@@ -8,7 +8,7 @@
 // 補上時戳與回讀延遲。機器人自己的 /FGC/Bridge/Last Set 與 Last Set Rejected
 // 一起顯示在頁尾當交叉驗證：兩邊不一致就表示我們送出去的東西根本沒到。
 
-import { useEffect, useRef, useSyncExternalStore } from "react";
+import { Fragment, useEffect, useRef, useSyncExternalStore } from "react";
 import { PanelShell } from "../shell/PanelShell";
 import { LogStore, liveLog } from "../../lib/LogStore";
 import { K } from "../../lib/fgcKeys";
@@ -87,23 +87,32 @@ export function SetLedger({ log = liveLog, allowInputs, rows = 20 }: Props) {
               </tr>
             )}
             {shown.map((r, i) => (
-              <tr key={r.at + "-" + r.name + "-" + i} className={r.ok ? "ok" : "bad"}>
-                <td className="tm">{hhmmss(r.at)}</td>
-                <td className="nm" title={r.key}>
-                  {r.name || "(無 key)"}
-                </td>
-                <td className="vv">
-                  {fmtV(r.from)}
-                  <span className="ar">→</span>
-                  {fmtV(r.to)}
-                </td>
-                <td className="ms">{r.echoMs === null ? "——" : "回讀 " + r.echoMs + "ms"}</td>
-                <td className="sl-rs">
-                  {/* 形狀 + 顏色兩條通道：● 成功 / ■ 被拒。灰階列印與紅綠色覺辨異下都讀得出來。 */}
-                  <span className={r.ok ? "fgc-glyph ok" : "fgc-glyph err"}>{r.ok ? "●" : "■"}</span>
-                  {!r.ok && r.why && <div className="why">{r.why}</div>}
-                </td>
-              </tr>
+              <Fragment key={r.at + "-" + r.name + "-" + i}>
+                <tr className={r.ok ? "ok" : "bad"}>
+                  <td className="tm">{hhmmss(r.at)}</td>
+                  <td className="nm" title={r.key}>
+                    {r.name || "(無 key)"}
+                  </td>
+                  <td className="vv">
+                    {fmtV(r.from)}
+                    <span className="ar">→</span>
+                    {fmtV(r.to)}
+                  </td>
+                  <td className="ms">{r.echoMs === null ? "——" : "回讀 " + r.echoMs + "ms"}</td>
+                  <td className="sl-rs">
+                    {/* 形狀 + 顏色兩條通道：● 成功 / ■ 被拒。灰階列印與紅綠色覺辨異下都讀得出來。 */}
+                    <span className={r.ok ? "fgc-glyph ok" : "fgc-glyph err"}>{r.ok ? "●" : "■"}</span>
+                  </td>
+                </tr>
+                {/* 被拒的原因自己佔一列：擠在最後一格裡會被壓成四行的窄柱，
+                    而「為什麼被擋下來」正是使用者打開這張帳本要讀的那一句。 */}
+                {!r.ok && r.why && (
+                  <tr className="bad sl-why">
+                    <td />
+                    <td colSpan={4}>{r.why}</td>
+                  </tr>
+                )}
+              </Fragment>
             ))}
           </tbody>
         </table>

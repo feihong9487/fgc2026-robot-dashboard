@@ -443,13 +443,14 @@
 .sl-table tr.bad td {
   background: color-mix(in srgb, var(--err) 10%, transparent);
 }
-/* 被拒的原因是一句中文（機器人說的），所以不等寬；30 全形字換行。 */
-.sl-table .why {
+/* 被拒的原因自己佔一列：一句中文（機器人說的），所以不等寬，也不塞進最後一格。 */
+.sl-table tr.sl-why td {
   color: var(--err);
   white-space: normal;
   text-align: left;
   max-width: var(--measure);
   line-height: var(--lh-prose);
+  padding-top: 0;
 }
 /* 頁尾是交叉驗證：標籤中文比例字體，值等寬。整行等寬會讓兩個中文標籤
    看起來也是機器字串。 */
