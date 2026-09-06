@@ -134,14 +134,15 @@ export function LoopHistogram({ log = liveLog, allowInputs, height = 116 }: Prop
       ctx.fillText("25", Math.min(w - 14, xOf(RED_MS) + 3), 1);
     }
 
-    // p50 / p95 標記。標籤排在驗收線標籤的下一行——p50 落在 25 ms 附近時
-    // 兩個標籤會疊在同一個像素上，那時最需要讀的就是它們。
-    const marks: [number, string, string][] = [
-      [p50, p.textDim, "p50"],
-      [p95, p.warn, "p95"],
+    // p50 / p95 標記。標籤排在驗收線標籤的下一行；**兩個標籤往相反方向長**——
+    // 機器人跑順的時候 p50 與 p95 只差 0.4 ms，兩個都靠右對齊就會疊成「p5p95」，
+    // 而那正是最需要讀它們的時候。p50 掛在線的左邊，p95 掛在線的右邊。
+    const marks: [number, string, string, -1 | 1][] = [
+      [p50, p.textDim, "p50", -1],
+      [p95, p.warn, "p95", 1],
     ];
     const lblY = 1 + Math.round(parseFloat(numFont()) || 12);
-    for (const [val, col, label] of marks) {
+    for (const [val, col, label, side] of marks) {
       if (!Number.isFinite(val) || val < lo || val > hi) continue;
       ctx.strokeStyle = col;
       ctx.beginPath();
@@ -150,16 +151,23 @@ export function LoopHistogram({ log = liveLog, allowInputs, height = 116 }: Prop
       ctx.lineTo(x, 2 + plotH);
       ctx.stroke();
       ctx.fillStyle = col;
-      ctx.textAlign = "right";
-      ctx.fillText(label, Math.max(24, x - 2), lblY);
+      const lw = ctx.measureText(label).width;
+      ctx.textAlign = side < 0 ? "right" : "left";
+      ctx.fillText(label, side < 0 ? Math.max(lw + 2, x - 3) : Math.min(w - lw - 2, x + 3), lblY);
     }
 
-    // x 軸刻度（每 5 個 bin 一個）
+    // x 軸刻度。步距照「畫得下幾個標籤」算，不是寫死每 5 個 bin——bin 只有 8 格時
+    // 寫死 5 只畫得出兩顆，而右邊那顆正好被 `ms` 蓋掉。
     ctx.fillStyle = p.textDim;
     ctx.textAlign = "center";
-    for (let i = 0; i <= n; i += 5) {
+    const msW = ctx.measureText("ms").width + 6;
+    const tickW = ctx.measureText(String(Math.round(hi))).width + 12;
+    const stepI = Math.max(1, Math.ceil(n / Math.max(1, Math.floor((w - msW) / tickW))));
+    for (let i = 0; i <= n; i += stepI) {
       const ms = hist.edges[Math.min(i, n)];
-      ctx.fillText(String(Math.round(ms)), Math.min(w - 8, Math.max(8, xOf(ms))), plotH + 5);
+      const x = xOf(ms);
+      if (x > w - msW - tickW / 2) break;
+      ctx.fillText(String(Math.round(ms)), Math.max(tickW / 2, x), plotH + 5);
     }
     ctx.textAlign = "right";
     ctx.fillText("ms", w - 2, plotH + 5);
@@ -210,7 +218,7 @@ export function LoopHistogram({ log = liveLog, allowInputs, height = 116 }: Prop
   return (
     <PanelShell
       title="loop ms 直方圖"
-      note={"一格 " + BIN_MS + " ms，紅色虛線是 " + RED_MS + " ms 的驗收線。"}
+      note={"一格 " + BIN_MS + " ms。" + RED_MS + " ms 是驗收線：超過的格子與那條虛線都是紅的。"}
       tools={
         allowInputs ? (
           <>

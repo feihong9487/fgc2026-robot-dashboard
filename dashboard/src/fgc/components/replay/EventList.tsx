@@ -168,9 +168,12 @@ export function EventList({
         </button>
       </div>
 
-      {/* 九個 chip 一套系統：未選無框、已選橘框、這份 log 裡沒有的那幾類再降一階。
-          原本九種顏色是獨立於 series-* 與 tone 之外的第三套色彩系統——
-          類別的輕重由旁邊的形狀字元與數字承擔，不由 chip 底色承擔。 */}
+      {/* 九個 chip 一套系統，而且**標記例外而不是標記常態**：
+          預設九類全開，把「開著」畫成九個亮框等於用最強的視覺講最沒有資訊的事，
+          而且橘框乘以五個就把「橘＝這裡連著機器人」洗掉了。
+          所以開著的長得像普通的唯讀 chip（凹槽底 + 亮字），
+          被收起來的那幾類才變樣：無底、灰字、名稱加一條刪除線。
+          類別的輕重由旁邊的數字與清單裡的形狀字元承擔，不由 chip 底色承擔。 */}
       <div className="ev-kinds">
         {EVENT_KINDS.map((k) => {
           const n = counts.get(k) ?? 0;
@@ -186,7 +189,7 @@ export function EventList({
               }
               onClick={() => onToggleKind(k)}
             >
-              {KIND_LABEL[k]}
+              <span className="lbl">{KIND_LABEL[k]}</span>
               <span className="n fgc-num">{n}</span>
             </button>
           );

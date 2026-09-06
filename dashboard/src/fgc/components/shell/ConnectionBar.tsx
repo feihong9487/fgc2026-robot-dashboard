@@ -7,7 +7,10 @@
 // 的判別依據，而且全部是機器人自身的健康狀態，零比賽資料，沒有一個可以被轉述給
 // 場上駕駛。recpending 不在 M11 的清單裡，所以 lockdown 下不 render。
 //
-//   [模式徽章] [Build] [OpMode] │ ws age · 8080 燈 │ ⌁電壓 · loop p50/p95 │ ⏺錄影行數 │ Thr │ [分頁]
+//   [模式徽章] [Build] [OpMode] │ ws age · 8080 燈 │ 電壓 · loop p50/p95 │ 錄影行數 │ Thr │ [分頁]
+//
+// 標籤一律是中文字，不是圖示。頂欄原本用 ⌁（電）與 ⏺（錄）當標籤，那是形狀語彙
+// ●▲■○ 以外的第三套圖示——同一條列上三種符號系統，沒有一套有圖例。
 //
 // 每一欄都有它非在頂欄不可的理由（§2.3）：
 //   Build    賽場上最常被問的是「你們現在跑的是哪一版」，比任何波形都常被問
@@ -169,7 +172,15 @@ export function ConnectionBar({ host, setHost, tabs, onPortsChanged }: Props) {
       <Stat label="Build" value={build || "—"} width={8} clip title="/FGC/Bridge/Build" tone={build ? undefined : "stale"} />
 
       {!lockedDown && (
-        <Stat label="OpMode" value={opMode || "—"} width={8} clip title="/FGC/Status/OpMode" tone={opMode ? undefined : "stale"} />
+        <Stat
+          label="OpMode"
+          value={opMode || "—"}
+          width={8}
+          clip
+          className="hide-lt-1440"
+          title="/FGC/Status/OpMode"
+          tone={opMode ? undefined : "stale"}
+        />
       )}
 
       <span className="sep" />
@@ -210,7 +221,7 @@ export function ConnectionBar({ host, setHost, tabs, onPortsChanged }: Props) {
         <>
           <span className="sep" />
           <Stat
-            label="⌁"
+            label="電"
             value={Number.isFinite(battery) ? battery.toFixed(1) : "—"}
             unit="V"
             width={4}
@@ -243,7 +254,7 @@ export function ConnectionBar({ host, setHost, tabs, onPortsChanged }: Props) {
       <span className="sep" />
 
       <Stat
-        label="⏺"
+        label="錄"
         value={Number.isFinite(recLines) ? Math.round(recLines).toLocaleString("en-US") : "—"}
         unit="行"
         width={8}

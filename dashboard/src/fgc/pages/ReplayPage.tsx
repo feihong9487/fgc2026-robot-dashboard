@@ -15,6 +15,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { client } from "../../lib/RobotClient";
 import { cursor } from "../lib/cursorStore";
+import type { LogStore } from "../lib/LogStore";
 import { K, shortName } from "../lib/fgcKeys";
 import { detect, nextChange, nextEvent, runInterval, type EventKind, type LogEvent } from "../lib/eventDetect";
 import { useCursor, useLogVersion, usePalette, useTick } from "../lib/hooks";
@@ -110,7 +111,7 @@ export function ReplayPage() {
       return next;
     });
   }, []);
-  const seeded = useRef("");
+  const seeded = useRef<LogStore | null>(null);
   const plotBoxRef = useRef<HTMLDivElement>(null);
   const [graphH, setGraphH] = useState(300);
 
@@ -152,9 +153,8 @@ export function ReplayPage() {
   // 載入一份新的 log：視窗鋪滿整份，然後跳到第一個 SHOOT（§5.5 的流程終點）
   useEffect(() => {
     if (!log || log.batchCount === 0) return;
-    const sig = name + "|" + log.batchCount;
-    if (seeded.current === sig) return;
-    seeded.current = sig;
+    if (seeded.current === log) return;
+    seeded.current = log;
     const [t0, t1] = log.tRange;
     view.reset(t0, t1, false);
     view.setWindow(t0, Math.min(t1, t0 + 20));
@@ -350,9 +350,6 @@ export function ReplayPage() {
           那是頂欄（§2.3）的職責。這裡只放動作，不重複同一份事實——
           同一個數字出現在畫面上兩次，讀的人就得先確認它們一不一樣。 */}
       <div className="rp-top">
-        <span className="rp-ab" title="A/B 疊比（LogStore 已經可實例化，UI 不在第三階段範圍）">
-          A/B 疊比尚未實作
-        </span>
         {note && <span className="rp-note">{note}</span>}
         <span className="spacer" />
         <button className="tb-btn" title="在游標位置打一顆書籤（Ctrl+B）" onClick={() => setPrompt({ t: cursor.cursorT, initial: "" })}>
@@ -520,7 +517,12 @@ export function ReplayPage() {
         )}
         <span className="spacer" />
         <div className="rp-status-note">
-          {log.tSource === "client" && <p className="warn">本機時鐘只有 ±50 ms 精度，不要拿去比較 FEED_THRESHOLD 1200 與 1300</p>}
+          {log.tSource === "client" && (
+            <p className="warn">
+              <span className="fgc-glyph">▲</span>
+              本機時鐘只有 ±50 ms 精度，不要拿去比較 FEED_THRESHOLD 1200 與 1300
+            </p>
+          )}
           <p>不建立 ws，物理上不可寫回</p>
         </div>
       </div>

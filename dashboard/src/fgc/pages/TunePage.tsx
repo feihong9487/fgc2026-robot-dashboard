@@ -52,7 +52,7 @@ function Tune() {
           <div className={"tp-ledger hide-lt-1024" + (ledgerOpen ? " open" : "")}>
             {canView && (
               <button className="tp-drawer" onClick={() => setLedgerOpen((o) => !o)}>
-                {ledgerOpen ? "▾" : "▸"} 寫回帳本
+                {ledgerOpen ? "▾ 收起帳本" : "▸ 寫回帳本"}
               </button>
             )}
             {ledgerOpen && <SetLedger log={log} allowInputs={canView} />}

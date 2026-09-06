@@ -335,18 +335,24 @@ export function TimeBar({
       // 最小間距以「最長的一個標籤」為準：t 跑到 9048.520 時一個標籤就 58 px，
       // 只靠 niceStep 的格數推估會在很短的全長（例如剛開機的 1 秒）下疊成一條黑線。
       const minGap = ctx.measureText(fmtT(tMax, span)).width + 14;
+      // 右端那顆標籤是右對齊的，所以它真正吃掉的寬度要量，不能寫死 46——
+      // 全長跑到四位數時 `2386.274 s` 是 66 px，寫死 46 會讓最後一格刻度
+      // 直接疊在它身上（實測右下角是 `2386.240` 與 `2386.274 s` 糊成一團）。
+      const endLabel = fmtT(tMax, span) + " s";
+      const endW = ctx.measureText(endLabel).width;
+      // 刻度是置中對齊的，所以要擋的是它的**右緣**，不是它的中心：
+      // 中心離右端 78 px 看起來很安全，但標籤本身有 58 px 寬，右緣其實已經
+      // 壓進總長標籤裡了（實測 `3341.060` 與 `3341.082 s` 疊在一起）。
+      const halfTick = minGap / 2;
       for (let t = Math.ceil(tMin / step) * step; t <= tMax; t += step) {
         const x = X(t);
-        // 右端留給總長標籤；不夠遠就不畫這一格，免得兩個數字疊在一起
-        if (x > x0 + w - 46) break;
+        if (x + halfTick > x0 + w - endW - 8) break;
         if (x - lastTickX < minGap) continue;
         ctx.fillText(fmtT(t, span), x, Y_AXIS + 1);
         lastTickX = x;
       }
-      if (x0 + w - lastTickX > 20) {
-        ctx.textAlign = "right";
-        ctx.fillText(fmtT(tMax, span) + " s", x0 + w, Y_AXIS + 1);
-      }
+      ctx.textAlign = "right";
+      ctx.fillText(endLabel, x0 + w, Y_AXIS + 1);
     };
 
     let raf = 0;

@@ -21,7 +21,7 @@ import { K, shortName } from "../lib/fgcKeys";
 import { liveLog } from "../lib/LogStore";
 import { cursor } from "../lib/cursorStore";
 import { client } from "../../lib/RobotClient";
-import { useAppMode } from "../lib/hooks";
+import { useAppMode, usePalette } from "../lib/hooks";
 import * as persist from "../lib/persist";
 import type { PageDef } from "./registry";
 import "../styles/graph.css";
@@ -64,6 +64,10 @@ function initial(param: string | null, storeKey: string, fallback: readonly stri
 function GraphDemo() {
   const params = useMemo(() => new URLSearchParams(window.location.search), []);
   const mode = useAppMode();
+  // 主題翻動時（開機一定先是 MATCH → lockdown，模式回來才變 dark）要重算線色：
+  // colorForKey 讀的是 theme 的快取。沒有這個相依時，這一頁的三條線會永遠停在
+  // lockdown 的 #7E8288 灰——實測就是這樣，圖上三條白線、圖例五個灰色塊。
+  const pal = usePalette();
   const replay = client.replayLog !== null;
   const log = client.replayLog ?? liveLog;
 
@@ -153,7 +157,7 @@ function GraphDemo() {
       unit: key.includes("Current") ? "A" : undefined,
     });
     return [...left.map((k, i) => mk(k, "left", i)), ...right.map((k, i) => mk(k, "right", left.length + i))];
-  }, [left, right]);
+  }, [left, right, pal]);
 
   const colorOf = useCallback(
     (key: string) => {
@@ -163,7 +167,7 @@ function GraphDemo() {
       if (j >= 0) return colorForKey(key, left.length + j);
       return null;
     },
-    [left, right],
+    [left, right, pal],
   );
 
   const bandRows: BandRow[] = useMemo(
@@ -237,9 +241,19 @@ function GraphDemo() {
           清除選區
         </button>
         <span className="spacer" />
-        <span>
-          t={tSource === "robot" ? "robot（/FGC/Status/Match s）" : tSource === "client" ? "client（±50 ms）" : "尚無資料"} ·{" "}
-          {log.batchCount} 批 · {log.keys().length} 欄位
+        <span className="tb-read">
+          <span className="k">時基</span>
+          <span className="v">
+            {tSource === "robot" ? "robot" : tSource === "client" ? "client（±50 ms）" : "尚無資料"}
+          </span>
+        </span>
+        <span className="tb-read">
+          <span className="k">批</span>
+          <span className="fgc-num">{log.batchCount.toLocaleString("en-US")}</span>
+        </span>
+        <span className="tb-read">
+          <span className="k">欄位</span>
+          <span className="fgc-num">{log.keys().length}</span>
         </span>
       </div>
 
@@ -259,7 +273,7 @@ function GraphDemo() {
         <div className="gd-center">
           <PanelShell
             title="shooter 三軌 + 階梯目標"
-            note="目標與實測同色（虛線）· FEED_THRESHOLD 讀 /FGC/Param 回讀值"
+            note="目標階梯與實測同色，只是虛線——誤差就是兩條線的距離。"
             rate={series.some((s) => s.points) ? "含 ~2 Hz 散點" : undefined}
             flush
           >

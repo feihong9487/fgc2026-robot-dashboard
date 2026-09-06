@@ -27,11 +27,28 @@
   line-height: var(--lh-num);
   color: var(--text);
 }
-.rec-src {
-  font-family: var(--font-num);
-  font-size: var(--fs-xs);
+/* 13 顆一模一樣的有框按鈕排成一欄，等於在整頁最右邊畫了一條裝飾豎線，
+   而且違反「框只表示可寫」——它們全都可按，所以框不帶任何資訊。
+   常態只留文字，框在 hover / focus / 已停用時才出現：**框回去表示「這一顆」**。 */
+.rec-load {
+  min-height: calc(var(--u) * 3.6);
+  padding: calc(var(--u) * 0.5) var(--u);
+  border: var(--bw) solid transparent;
+  border-radius: var(--r-chip);
+  background: none;
   color: var(--text-dim);
+  font-family: inherit;
+  font-size: var(--fs-sm);
+  cursor: pointer;
 }
+.rec-table tr:hover .rec-load,
+.rec-load:focus-visible {
+  border-color: var(--border-c);
+  background: var(--surface-3);
+  color: var(--text);
+}
+.rec-load:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
+.rec-load:disabled { color: var(--stale); cursor: not-allowed; border-color: transparent; background: none; }
 
 /* 訊息卡是唯讀的，所以沒有框；tone 由左側 3px 直條帶。 */
 .rec-msg {

@@ -36,7 +36,7 @@ export function LockdownPage({ host }: { host: string }) {
         <span className="brand">FGC2026</span>
         <span className="badge">
           <span className="fgc-glyph">▮</span>
-          {mode === "MATCH" ? "MATCH · LOCKDOWN" : "模式未知 · LOCKDOWN"}
+          {mode === "MATCH" ? "MATCH" : "模式未知"}
         </span>
         <span className="spacer" />
         <span className="mono">Build {build || "—"}</span>
@@ -47,10 +47,13 @@ export function LockdownPage({ host }: { host: string }) {
         {/* 字距不寫在字串裡：漢字本來就是等寬方塊，拉開只會鬆散不會莊重。 */}
         <div className="lockdown-slab">比賽模式鎖定</div>
         <div className="lockdown-rule">
-          依 M01 / M09 / M11：遙測已封鎖，本機不存在任何控制路徑
-          <br />
-          8081 不推播 · <code>/dash/state.json</code> 503 · <code>/dash/rec.*</code> 503 · MJPEG 503 ·
-          只在機器人上錄影
+          依 M01 / M09 / M11：遙測已封鎖，本機不存在任何控制路徑。錄影只在機器人上進行。
+          <div className="lockdown-closed">
+            <span className="p"><code>8081</code>不推播</span>
+            <span className="p"><code>/dash/state.json</code>503</span>
+            <span className="p"><code>/dash/rec.*</code>503</span>
+            <span className="p"><code>MJPEG</code>503</span>
+          </div>
           {mode === "UNKNOWN" && (
             <>
               <br />
@@ -72,7 +75,7 @@ export function LockdownPage({ host }: { host: string }) {
       <div className="lockdown-foot">
         本頁沒有任何輸入元件。要調參請在 Driver Hub 選 <code>B1-PIT</code>。
         {store.connState === "connecting" && nextRetryInS !== null && (
-          <> · 重連退避中（{nextRetryInS} 秒後）——規則性靜默不是斷線，不製造重連風暴</>
+          <>　重連退避中，{nextRetryInS} 秒後再試：規則性靜默不是斷線，不製造重連風暴。</>
         )}
       </div>
     </div>

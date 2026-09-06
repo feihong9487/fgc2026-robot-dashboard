@@ -92,7 +92,7 @@ export function MatchClock() {
   }, 8);
 
   return (
-    <PanelShell title="比賽計時" note="來源 /FGC/Status/Match s（OpMode START 起算）" flush className="drive-clock">
+    <PanelShell title="比賽計時" flush className="drive-clock">
       <div ref={box} className="clock-box z-none">
         <div className="clock-row">
           <span ref={big} className="clock-big fgc-num">—:—</span>

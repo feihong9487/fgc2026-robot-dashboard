@@ -154,11 +154,14 @@
   border-color: var(--border-hi);
   color: var(--text);
 }
-/* 已選 = 橘框 + 亮字，不是橘底（§5.2）。這顆按鈕在圖表 / 回放 / shooter /
-   參數四頁都用，橘底乘以四頁就直接吃掉「全頁橘色像素預算 < 2%」。 */
+/* 已選 = 凹槽底 + 亮字 + 亮一階的框。**不是橘框**：原則 3 說橘只有一個意思
+   「這裡連著機器人」，而視窗長度 / 播放速率 / 統計範圍全是本機的視角設定，
+   一個 robot 的位元都不會動。這顆按鈕在圖表 / 回放 / shooter / 參數四頁都用，
+   四頁各撒三四個橘框就是「把強調色到處撒」——那正是暗底單一亮色會變成
+   AI 預設的原因。橘留給：分頁下標線、可寫欄位、送出鈕、游標與時間視窗。 */
 .tb-btn.on {
   background: var(--surface-3);
-  border-color: var(--focus-ring);
+  border-color: var(--border-hi);
   color: var(--text);
   font-weight: var(--fw-normal);
 }
@@ -182,6 +185,10 @@
 .tb-read .fgc-num {
   color: var(--text);
   min-width: 3ch;
+}
+.tb-read .v {
+  color: var(--text);
+  font-family: var(--font-num);
 }
 .tb-live {
   display: inline-flex;

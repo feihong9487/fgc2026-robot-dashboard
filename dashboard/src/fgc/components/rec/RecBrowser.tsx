@@ -1,4 +1,4 @@
-// #30 RecBrowser：GET /dash/rec.json → 表格 → GET /dash/rec.jsonl?name=<檔名> → REPLAY。
+// #30 RecBrowser：GET /dash/rec.json 取清單，點一列拉 /dash/rec.jsonl?name=<檔名> 進 REPLAY。
 //
 // 三件不可退讓的事：
 //
@@ -130,9 +130,6 @@ export function RecBrowser({ host }: { host: string }) {
     <div className="rec">
       <div className="rec-head">
         <span className="rec-title">機器人上的錄影檔</span>
-        <code className="rec-src">
-          GET {PATHS.recList} → {REC_FILE_LABEL}?name=&lt;檔名&gt;
-        </code>
         <span className="spacer" />
         {mode === "PIT" && (
           <button className="hw-btn" onClick={() => void refresh()} disabled={state.kind === "loading"}>
@@ -198,7 +195,7 @@ export function RecBrowser({ host }: { host: string }) {
                 <tr>
                   <th>檔名</th>
                   <th className="num">大小</th>
-                  <th>修改時間</th>
+                  <th className="num">修改時間</th>
                   <th />
                 </tr>
               </thead>
@@ -230,7 +227,7 @@ export function RecBrowser({ host }: { host: string }) {
                       <td className="num">{fmtTime(f.mtime)}</td>
                       <td className="act">
                         {mode === "PIT" ? (
-                          <button className="hw-btn" disabled={!!busy || !pullable} onClick={() => void load(f)}>
+                          <button className="rec-load" disabled={!!busy || !pullable} onClick={() => void load(f)}>
                             {loading ? `載入中 ${fmtSize(got)}${f.size ? ` / ${fmtSize(f.size)}` : ""}` : "載入回放"}
                           </button>
                         ) : (
@@ -264,9 +261,12 @@ export function RecBrowser({ host }: { host: string }) {
             OnBotJava 的檔案樹直接下載。Day 1 若 8080 註冊失敗，第一條路就沒了——賽場上不會有時間翻文件
           </span>
         </div>
-        <div className="rec-note">
-          <code>?name=live</code> 這條路徑本前端<b>一律不呼叫</b>：它回的是這一場記憶體 ring
-          的全部遙測，等同一條繞過「MATCH 不推播」的即時資料旁路。
+        <div className="rec-path">
+          <span className="n">不呼叫</span>
+          <code>?name=live</code>
+          <span className="why">
+            它回的是這一場記憶體 ring 的全部遙測，等同一條繞過「MATCH 不推播」的即時資料旁路
+          </span>
         </div>
       </div>
     </div>

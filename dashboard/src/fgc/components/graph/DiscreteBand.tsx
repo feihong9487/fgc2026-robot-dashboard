@@ -59,7 +59,7 @@ interface Colors {
   label: string | null;
   /** off / 未知：只填底，不畫邊，不算「有東西發生」。 */
   off?: boolean;
-  /** level 模式的填色透明度（0.12–0.35）。上下邊仍是實色，所以「有按」看得到、
+  /** level 模式的填色透明度（0.12–0.22）。上下邊仍是實色，所以「有按」看得到、
       「按多深」讀得出來，而整條帶的能量上限與其他列一致。 */
   alpha?: number;
 }
@@ -94,7 +94,7 @@ function runColor(
   const a = Math.min(1, Math.abs(run.v));
   if (a < 0.02) return { fill: p.bandOff, label: null, off: true };
   const base = run.v < 0 ? p.bandNeg : p.bandOn;
-  return { fill: base, label: a >= 0.98 ? null : a.toFixed(2), alpha: 0.12 + 0.23 * a };
+  return { fill: base, label: a >= 0.98 ? null : a.toFixed(2), alpha: 0.10 + 0.12 * a };
 }
 
 export function DiscreteBand({
@@ -194,8 +194,10 @@ export function DiscreteBand({
             ctx.fillStyle = m.c.fill;
             ctx.fillRect(m.x0, y, wpx, h);
           } else {
-            // 35% 的底 + 同色 1px 上下邊：色塊仍然指得出來，但不再蓋過折線的色彩系統
-            ctx.fillStyle = withAlpha(m.c.fill, m.c.alpha ?? 0.35);
+            // 22% 的底 + 同色 1px 上下邊。原本是 35%，但一列長 780 px、六列有五列
+            // 是 on 時，那塊色的面積比駕駛頁的巨燈還大，整條讀起來像堆疊進度條。
+            // 邊維持 100% 實色，所以「哪裡換狀態了」的銳利度一點都沒掉。
+            ctx.fillStyle = withAlpha(m.c.fill, m.c.alpha ?? 0.22);
             ctx.fillRect(m.x0, y, wpx, h);
             ctx.fillStyle = m.c.fill;
             ctx.fillRect(m.x0, y, wpx, 1);

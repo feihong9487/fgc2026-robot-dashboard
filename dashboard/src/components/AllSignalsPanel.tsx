@@ -13,7 +13,7 @@ import { useMemo, useState, useSyncExternalStore } from "react";
 import { store, NtValue } from "../lib/store";
 import { client } from "../lib/RobotClient";
 import { isTunableKey } from "../fgc/lib/fgcKeys";
-import { useAppMode, useTick } from "../fgc/lib/hooks";
+import { useAppMode, useTick, useWindowWidth } from "../fgc/lib/hooks";
 import * as persist from "../fgc/lib/persist";
 import { LineGraph, type GraphSeries } from "../fgc/components/graph/LineGraph";
 import { SPAN_CHOICES, view } from "../fgc/components/graph/viewWindow";
@@ -177,6 +177,23 @@ export function AllSignalsPanel() {
     [pinned],
   );
 
+  // 分欄：CSS grid 的每一列會對齊到最高的那一格，所以 /FGC/Bridge（11 列）
+  // 會把同一橫排的 /CameraPublisher/C270（1 列）撐出 200 px 的空洞。
+  // CSS 沒有 masonry，所以這裡直接把群組貪婪地分進 N 欄，讓四欄自己長高。
+  const winW = useWindowWidth();
+  const columns = useMemo(() => {
+    const n = Math.max(1, Math.min(4, Math.floor((winW - 24) / 360)));
+    const cols: [string, string[]][][] = Array.from({ length: n }, () => []);
+    const load = new Array(n).fill(0);
+    for (const g of sortedGroups) {
+      let best = 0;
+      for (let i = 1; i < n; i++) if (load[i] < load[best]) best = i;
+      cols[best].push(g);
+      load[best] += g[1].length + 2.2; // 2.2 = 群組標題 + 上下留白折算成幾列
+    }
+    return cols;
+  }, [sortedGroups, winW]);
+
   const total = store.latest.size;
   const disconnected = store.connState === "disconnected" || store.connState === "connecting";
 
@@ -187,7 +204,7 @@ export function AllSignalsPanel() {
           className="sig-filter"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          placeholder="過濾訊號（如 Chassis、Vision、Distance…）"
+          placeholder="過濾 key（如 Climb、Shooter、Gamepad）"
         />
         <button
           className={showHidden ? "seg active" : "seg"}
@@ -230,10 +247,14 @@ export function AllSignalsPanel() {
           </div>
         ) : sortedGroups.length === 0 ? (
           <div className="cam-placeholder">
-            {total === 0 ? "等待訊號中…" : "沒有符合過濾條件的訊號。"}
+            {total === 0
+              ? "還沒收到任何訊號。橋接器一連上，/FGC/** 的每一個 key 都會自動出現在這裡。"
+              : `沒有 key 含有「${filter.trim()}」。清掉過濾字看全部 ${total} 個。`}
           </div>
         ) : (
-          sortedGroups.map(([group, list]) => (
+          columns.map((groups, ci) => (
+          <div className="sig-col" key={ci}>
+          {groups.map(([group, list]) => (
             <section key={group}>
               <h3>{group}</h3>
               {list.map((key) => {
@@ -241,25 +262,27 @@ export function AllSignalsPanel() {
                 if (value === undefined) return null;
                 return (
                 <div className="sig-row" key={key}>
-                  {typeof value === "number" ? (
-                    <button
-                      className={pinned.includes(key) ? "sig-pin on" : "sig-pin"}
-                      title="釘選到波形圖"
-                      onClick={() => togglePin(key)}
-                    >
-                      圖
-                    </button>
-                  ) : (
-                    <span className="sig-pin-slot" />
-                  )}
                   <span className="sig-name" title={key}>
                     {key.slice(group.length + 1)}
                   </span>
                   <ValueCell ntKey={key} value={value} pit={pit} />
+                  {typeof value === "number" ? (
+                    <button
+                      className={pinned.includes(key) ? "sig-pin on" : "sig-pin"}
+                      title={pinned.includes(key) ? "已在波形圖上，點一下移除" : "釘選到波形圖"}
+                      onClick={() => togglePin(key)}
+                    >
+                      <span className="fgc-glyph">{pinned.includes(key) ? "●" : "○"}</span>
+                    </button>
+                  ) : (
+                    <span className="sig-pin-slot" />
+                  )}
                 </div>
                 );
               })}
             </section>
+          ))}
+          </div>
           ))
         )}
       </div>

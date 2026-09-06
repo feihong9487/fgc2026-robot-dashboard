@@ -126,10 +126,10 @@ function drawGauge(a: GaugeArgs, p: ReturnType<typeof palette>) {
   ctx.arc(rcx, cy, r, start, ang(mag), mirror);
   ctx.stroke();
 
-  // FEED_THRESHOLD 紅刻（回讀不到時畫成虛淡色，不假裝知道）
+  // FEED_THRESHOLD 刻（回讀不到時畫成淡色，不假裝知道）
   if (feed !== null && feed > 0) {
     const t = ang(feed);
-    ctx.strokeStyle = a.feedSolid ? p.err : alpha(p.err, 0.4);
+    ctx.strokeStyle = a.feedSolid ? p.thresh : alpha(p.thresh, 0.4);
     ctx.lineWidth = Math.max(2, r * 0.08);
     ctx.beginPath();
     ctx.moveTo(rcx + Math.cos(t) * (r - lw * 0.8), cy + Math.sin(t) * (r - lw * 0.8));
@@ -255,7 +255,7 @@ export function SpinDualGauge() {
   return (
     <PanelShell
       title="飛輪雙環"
-      note="機器人端 atSpeed 從未比較兩顆是否一致；失衡條是純前端相減"
+      note="失衡值是前端相減；機器人端的 atSpeed 不比較兩顆。"
       flush
       className="drive-gauge"
     >

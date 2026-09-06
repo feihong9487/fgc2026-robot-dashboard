@@ -9,7 +9,7 @@
 // 取樣一律走 valuesInWindow（絕不 decimate）。sampleWindow 的 min/max 抽樣是給
 // 畫圖用的，拿去算 σ 會得到一個偏大的假數字。
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { PanelShell } from "../shell/PanelShell";
 import { LogStore, liveLog } from "../../lib/LogStore";
 import { cursor } from "../../lib/cursorStore";
@@ -175,10 +175,12 @@ export function RangeStats({ log = liveLog, allowInputs }: Props) {
               <span
                 key={i}
                 className="bar"
-                style={{
-                  height: (hist.max ? (c / hist.max) * 100 : 0) + "%",
-                  background: HIST_COLOR[key] ?? "var(--border-hi)",
-                }}
+                style={
+                  {
+                    height: (hist.max ? (c / hist.max) * 100 : 0) + "%",
+                    "--c": HIST_COLOR[key] ?? "var(--border-hi)",
+                  } as CSSProperties
+                }
                 title={fmt(hist.edges[i]) + "–" + fmt(hist.edges[i + 1]) + "：" + c}
               />
             ))

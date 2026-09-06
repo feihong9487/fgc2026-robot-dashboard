@@ -12,7 +12,7 @@ function Signals() {
     <div style={{ height: "100%", padding: "var(--u)", boxSizing: "border-box", display: "flex" }}>
       <PanelShell
         title="全部訊號"
-        note="唯一可寫的是 /FGC/Tune/ 的 21 項；其餘一律純文字"
+        note="唯一可寫的是 /FGC/Tune/ 的 21 項，它們有輸入框；其餘一律純文字。"
         flush
         className="fill"
       >

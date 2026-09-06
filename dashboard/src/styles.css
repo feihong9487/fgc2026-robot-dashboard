@@ -195,7 +195,7 @@ html, body, #root {
 }
 .seg:hover { background: var(--surface-3); border-color: var(--border-hi); color: var(--fg); }
 /* 已選 = 橘框 + 亮字；不是橘底。橘的面積要留給真的會改機器人的按鈕。 */
-.seg.active { background: var(--surface-3); color: var(--fg); border-color: var(--focus-ring); }
+.seg.active { background: var(--surface-3); color: var(--fg); border-color: var(--border-hi); }
 .chart-grid {
   flex: 1; display: grid;
   grid-template-columns: 1fr 1fr;
@@ -352,73 +352,93 @@ html, body, #root {
   border: var(--bw) solid var(--border-c); border-radius: var(--r-chip);
   font-family: inherit; font-size: var(--fs-sm);
 }
-.sig-list { flex: 1; overflow-y: auto; min-height: 0; }
-/* 唯讀清單 —— 無框（原則 2）。分組靠底色階差與留白，不靠 15 個一模一樣的框。 */
+/* 這一頁的版面概念是「一份索引」：key 靠左，值就貼在 key 右邊的固定欄裡。
+   舊版是一條 flex 列 + `.sig-name { flex: 1 }`，於是 "Build" 這種 5 個字的
+   key 與它的值之間隔著 900 px 的空白，眼睛要橫跨整個螢幕才連得起來，
+   而右邊 400 px 一個字都沒有。改成：
+     · 列 = 三欄格線（名稱 / 值 / 釘子），值欄固定 132px，永遠貼著名稱
+     · 清單本身 = 自動填欄的格線，1440 寬時三欄群組並排，不再只用左邊 1/3
+   129 個 key 因此一頁看得完，不必捲。 */
+.sig-list {
+  flex: 1; overflow-y: auto; min-height: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 0 calc(var(--u) * 4);
+}
+.sig-col { flex: 1 1 0; min-width: 0; }
+/* 唯讀清單 —— 無框（原則 2）。群組靠標題上的一條 1px 頂線分隔，
+   不靠 15 個一模一樣的卡片框，也不靠底色（面板本身已經是 surface-2）。 */
 .sig-list section {
-  background: var(--bg2); border: none;
-  border-radius: var(--r-card);
-  padding: calc(var(--u) * 1.5) calc(var(--u) * 2);
-  margin-bottom: calc(var(--u) * 1.5);
+  background: none; border: none;
+  border-top: var(--bw) solid var(--border-c);
+  padding: calc(var(--u) * 1.2) 0 calc(var(--u) * 2);
+  break-inside: avoid;
 }
 /* 訊號頁的群組標題：整片變橘會直接吃掉全頁的橘色預算。
    它是機器的 key path，所以用 --font-num，靠顏色階差而不是強調色分層。 */
 .sig-list h3 {
-  margin: 0 0 6px; font-size: var(--fs-xs); color: var(--fg-dim);
+  margin: 0 0 calc(var(--u) * 0.6); font-size: var(--fs-xs); color: var(--fg-dim);
   font-family: var(--font-num); font-weight: 400;
   word-break: break-all;
 }
-/* 值靠螢幕最右、key 靠最左、中間 1000px 全空，眼睛要橫跨整個螢幕連線。
-   72em 的欄寬把兩者拉回同一個視域內；超過的留白留給下一欄。 */
+.sig-list .cam-placeholder { flex: 1; }
 .sig-row {
-  display: flex; align-items: center; gap: var(--u);
-  max-width: 72em;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 132px 20px;
+  align-items: center;
+  gap: var(--u);
+  min-height: 22px;
   padding: 1px 0;
-  border-bottom: var(--bw) solid transparent;
 }
 .sig-row:hover { background: var(--bg3); }
-/* 大部分的列不是數字，所以這一欄大部分是空的——它形成一條貫穿全頁的
-   空白溝。收到 20px 就夠放一個釘子，而溝不見了。 */
+/* 釘子放在列尾而不是列首：列首的 20px 欄大部分是空的（只有數字釘得起來），
+   會形成一條貫穿全頁的空白溝。放列尾並且只在 hover / focus / 已釘時現形，
+   欄寬保留所以不位移——與 Inspector 的 × 同一套規矩。 */
 .sig-pin, .sig-pin-slot {
-  width: 20px; height: 22px; flex-shrink: 0;
+  width: 20px; height: 20px; flex-shrink: 0;
   display: inline-flex; align-items: center; justify-content: center;
 }
 .sig-pin {
   border: var(--bw) solid transparent; border-radius: var(--r-chip);
   background: transparent; cursor: pointer;
-  /* 原本是 filter: grayscale(1) opacity(.45)，「圖」被壓到看起來像缺字方塊。
-     改用 color：同樣是「未啟用」的視覺，但字還是字。 */
-  color: var(--fg-dim); font-size: var(--fs-sm); font-family: inherit;
+  color: var(--fg-dim); font-size: var(--fs-xs); font-family: inherit;
+  opacity: 0;
 }
+.sig-row:hover .sig-pin, .sig-pin:focus-visible, .sig-pin.on { opacity: 1; }
 .sig-pin:hover { border-color: var(--border); color: var(--fg); }
-.sig-pin.on { color: var(--accent); background: var(--bg3); border-color: var(--accent); }
+.sig-pin.on { color: var(--text); background: var(--bg3); border-color: var(--border-hi); }
 /* key path 是機器的字面字串 → 等寬。標籤不用等寬，字面值才用。 */
 .sig-name {
-  flex: 1; min-width: 0; color: var(--fg-dim);
+  min-width: 0; color: var(--fg-dim);
   font-family: var(--font-num); font-size: var(--fs-xs);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 /* 這一頁唯一有框的東西：/FGC/Tune/ 的 21 項。其餘一律 .ro-value 純文字。 */
 .sig-input {
-  width: 130px; padding: 3px 6px; text-align: right; flex-shrink: 0;
+  width: 100%; padding: 2px 5px; text-align: right;
   background: var(--bg3); color: var(--fg);
   border: var(--bw) solid var(--border-c); border-radius: var(--r-chip);
   font-family: var(--font-num); font-variant-numeric: tabular-nums;
+  font-size: var(--fs-xs);
 }
 .sig-input:focus { border-color: var(--focus-ring); }
-.sig-input.text { width: 200px; text-align: left; }
+.sig-input.text { text-align: left; }
 .sig-input.editing { border-color: var(--warn); }
 .sig-filter:focus { border-color: var(--focus-ring); }
 .sig-bool {
-  width: 130px; padding: 3px 6px; flex-shrink: 0; cursor: pointer;
+  width: 100%; padding: 2px 5px; cursor: pointer;
   background: var(--bg3); color: var(--fg-dim);
   border: var(--bw) solid var(--border-c); border-radius: var(--r-chip);
-  font-family: inherit; font-size: var(--fs-sm);
+  font-family: var(--font-num); font-size: var(--fs-xs); text-align: right;
 }
 .sig-bool.on { color: var(--on-fire); background: var(--ok); font-weight: 700; }
+.sig-row .ro-value,
 .sig-array {
-  width: 130px; text-align: right; color: var(--fg-dim); flex-shrink: 0;
-  font-family: var(--font-num);
+  text-align: right; color: var(--text); flex-shrink: 0;
+  font-family: var(--font-num); font-size: var(--fs-xs);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+.sig-array { color: var(--fg-dim); }
 
 /* ── LabVIEW 風格控件庫 ───────────────── */
 .lv-row {
@@ -1050,7 +1070,7 @@ html, body, #root {
 /* 分頁列：這一頁需要更寬的視窗時先標出來，而不是點進去才發現版面壞掉 */
 .fgc-tab.narrow { opacity: 0.6; }
 .fgc-tab.narrow::after {
-  content: "⌐";
+  content: "▲";
   color: var(--warn);
   margin-left: 3px;
   font-size: var(--fs-xs);
@@ -1075,7 +1095,7 @@ html, body, #root {
   line-height: 1;
 }
 .fgc-gear:hover { color: var(--text); border-color: var(--border-c); }
-.fgc-gear.on { background: var(--surface-3); color: var(--text); border-color: var(--focus-ring); }
+.fgc-gear.on { background: var(--surface-3); color: var(--text); border-color: var(--border-hi); }
 /* 埠被改離原廠值：這件事在「連不上」的時候一定要看得見 */
 .fgc-gear.flagged { color: var(--warn); border-color: var(--warn); }
 
@@ -1121,7 +1141,7 @@ html, body, #root {
   font-family: inherit;
 }
 .fgc-menu .seg:hover { color: var(--text); background: var(--surface-3); border-color: var(--border-hi); }
-.fgc-menu .seg.active { background: var(--surface-3); color: var(--text); border-color: var(--focus-ring); }
+.fgc-menu .seg.active { background: var(--surface-3); color: var(--text); border-color: var(--border-hi); }
 .fgc-menu .hint { margin: calc(var(--u) * 0.75) 0 0; font-size: var(--fs-xs); color: var(--text-dim); line-height: 1.5; }
 .fgc-menu .hint.warn { color: var(--warn); }
 .fgc-menu .port-row { display: flex; gap: calc(var(--u)); align-items: flex-end; }
@@ -1219,12 +1239,38 @@ html, body, #root {
 
 /* Build tag / OpMode / 回放檔名：長度不可預測，超出就省略號（全文在 title）。
    不設上限的話一個 24 字的 build tag 會把分頁列擠出 1440 寬的畫面外。 */
+/* 長度不可預測的兩欄（Build tag、OpMode 名稱）。它們**不收縮**：
+   .fgc-stat 是 inline-flex，min-width:0 之後容器會塌到比內容窄，
+   而 text-overflow 是掛在 .value 上的，於是收縮的結果不是「fake-hub…」
+   而是硬生生切在字中間的「fake」與「OpMod」（實測 1280 就是這樣）。
+   寬度改用每個斷點明講的 max-width 來管，省略號才畫得出來。 */
+.fgc-stat.clip {
+  flex: 0 0 auto;
+}
 .fgc-stat.clip > .value {
   max-width: 15ch;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-@media (max-width: 1279px) {
-  .fgc-stat.clip > .value { max-width: 8ch; }
+/* .fgc-bar 有 overflow:hidden（那是為了不讓長 build tag 把分頁列頂出畫面），
+   所以總寬一超過視窗，被剪掉的就是最右邊的分頁列與齒輪——1024 寬時實測
+   「檢查 C」「訊號 A」與齒輪整組不見，滑鼠就換不了頁。1440 以下先讓出
+   OpMode 這一欄：
+     · 賽場上最常被問的一句話是「你們現在跑的是哪一版」，那是 Build
+     · OpMode 在檢查頁、訊號樹、以及頂欄左邊那顆模式徽章上都還看得到 */
+@media (max-width: 1439px) {
+  .hide-lt-1440 { display: none !important; }
+  .fgc-stat.clip > .value { max-width: 12ch; }
 }
+@media (max-width: 1099px) {
+  /* 只剩 Build 一欄了，值自己說得出自己是什麼，標籤讓出來給值。 */
+  .fgc-stat.clip > .label { display: none; }
+  .fgc-stat.clip > .value { max-width: 10ch; }
+  /* 快捷鍵字母是提示，鍵本身照樣有效；1024 寬時它是齒輪與分頁之間的差別。 */
+  .fgc-tab .hk { display: none; }
+  .fgc-tab { padding: 0 var(--u); }
+}
+/* 分頁列與齒輪永遠不收縮，也永遠排在最後——它們是「還能不能操作這台儀表板」。 */
+.fgc-tabs,
+.fgc-gear { flex: 0 0 auto; }

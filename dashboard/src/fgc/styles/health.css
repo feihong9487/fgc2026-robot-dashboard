@@ -94,8 +94,7 @@
     calc(var(--u) * 6)
     minmax(9ch, 13ch)
     minmax(0, 400px)
-    minmax(0, 1fr)
-    auto;
+    minmax(0, 1fr);
   align-items: baseline;
   gap: calc(var(--u) * 0.5) calc(var(--u) * 1.5);
   padding: calc(var(--u) * 1) calc(var(--u) * 2);
@@ -150,12 +149,32 @@
 }
 
 /* 原本是一個沒有圖例的「指紋」chip，15 張裡只有 3 張有。
-   改成只在這一格真的沒過時出現的一個詞——那時它才帶資訊。 */
+   改成只在這一格真的沒過時、接在處置句尾的一個詞——那時它才帶資訊，
+   而且它就長在它形容的那句話旁邊，不是飛到 700 px 外的螢幕右緣。 */
 .hw-row-fp {
   font-size: var(--fs-xs);
   color: var(--stale);
   white-space: nowrap;
+  margin-left: calc(var(--u) * 1.5);
 }
+
+/* 28px 是給數字的。沒有數字的 detail 是一句話，降回介面音階的比例字體。 */
+.hw-row-detail.words {
+  font-family: var(--font-ui);
+  font-size: var(--fs-md);
+  line-height: var(--lh-ui);
+  letter-spacing: 0;
+}
+/* 尾巴的括號是註腳，不是讀數。 */
+.hw-row-tail {
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  color: var(--text-dim);
+  letter-spacing: 0;
+  margin-left: 0.5em;
+  white-space: nowrap;
+}
+.hw-row.pass .hw-row-tail { font-size: var(--fs-xs); }
 
 /* 通過的那幾項不需要任何動作，所以也不需要一整列的版面：兩欄、40px、
    值降回 --fs-sm。它們不消失（消失就變成「我不知道有沒有檢查」），只是讓路。 */

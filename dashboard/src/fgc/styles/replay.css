@@ -38,10 +38,6 @@
 .rp-meta {
   color: var(--text-dim);
 }
-.rp-ab {
-  color: var(--stale);
-  font-size: var(--fs-xs);
-}
 .rp-note {
   color: var(--warn);
   font-size: var(--fs-xs);
@@ -204,8 +200,9 @@
   line-height: var(--lh-ui);
 }
 .rp-status-note p.warn {
-  color: var(--warn);
+  color: var(--text-dim);
 }
+.rp-status-note p.warn .fgc-glyph { color: var(--warn); font-size: var(--fs-xs); }
 
 /* ═══ 事件清單（#33）════════════════════════════════════════════ */
 .ev {
@@ -245,8 +242,8 @@
   border-bottom: 1px solid var(--border-c);
   flex: 0 0 auto;
 }
-/* 九個 chip 一套系統（§5.2）：未選無框、已選橘框、這份 log 裡沒有的再降一階。
-   原本九種顏色是獨立於 series-* 與 tone 之外的第三套色彩系統。 */
+/* 標記例外，不標記常態：預設九類全開，所以「開著」是常態，長得像唯讀 chip；
+   被收起來的那幾類才有記號（無底 + 灰字 + 刪除線）。 */
 .ev-chip {
   display: inline-flex;
   align-items: baseline;
@@ -266,10 +263,13 @@
 }
 .ev-chip.on {
   background: var(--surface-3);
-  border-color: var(--focus-ring);
+  border-color: transparent;
   color: var(--text);
 }
-/* 這一類在這份 log 裡是 0 筆：開關它不會改變任何東西，所以不給框。 */
+.ev-chip:not(.on) .lbl { text-decoration: line-through; text-decoration-thickness: 1px; }
+.ev-chip:not(.on) { color: var(--stale); }
+/* 這一類在這份 log 裡是 0 筆：開關它不會改變任何東西，所以既不給框也不給
+   刪除線——刪除線的意思是「這一類被你收起來了」，而這一類根本沒東西可收。 */
 .ev-chip.empty,
 .ev-chip.empty.on {
   background: none;
@@ -277,6 +277,7 @@
   color: var(--stale);
   cursor: default;
 }
+.ev-chip.empty .lbl { text-decoration: none; }
 .ev-chip .n {
   color: var(--text-dim);
 }

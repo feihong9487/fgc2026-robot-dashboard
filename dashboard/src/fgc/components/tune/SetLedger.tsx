@@ -122,10 +122,10 @@ export function SetLedger({ log = liveLog, allowInputs, rows = 20 }: Props) {
           標籤是中文比例字體，值才是等寬——等寬給值，不給標籤。 */}
       <div className="sl-foot">
         <span title="/FGC/Bridge/Last Set：機器人自己記的最後一筆">
-          機器人 <b>{log.latestStr(K.lastSet, "—")}</b>
+          機器人 <b>{log.latestStr(K.lastSet, "") || "—"}</b>
         </span>
         <span className="rej" title="/FGC/Bridge/Last Set Rejected">
-          被拒 <b>{log.latestStr(K.lastSetRejected, "—")}</b>
+          被拒 <b>{log.latestStr(K.lastSetRejected, "") || "—"}</b>
         </span>
       </div>
     </PanelShell>

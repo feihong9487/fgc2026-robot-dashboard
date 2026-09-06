@@ -119,7 +119,7 @@ export function AlertRail() {
       note={
         extra > 0
           ? `另有 ${extra} 條未顯示：rail 只留最嚴重的 3 條`
-          : "ERROR 會響兩短嗶；條件解除卡片自己收"
+          : "ERROR 會響兩短嗶。"
       }
       flush
       className="drive-alerts"

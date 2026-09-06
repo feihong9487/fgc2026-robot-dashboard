@@ -30,16 +30,42 @@ import { copyText } from "../../lib/clipboard";
 /** 清單順序 = 處理順序。這是「顏色不是唯一通道」的第三個通道：位置。 */
 const TONE_ORDER: Record<Tone, number> = { err: 0, warn: 1, stale: 2, ok: 3 };
 
+/**
+ * 讀數欄的排版規則：**28px 是給數字的。**
+ *
+ * detail 是一句話（「Cmd 整段沒變過」「視覺未啟用」「沒有讀數」）時，把它畫成
+ * 28px 等寬只會得到一段又大又醜的漢字，而且它與旁邊真正的 `10.5 V` 搶同一份
+ * 注意力——那一格明明沒有數字可讀。所以：沒有阿拉伯數字的 detail 降到 --fs-md
+ * 的比例字體。
+ *
+ * 同理，尾巴的括號（`(p50 21　max 43)`、`（觀察中 6/30 s）`）是註腳不是讀數，
+ * 拆出來畫成 --fs-sm --text-dim。這兩條都是純呈現規則，checks.ts 一個字沒動。
+ */
+const TAIL = /^(.*?)[\s　]*[（(]([^（(]+)[)）][\s　]*$/;
+
 function Row({ c }: { c: Check }) {
+  const m = TAIL.exec(c.detail);
+  const head = (m ? m[1] : c.detail).trim();
+  const tail = m ? m[2] : null;
+  const numeric = /[0-9]/.test(head);
   return (
     <div className={`hw-row ${c.state}${c.ok ? " pass" : ""}`} title={c.hint}>
       <Glyph tone={c.state} />
       <span className="hw-row-name">{c.name}</span>
-      <span className="hw-row-detail">{c.detail}</span>
-      {!c.ok && c.hint ? <span className="hw-row-hint">{c.hint}</span> : <span />}
-      {!c.ok && c.fingerprint && (
-        <span className="hw-row-fp" title="這一格直接指向一個具體的機器人端故障，處置寫在左邊，不必再猜">
-          直指故障
+      <span className={numeric ? "hw-row-detail" : "hw-row-detail words"}>
+        {head}
+        {tail && <span className="hw-row-tail">{tail}</span>}
+      </span>
+      {c.ok ? (
+        <span />
+      ) : (
+        <span className="hw-row-hint">
+          {c.hint}
+          {c.fingerprint && (
+            <span className="hw-row-fp" title="這一格直接指向一個具體的機器人端故障，不必再猜是哪裡壞了">
+              直指故障
+            </span>
+          )}
         </span>
       )}
     </div>
