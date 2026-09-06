@@ -21,19 +21,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { client } from "../../../lib/RobotClient";
 import { PATHS, httpUrl } from "../../lib/profile";
 import { useAppMode } from "../../lib/hooks";
+import { parseRecList, robotAcceptsName, fmtSize, fmtTime, type RecFileRow, type RecList } from "./recList";
 
-export interface RecFileRow {
-  name: string;
-  size: number;
-  mtime: number;
-}
-
-export interface RecList {
-  dir: string;
-  current: string;
-  files: RecFileRow[];
-  error?: string;
-}
+export { parseRecList, robotAcceptsName } from "./recList";
+export type { RecFileRow, RecList } from "./recList";
 
 type ListState =
   | { kind: "idle" }
@@ -43,57 +34,6 @@ type ListState =
   | { kind: "locked" }
   | { kind: "disabled" }
   | { kind: "error"; why: string };
-
-/** 真機回 {dir,current,files:[{name,size,mtime}]}；防禦性解析，欄位缺了不整支炸掉。 */
-export function parseRecList(raw: unknown): RecList {
-  const o = (raw ?? {}) as Record<string, unknown>;
-  const files: RecFileRow[] = [];
-  const arr = Array.isArray(o.files) ? o.files : [];
-  for (const f of arr) {
-    if (!f || typeof f !== "object") continue;
-    const r = f as Record<string, unknown>;
-    const name = typeof r.name === "string" ? r.name : "";
-    if (!name) continue;
-    files.push({
-      name,
-      size: typeof r.size === "number" ? r.size : 0,
-      mtime: typeof r.mtime === "number" ? r.mtime : 0,
-    });
-  }
-  files.sort((a, b) => b.mtime - a.mtime);
-  return {
-    dir: typeof o.dir === "string" ? o.dir : "",
-    current: typeof o.current === "string" ? o.current : "",
-    files,
-    error: typeof o.error === "string" ? o.error : undefined,
-  };
-}
-
-/**
- * 機器人端的 DashRec.safeName 只收 `rec-*.jsonl`，但 DashRec.listFiles 列的是
- * **所有** `*.jsonl`（DashRec.java:265）。所以手動丟進 /sdcard/FIRST/fgc-rec 的檔案
- * （例如從別台機器拷過去的 `real-B1PIT-*.jsonl`）**會出現在清單上，點下去卻回 400**。
- *
- * 這是機器人端的一個小落差（一行可修：listFiles 也加 startsWith("rec-")）。
- * 在它被修掉之前，前端先把這件事講清楚——一個沒有解釋的 400 在賽場上會被當成
- * 「儀表板壞了」，然後有人開始重開機。
- */
-export function robotAcceptsName(name: string): boolean {
-  if (!name || name.length > 64) return false;
-  if (name.includes("/") || name.includes("\\") || name.includes("..")) return false;
-  return name.startsWith("rec-") && name.endsWith(".jsonl");
-}
-
-function fmtSize(bytes: number): string {
-  if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
-  if (bytes >= 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-  return `${bytes} B`;
-}
-
-function fmtTime(ms: number): string {
-  if (!ms) return "—";
-  return new Date(ms).toLocaleString("zh-TW", { hour12: false });
-}
 
 export function RecBrowser({ host }: { host: string }) {
   const mode = useAppMode();
