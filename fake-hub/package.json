@@ -1,0 +1,15 @@
+{
+  "name": "fgc-fake-hub",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "假 Control Hub：模擬 FGC 2026 機器人端橋接器的 8081 WebSocket 與 8080 HTTP，供儀表板前端離線開發",
+  "scripts": {
+    "fake-hub": "node fake-hub.mjs",
+    "start": "node fake-hub.mjs",
+    "match": "node fake-hub.mjs --mode MATCH"
+  },
+  "devDependencies": {
+    "ws": "^8.21.3"
+  }
+}

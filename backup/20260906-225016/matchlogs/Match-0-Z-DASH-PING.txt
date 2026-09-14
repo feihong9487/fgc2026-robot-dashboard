@@ -1,0 +1,22 @@
+--------- beginning of main
+09-06 22:42:19.722   964  1166 V Robocol : received command: CMD_SET_MATCH_NUMBER(42387) 0
+09-06 22:42:19.723   964  1166 V Robocol : received command: CMD_INIT_OP_MODE(42388) Z-DASH-PING
+09-06 22:42:19.756   964  3777 V RobotCore: thread: ...terminating 'OpModeThread'
+09-06 22:42:19.758   964  1191 I RobotCore: Attempting to switch to OpMode Z-DASH-PING
+09-06 22:42:19.763   964  1191 I RobotCore: ******************** START - OPMODE Z-DASH-PING ********************
+09-06 22:42:19.799   964  1172 V Robocol : sending CMD_STREAM_CHANGE(32551), attempt: 0
+09-06 22:42:19.940   964  1191 D HardwareMap: Clearing which device instances have been retrieved
+09-06 22:42:19.943   964  3815 V RobotCore: thread: 'OpModeThread' starting...
+09-06 22:42:19.958   964  1172 V Robocol : sending CMD_NOTIFY_INIT_OP_MODE(32558), attempt: 0
+09-06 22:42:22.642   964  1166 V Robocol : received command: CMD_INIT_OP_MODE(42437) $Stop$Robot$
+09-06 22:42:22.657   964  3815 D RobotCore: User runOpModeMethod exited
+09-06 22:42:22.660   964  3815 V RobotCore: thread: ...terminating 'OpModeThread'
+09-06 22:42:22.663   964  1191 I RobotCore: Attempting to switch to OpMode $Stop$Robot$
+09-06 22:42:22.664   964  1191 I RobotCore: ******************** STOP - OPMODE /storage/emulated/0/FIRST/matchlogs/Match-0-Z-DASH-PING.txt ********************
+09-06 22:42:22.669   964  3818 I RobotCore: saving match logcat to /storage/emulated/0/FIRST/matchlogs/Match-0-Z-DASH-PING.txt
+09-06 22:42:22.669   964  3818 I RobotCore: logging command line: exec logcat -d -T '9-6 22:42:19.000' -f '/storage/emulated/0/FIRST/matchlogs/Match-0-Z-DASH-PING.txt' -n4 -v threadtime UsbRequestJNI:S UsbRequest:S art:W ThreadPool:W System:W ExtendedExtractor:W OMXClient:W MediaPlayer:W dalvikvm:W  *:V
+09-06 22:42:22.670   964  1191 D HardwareMap: Clearing which device instances have been retrieved
+09-06 22:42:22.675   964  3822 V RobotCore: thread: 'OpModeThread' starting...
+09-06 22:42:22.679   964  1172 V Robocol : sending CMD_STREAM_CHANGE(32602), attempt: 0
+09-06 22:42:22.679   964  1172 V Robocol : sending CMD_NOTIFY_INIT_OP_MODE(32607), attempt: 0
+09-06 22:42:22.680   964  1172 V Robocol : sending CMD_NOTIFY_RUN_OP_MODE(32608), attempt: 0

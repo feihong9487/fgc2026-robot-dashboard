@@ -1,0 +1,73 @@
+--------- beginning of main
+08-30 15:59:01.184   972  1161 V Robocol : received command: CMD_SET_MATCH_NUMBER(59809) 0
+08-30 15:59:01.186   972  1161 V Robocol : received command: CMD_INIT_OP_MODE(59810) ServoTest
+08-30 15:59:01.217   972  5943 V RobotCore: thread: ...terminating 'OpModeThread'
+08-30 15:59:01.219   972  5724 I RobotCore: Attempting to switch to OpMode ServoTest
+08-30 15:59:01.223   972  5724 I RobotCore: ******************** START - OPMODE ServoTest ********************
+08-30 15:59:01.395   972  5724 D HardwareMap: Clearing which device instances have been retrieved
+08-30 15:59:01.398   972  5946 V RobotCore: thread: 'OpModeThread' starting...
+08-30 15:59:01.429   972  1191 V Robocol : sending CMD_NOTIFY_INIT_OP_MODE(50181), attempt: 0
+08-30 15:59:02.305   972  1161 V Robocol : received command: CMD_RUN_OP_MODE(59832) ServoTest
+08-30 15:59:02.349   972  1191 V Robocol : sending CMD_NOTIFY_RUN_OP_MODE(50196), attempt: 0
+08-30 16:00:13.285   972  1121 V FtcWebSocket: websocket (ip=192.168.43.42/192.168.43.42 port=8081) has closed. closeCode:ABNORMAL_CLOSURE(1006) initiatedByRemote:false Reason: The connection was closed because the other endpoint did not respond with a pong in time. For more information check: https://github.com/TooTallNate/Java-WebSocket/wiki/Lost-connection-detection
+08-30 16:00:13.285   972  1121 V WebSocketManager: Unsubscribed websocket (ip=192.168.43.42/192.168.43.42 port=8081) from namespace (ControlHubUpdater)
+08-30 16:00:13.286   972  1121 V WebSocketManager: Unsubscribed websocket (ip=192.168.43.42/192.168.43.42 port=8081) from namespace (progress)
+08-30 16:00:13.286   972  1121 V WebSocketManager: Unsubscribed websocket (ip=192.168.43.42/192.168.43.42 port=8081) from namespace (ONBOTJAVA)
+08-30 16:00:16.424   972  1122 V FtcWebSocket: Opening websocket (ip=192.168.43.42/192.168.43.42 port=8081)
+08-30 16:00:16.706   972  5998 V WebSocketManager: Subscribed websocket (ip=192.168.43.42/192.168.43.42 port=8081) to namespace (ONBOTJAVA)
+08-30 16:00:16.707   972  5998 V WebSocketManager: Subscribed websocket (ip=192.168.43.42/192.168.43.42 port=8081) to namespace (progress)
+08-30 16:00:16.708   972  5999 V WebSocketManager: Subscribed websocket (ip=192.168.43.42/192.168.43.42 port=8081) to namespace (ControlHubUpdater)
+08-30 16:00:18.672   972  6001 V ProgrammingModeManager: serve uri=/java/file/get
+08-30 16:00:21.550   972  6007 V ProgrammingModeManager: serve uri=/java/file/save
+08-30 16:00:24.768   972  6009 V ProgrammingModeManager: serve uri=/java/file/save
+08-30 16:00:25.461   972  1017 V OnBotJava: build request file changed: 0x00000002 /storage/emulated/0/FIRST/java/control/buildRequest.txt
+08-30 16:00:25.462   972  5998 V OnBotJava: build()...
+08-30 16:00:25.463   972  6009 V ProgrammingModeManager: serve uri=/java/file/save
+08-30 16:00:25.479   972  5999 I ONBOTJAVA_BUILD_MONITOR: Build 1788076825460 is pending
+08-30 16:00:25.479   972  1017 V OnBotJava: build request file changed: 0x00000002 /storage/emulated/0/FIRST/java/control/buildRequest.txt
+08-30 16:00:25.485   972  1017 I ONBOTJAVA_BUILD_MONITOR: Build 1788076825460 has successfully started
+08-30 16:00:25.510   972  5998 V OnBotJava: clean()...
+08-30 16:00:25.581   972  5998 V OnBotJava: ...clean()
+08-30 16:00:25.581   972  5998 V OnBotJava: ensureBuildDirs()...
+08-30 16:00:25.615   972  5998 V OnBotJava: ...ensureBuildDirs()
+08-30 16:00:25.615   972  5998 V OnBotJava: compileJavaFiles()...
+08-30 16:00:26.395   972  5998 V OnBotJava: ...compileJavaFiles()
+08-30 16:00:26.414   972  5998 V OnBotJava: consolidateClassFilesInJar()...
+08-30 16:00:26.420   972  5998 V OnBotJava: consolidating to /storage/emulated/0/FIRST/java/build/jars/onBotJavaJar-2026-08-30+16.00.26--1400318027/OnBotJava.jar
+08-30 16:00:26.501   972  5998 V OnBotJava: ...consolidateClassFilesInJar()
+08-30 16:00:26.501   972  5998 V OnBotJava: dexifyJarFiles()...
+08-30 16:00:26.513   972  5998 V OnBotJava: dexifying  /storage/emulated/0/FIRST/java/build/jars/onBotJavaJar-2026-08-30+16.00.26--1400318027/OnBotJava.jar...
+08-30 16:00:26.515   972  5998 V OnBotJava: using d8
+08-30 16:00:27.827   972  5998 V OnBotJava: Wrote /storage/emulated/0/FIRST/java/build/jars/onBotJavaJar-2026-08-30+16.00.26--1400318027/classes.dex
+08-30 16:00:27.831   972  5998 V OnBotJava: ...dexifying  /storage/emulated/0/FIRST/java/build/jars/onBotJavaJar-2026-08-30+16.00.26--1400318027/OnBotJava.jar
+08-30 16:00:27.847   972  5998 V OnBotJava: ...dexifyJarFiles()
+08-30 16:00:27.857   972  5998 D OnBotJavaBackupManager: Backing up source code for this build to: /storage/emulated/0/FIRST/java/srcBackups/OnBot-build-00000029-2026-08-30+16.00.27.zip
+08-30 16:00:27.958   972  5998 D OnBotJavaBackupManager: Finished backing up source code for this build
+08-30 16:00:27.960   972  1017 V RegisteredOpModes: noting that OnBotJava changed
+08-30 16:00:27.961   972  1017 V RegisteredOpModes: noting that OnBotJava changed
+08-30 16:00:27.974   972  5998 V OnBotJava: onBotJava build finished successfully
+08-30 16:00:27.977   972  1017 I ONBOTJAVA_BUILD_MONITOR: Build 1788076825460 completed with status SUCCESSFUL
+08-30 16:00:27.986   972  6009 V ProgrammingModeManager: serve uri=/java/build/wait
+08-30 16:00:27.998   972  5998 V OnBotJava: ...build()
+08-30 16:00:27.999   972  5724 V OpmodeRegistration: unregistered {FGC2026_TeleOp_v2}
+08-30 16:00:27.999   972  5724 V OpmodeRegistration: unregistered {ServoTest}
+08-30 16:00:28.007   972  6016 V ProgrammingModeManager: serve uri=/java/build/wait
+08-30 16:00:28.033   972  5724 V OpmodeRegistration: registered {FGC2026_TeleOp_v2} as {FGC2026_TeleOp_v2}
+08-30 16:00:28.034   972  5724 V OpmodeRegistration: registered {ServoTest} as {ServoTest}
+08-30 16:00:28.069   972  1191 V Robocol : sending CMD_NOTIFY_OP_MODE_LIST(52006), attempt: 0
+08-30 16:00:28.069   972  1191 V Robocol : sending CMD_NOTIFY_USER_DEVICE_LIST(52008), attempt: 0
+08-30 16:01:18.285   972  1121 V FtcWebSocket: websocket (ip=192.168.43.42/192.168.43.42 port=8081) has closed. closeCode:ABNORMAL_CLOSURE(1006) initiatedByRemote:false Reason: The connection was closed because the other endpoint did not respond with a pong in time. For more information check: https://github.com/TooTallNate/Java-WebSocket/wiki/Lost-connection-detection
+08-30 16:01:18.285   972  1121 V WebSocketManager: Unsubscribed websocket (ip=192.168.43.42/192.168.43.42 port=8081) from namespace (ControlHubUpdater)
+08-30 16:01:18.286   972  1121 V WebSocketManager: Unsubscribed websocket (ip=192.168.43.42/192.168.43.42 port=8081) from namespace (progress)
+08-30 16:01:18.286   972  1121 V WebSocketManager: Unsubscribed websocket (ip=192.168.43.42/192.168.43.42 port=8081) from namespace (ONBOTJAVA)
+08-30 16:04:57.276   972  1161 V Robocol : received command: CMD_INIT_OP_MODE(65444) $Stop$Robot$
+08-30 16:04:57.292   972  5946 D RobotCore: User runOpModeMethod exited
+08-30 16:04:57.293   972  5946 V RobotCore: thread: ...terminating 'OpModeThread'
+08-30 16:04:57.296   972  5724 I RobotCore: Attempting to switch to OpMode $Stop$Robot$
+08-30 16:04:57.298   972  5724 I RobotCore: ******************** STOP - OPMODE /storage/emulated/0/FIRST/matchlogs/Match-0-ServoTest.txt ********************
+08-30 16:04:57.301   972  5724 D HardwareMap: Clearing which device instances have been retrieved
+08-30 16:04:57.301   972  6022 I RobotCore: saving match logcat to /storage/emulated/0/FIRST/matchlogs/Match-0-ServoTest.txt
+08-30 16:04:57.301   972  6022 I RobotCore: logging command line: exec logcat -d -T '8-30 15:59:1.000' -f '/storage/emulated/0/FIRST/matchlogs/Match-0-ServoTest.txt' -n4 -v threadtime UsbRequestJNI:S UsbRequest:S art:W ThreadPool:W System:W ExtendedExtractor:W OMXClient:W MediaPlayer:W dalvikvm:W  *:V
+08-30 16:04:57.303   972  6024 V RobotCore: thread: 'OpModeThread' starting...
+08-30 16:04:57.309   972  1191 V Robocol : sending CMD_NOTIFY_INIT_OP_MODE(55818), attempt: 0
+08-30 16:04:57.311   972  1191 V Robocol : sending CMD_NOTIFY_RUN_OP_MODE(55819), attempt: 0

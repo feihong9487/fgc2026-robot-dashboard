@@ -1,0 +1,16 @@
+{
+  "src": [
+    "/org/",
+    "/org/firstinspires/",
+    "/org/firstinspires/ftc/",
+    "/org/firstinspires/ftc/teamcode/",
+    "/org/firstinspires/ftc/teamcode/FGC2026_TeleOp_v2.java",
+    "/org/firstinspires/ftc/teamcode/Constants.java",
+    "/org/firstinspires/ftc/teamcode/DriveSystem.java",
+    "/org/firstinspires/ftc/teamcode/ShooterSystem.java",
+    "/org/firstinspires/ftc/teamcode/IntakeSystem.java",
+    "/org/firstinspires/ftc/teamcode/ClimbSystem.java",
+    "/org/firstinspires/ftc/teamcode/HopperSystem.java",
+    "/jars/"
+  ]
+}

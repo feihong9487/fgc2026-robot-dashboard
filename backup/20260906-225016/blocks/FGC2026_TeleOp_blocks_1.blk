@@ -1,0 +1,339 @@
+<xml xmlns="https://developers.google.com/blockly/xml">
+<variables>
+<variable id="vLatch">shootLatch</variable>
+<variable id="vDrive">drive</variable>
+<variable id="vTurn">turn</variable>
+</variables>
+<block type="procedures_defnoreturn" id="root" deletable="false" x="25" y="25">
+<field name="NAME">runOpMode</field>
+<comment pinned="true" h="60" w="360">FGC2026 TeleOp (Blocks) - R2進入射擊鎖定/L2解除, L1開倉R1關倉, X退球</comment>
+<statement name="STACK">
+<block type="dcMotor_setProperty" id="s1">
+<field name="IDENTIFIER">LAsDcMotor</field>
+<field name="PROP">Direction</field>
+<data>{"IDENTIFIER":"L"}</data>
+<value name="VALUE"><shadow type="dcMotor_typedEnum_direction" id="s1e"><field name="DIRECTION">REVERSE</field></shadow></value>
+<next>
+<block type="dcMotor_setProperty" id="s2">
+<field name="IDENTIFIER">shooter_blackAsDcMotor</field>
+<field name="PROP">Direction</field>
+<data>{"IDENTIFIER":"shooter_black"}</data>
+<value name="VALUE"><shadow type="dcMotor_typedEnum_direction" id="s2e"><field name="DIRECTION">REVERSE</field></shadow></value>
+<next>
+<block type="dcMotor_setProperty" id="s3">
+<field name="IDENTIFIER">wayAsDcMotor</field>
+<field name="PROP">Direction</field>
+<data>{"IDENTIFIER":"way"}</data>
+<value name="VALUE"><shadow type="dcMotor_typedEnum_direction" id="s3e"><field name="DIRECTION">REVERSE</field></shadow></value>
+<next>
+<block type="dcMotor_setProperty" id="s4">
+<field name="IDENTIFIER">intakeAsDcMotor</field>
+<field name="PROP">Direction</field>
+<data>{"IDENTIFIER":"intake"}</data>
+<value name="VALUE"><shadow type="dcMotor_typedEnum_direction" id="s4e"><field name="DIRECTION">REVERSE</field></shadow></value>
+<next>
+<block type="dcMotor_setProperty" id="s5">
+<field name="IDENTIFIER">LAsDcMotor</field>
+<field name="PROP">ZeroPowerBehavior</field>
+<data>{"IDENTIFIER":"L"}</data>
+<value name="VALUE"><shadow type="dcMotor_typedEnum_zeroPowerBehavior" id="s5e"><field name="ZERO_POWER_BEHAVIOR">BRAKE</field></shadow></value>
+<next>
+<block type="dcMotor_setProperty" id="s6">
+<field name="IDENTIFIER">RAsDcMotor</field>
+<field name="PROP">ZeroPowerBehavior</field>
+<data>{"IDENTIFIER":"R"}</data>
+<value name="VALUE"><shadow type="dcMotor_typedEnum_zeroPowerBehavior" id="s6e"><field name="ZERO_POWER_BEHAVIOR">BRAKE</field></shadow></value>
+<next>
+<block type="dcMotor_setProperty" id="s7">
+<field name="IDENTIFIER">shooter_blackAsDcMotor</field>
+<field name="PROP">Mode</field>
+<data>{"IDENTIFIER":"shooter_black"}</data>
+<value name="VALUE"><shadow type="dcMotor_typedEnum_runMode" id="s7e"><field name="RUN_MODE">STOP_AND_RESET_ENCODER</field></shadow></value>
+<next>
+<block type="dcMotor_setProperty" id="s8">
+<field name="IDENTIFIER">shooter_grayAsDcMotor</field>
+<field name="PROP">Mode</field>
+<data>{"IDENTIFIER":"shooter_gray"}</data>
+<value name="VALUE"><shadow type="dcMotor_typedEnum_runMode" id="s8e"><field name="RUN_MODE">STOP_AND_RESET_ENCODER</field></shadow></value>
+<next>
+<block type="dcMotor_setProperty" id="s9">
+<field name="IDENTIFIER">wayAsDcMotor</field>
+<field name="PROP">Mode</field>
+<data>{"IDENTIFIER":"way"}</data>
+<value name="VALUE"><shadow type="dcMotor_typedEnum_runMode" id="s9e"><field name="RUN_MODE">STOP_AND_RESET_ENCODER</field></shadow></value>
+<next>
+<block type="dcMotor_setProperty" id="s10">
+<field name="IDENTIFIER">shooter_blackAsDcMotor</field>
+<field name="PROP">Mode</field>
+<data>{"IDENTIFIER":"shooter_black"}</data>
+<value name="VALUE"><shadow type="dcMotor_typedEnum_runMode" id="s10e"><field name="RUN_MODE">RUN_USING_ENCODER</field></shadow></value>
+<next>
+<block type="dcMotor_setProperty" id="s11">
+<field name="IDENTIFIER">shooter_grayAsDcMotor</field>
+<field name="PROP">Mode</field>
+<data>{"IDENTIFIER":"shooter_gray"}</data>
+<value name="VALUE"><shadow type="dcMotor_typedEnum_runMode" id="s11e"><field name="RUN_MODE">RUN_USING_ENCODER</field></shadow></value>
+<next>
+<block type="dcMotor_setProperty" id="s12">
+<field name="IDENTIFIER">wayAsDcMotor</field>
+<field name="PROP">Mode</field>
+<data>{"IDENTIFIER":"way"}</data>
+<value name="VALUE"><shadow type="dcMotor_typedEnum_runMode" id="s12e"><field name="RUN_MODE">RUN_USING_ENCODER</field></shadow></value>
+<next>
+<block type="servo_setProperty" id="s13">
+<field name="IDENTIFIER">yoyoRAsServo</field>
+<field name="PROP">Direction</field>
+<data>{"IDENTIFIER":"yoyoR"}</data>
+<value name="VALUE"><shadow type="servo_typedEnum_direction" id="s13e"><field name="DIRECTION">REVERSE</field></shadow></value>
+<next>
+<block type="servo_setProperty_Number" id="s14">
+<field name="IDENTIFIER">yoyoLAsServo</field>
+<field name="PROP">Position</field>
+<data>{"IDENTIFIER":"yoyoL"}</data>
+<value name="VALUE"><shadow type="math_number" id="s14e"><field name="NUM">0</field></shadow></value>
+<next>
+<block type="servo_setProperty_Number" id="s15">
+<field name="IDENTIFIER">yoyoRAsServo</field>
+<field name="PROP">Position</field>
+<data>{"IDENTIFIER":"yoyoR"}</data>
+<value name="VALUE"><shadow type="math_number" id="s15e"><field name="NUM">0</field></shadow></value>
+<next>
+<block type="variables_set" id="s16">
+<field name="VAR" id="vLatch">shootLatch</field>
+<value name="VALUE"><block type="logic_boolean" id="s16b"><field name="BOOL">FALSE</field></block></value>
+<next>
+<block type="linearOpMode_waitForStart" id="s17">
+<next>
+<block type="servo_setProperty_Number" id="s18">
+<field name="IDENTIFIER">yoyoLAsServo</field>
+<field name="PROP">Position</field>
+<data>{"IDENTIFIER":"yoyoL"}</data>
+<value name="VALUE"><shadow type="math_number" id="s18e"><field name="NUM">0.315</field></shadow></value>
+<next>
+<block type="servo_setProperty_Number" id="s19">
+<field name="IDENTIFIER">yoyoRAsServo</field>
+<field name="PROP">Position</field>
+<data>{"IDENTIFIER":"yoyoR"}</data>
+<value name="VALUE"><shadow type="math_number" id="s19e"><field name="NUM">0.315</field></shadow></value>
+<next>
+<block type="controls_whileUntil" id="loop">
+<field name="MODE">WHILE</field>
+<value name="BOOL"><block type="linearOpMode_opModeIsActive" id="loopc"></block></value>
+<statement name="DO">
+<block type="variables_set" id="d1">
+<field name="VAR" id="vDrive">drive</field>
+<value name="VALUE">
+<block type="math_arithmetic" id="d1m">
+<field name="OP">MULTIPLY</field>
+<value name="A"><block type="math_single" id="d1n"><field name="OP">NEG</field><value name="NUM"><block type="gamepad_getProperty_Number" id="d1g"><field name="IDENTIFIER">gamepad1</field><field name="PROP">LeftStickY</field></block></value></block></value>
+<value name="B"><block type="math_single" id="d1a"><field name="OP">ABS</field><value name="NUM"><block type="gamepad_getProperty_Number" id="d1g2"><field name="IDENTIFIER">gamepad1</field><field name="PROP">LeftStickY</field></block></value></block></value>
+</block>
+</value>
+<next>
+<block type="variables_set" id="d2">
+<field name="VAR" id="vTurn">turn</field>
+<value name="VALUE">
+<block type="math_arithmetic" id="d2m">
+<field name="OP">MULTIPLY</field>
+<value name="A"><shadow type="math_number" id="d2k"><field name="NUM">0.8</field></shadow></value>
+<value name="B">
+<block type="math_arithmetic" id="d2m2">
+<field name="OP">MULTIPLY</field>
+<value name="A"><block type="math_single" id="d2n"><field name="OP">NEG</field><value name="NUM"><block type="gamepad_getProperty_Number" id="d2g"><field name="IDENTIFIER">gamepad1</field><field name="PROP">RightStickX</field></block></value></block></value>
+<value name="B"><block type="math_single" id="d2a"><field name="OP">ABS</field><value name="NUM"><block type="gamepad_getProperty_Number" id="d2g2"><field name="IDENTIFIER">gamepad1</field><field name="PROP">RightStickX</field></block></value></block></value>
+</block>
+</value>
+</block>
+</value>
+<next>
+<block type="dcMotor_setDualProperty_Number" id="d3">
+<field name="PROP">Power</field>
+<field name="IDENTIFIER1">LAsDcMotor</field>
+<field name="IDENTIFIER2">RAsDcMotor</field>
+<data>{"IDENTIFIER1":"L","IDENTIFIER2":"R"}</data>
+<value name="VALUE1">
+<block type="math_constrain" id="d3c1">
+<value name="VALUE"><block type="math_arithmetic" id="d3s1"><field name="OP">ADD</field><value name="A"><block type="variables_get" id="d3v1"><field name="VAR" id="vDrive">drive</field></block></value><value name="B"><block type="variables_get" id="d3v2"><field name="VAR" id="vTurn">turn</field></block></value></block></value>
+<value name="LOW"><shadow type="math_number" id="d3l1"><field name="NUM">-1</field></shadow></value>
+<value name="HIGH"><shadow type="math_number" id="d3h1"><field name="NUM">1</field></shadow></value>
+</block>
+</value>
+<value name="VALUE2">
+<block type="math_constrain" id="d3c2">
+<value name="VALUE"><block type="math_arithmetic" id="d3s2"><field name="OP">MINUS</field><value name="A"><block type="variables_get" id="d3v3"><field name="VAR" id="vDrive">drive</field></block></value><value name="B"><block type="variables_get" id="d3v4"><field name="VAR" id="vTurn">turn</field></block></value></block></value>
+<value name="LOW"><shadow type="math_number" id="d3l2"><field name="NUM">-1</field></shadow></value>
+<value name="HIGH"><shadow type="math_number" id="d3h2"><field name="NUM">1</field></shadow></value>
+</block>
+</value>
+<next>
+<block type="controls_if" id="d4">
+<value name="IF0"><block type="logic_compare" id="d4c"><field name="OP">GT</field><value name="A"><block type="gamepad_getProperty_Number" id="d4g"><field name="IDENTIFIER">gamepad1</field><field name="PROP">RightTrigger</field></block></value><value name="B"><shadow type="math_number" id="d4n"><field name="NUM">0.5</field></shadow></value></block></value>
+<statement name="DO0"><block type="variables_set" id="d4s"><field name="VAR" id="vLatch">shootLatch</field><value name="VALUE"><block type="logic_boolean" id="d4b"><field name="BOOL">TRUE</field></block></value></block></statement>
+<next>
+<block type="controls_if" id="d5">
+<value name="IF0"><block type="logic_compare" id="d5c"><field name="OP">GT</field><value name="A"><block type="gamepad_getProperty_Number" id="d5g"><field name="IDENTIFIER">gamepad1</field><field name="PROP">LeftTrigger</field></block></value><value name="B"><shadow type="math_number" id="d5n"><field name="NUM">0.5</field></shadow></value></block></value>
+<statement name="DO0"><block type="variables_set" id="d5s"><field name="VAR" id="vLatch">shootLatch</field><value name="VALUE"><block type="logic_boolean" id="d5b"><field name="BOOL">FALSE</field></block></value></block></statement>
+<next>
+<block type="controls_if" id="d6">
+<mutation elseif="1" else="1"></mutation>
+<value name="IF0"><block type="gamepad_getProperty_Boolean" id="d6g"><field name="IDENTIFIER">gamepad1</field><field name="PROP">Cross</field></block></value>
+<statement name="DO0">
+<block type="dcMotor_setProperty_Number" id="e1">
+<field name="IDENTIFIER">shooter_blackAsDcMotor</field>
+<field name="PROP">Velocity</field>
+<data>{"IDENTIFIER":"shooter_black"}</data>
+<value name="VALUE"><shadow type="math_number" id="e1n"><field name="NUM">-800</field></shadow></value>
+<next>
+<block type="dcMotor_setProperty_Number" id="e2">
+<field name="IDENTIFIER">shooter_grayAsDcMotor</field>
+<field name="PROP">Velocity</field>
+<data>{"IDENTIFIER":"shooter_gray"}</data>
+<value name="VALUE"><shadow type="math_number" id="e2n"><field name="NUM">-800</field></shadow></value>
+<next>
+<block type="dcMotor_setProperty_Number" id="e3">
+<field name="IDENTIFIER">wayAsDcMotor</field>
+<field name="PROP">Velocity</field>
+<data>{"IDENTIFIER":"way"}</data>
+<value name="VALUE"><shadow type="math_number" id="e3n"><field name="NUM">-500</field></shadow></value>
+<next>
+<block type="dcMotor_setProperty_Number" id="e4">
+<field name="IDENTIFIER">intakeAsDcMotor</field>
+<field name="PROP">Power</field>
+<data>{"IDENTIFIER":"intake"}</data>
+<value name="VALUE"><shadow type="math_number" id="e4n"><field name="NUM">-1</field></shadow></value>
+</block>
+</next></block>
+</next></block>
+</next></block>
+</statement>
+<value name="IF1"><block type="variables_get" id="d6v"><field name="VAR" id="vLatch">shootLatch</field></block></value>
+<statement name="DO1">
+<block type="dcMotor_setProperty_Number" id="f1">
+<field name="IDENTIFIER">shooter_blackAsDcMotor</field>
+<field name="PROP">Velocity</field>
+<data>{"IDENTIFIER":"shooter_black"}</data>
+<value name="VALUE"><shadow type="math_number" id="f1n"><field name="NUM">2000</field></shadow></value>
+<next>
+<block type="dcMotor_setProperty_Number" id="f2">
+<field name="IDENTIFIER">shooter_grayAsDcMotor</field>
+<field name="PROP">Velocity</field>
+<data>{"IDENTIFIER":"shooter_gray"}</data>
+<value name="VALUE"><shadow type="math_number" id="f2n"><field name="NUM">800</field></shadow></value>
+<next>
+<block type="dcMotor_setProperty_Number" id="f3">
+<field name="IDENTIFIER">wayAsDcMotor</field>
+<field name="PROP">Velocity</field>
+<data>{"IDENTIFIER":"way"}</data>
+<value name="VALUE"><shadow type="math_number" id="f3n"><field name="NUM">500</field></shadow></value>
+<next>
+<block type="dcMotor_setProperty_Number" id="f4">
+<field name="IDENTIFIER">intakeAsDcMotor</field>
+<field name="PROP">Power</field>
+<data>{"IDENTIFIER":"intake"}</data>
+<value name="VALUE"><shadow type="math_number" id="f4n"><field name="NUM">1</field></shadow></value>
+</block>
+</next></block>
+</next></block>
+</next></block>
+</statement>
+<statement name="ELSE">
+<block type="dcMotor_setProperty_Number" id="g1">
+<field name="IDENTIFIER">shooter_blackAsDcMotor</field>
+<field name="PROP">Velocity</field>
+<data>{"IDENTIFIER":"shooter_black"}</data>
+<value name="VALUE"><shadow type="math_number" id="g1n"><field name="NUM">0</field></shadow></value>
+<next>
+<block type="dcMotor_setProperty_Number" id="g2">
+<field name="IDENTIFIER">shooter_grayAsDcMotor</field>
+<field name="PROP">Velocity</field>
+<data>{"IDENTIFIER":"shooter_gray"}</data>
+<value name="VALUE"><shadow type="math_number" id="g2n"><field name="NUM">0</field></shadow></value>
+<next>
+<block type="dcMotor_setProperty_Number" id="g3">
+<field name="IDENTIFIER">wayAsDcMotor</field>
+<field name="PROP">Velocity</field>
+<data>{"IDENTIFIER":"way"}</data>
+<value name="VALUE"><shadow type="math_number" id="g3n"><field name="NUM">-500</field></shadow></value>
+<next>
+<block type="dcMotor_setProperty_Number" id="g4">
+<field name="IDENTIFIER">intakeAsDcMotor</field>
+<field name="PROP">Power</field>
+<data>{"IDENTIFIER":"intake"}</data>
+<value name="VALUE"><shadow type="math_number" id="g4n"><field name="NUM">1</field></shadow></value>
+</block>
+</next></block>
+</next></block>
+</next></block>
+</statement>
+<next>
+<block type="controls_if" id="d7">
+<value name="IF0"><block type="gamepad_getProperty_Boolean" id="d7g"><field name="IDENTIFIER">gamepad1</field><field name="PROP">LeftBumper</field></block></value>
+<statement name="DO0">
+<block type="servo_setProperty_Number" id="h1">
+<field name="IDENTIFIER">yoyoLAsServo</field>
+<field name="PROP">Position</field>
+<data>{"IDENTIFIER":"yoyoL"}</data>
+<value name="VALUE"><shadow type="math_number" id="h1n"><field name="NUM">0.315</field></shadow></value>
+<next>
+<block type="servo_setProperty_Number" id="h2">
+<field name="IDENTIFIER">yoyoRAsServo</field>
+<field name="PROP">Position</field>
+<data>{"IDENTIFIER":"yoyoR"}</data>
+<value name="VALUE"><shadow type="math_number" id="h2n"><field name="NUM">0.315</field></shadow></value>
+</block>
+</next></block>
+</statement>
+<next>
+<block type="controls_if" id="d8">
+<value name="IF0"><block type="gamepad_getProperty_Boolean" id="d8g"><field name="IDENTIFIER">gamepad1</field><field name="PROP">RightBumper</field></block></value>
+<statement name="DO0">
+<block type="servo_setProperty_Number" id="h3">
+<field name="IDENTIFIER">yoyoLAsServo</field>
+<field name="PROP">Position</field>
+<data>{"IDENTIFIER":"yoyoL"}</data>
+<value name="VALUE"><shadow type="math_number" id="h3n"><field name="NUM">0</field></shadow></value>
+<next>
+<block type="servo_setProperty_Number" id="h4">
+<field name="IDENTIFIER">yoyoRAsServo</field>
+<field name="PROP">Position</field>
+<data>{"IDENTIFIER":"yoyoR"}</data>
+<value name="VALUE"><shadow type="math_number" id="h4n"><field name="NUM">0</field></shadow></value>
+</block>
+</next></block>
+</statement>
+</block>
+</next></block>
+</next></block>
+</next></block>
+</next></block>
+</next></block>
+</next></block>
+</next></block>
+</statement>
+</block>
+</next></block>
+</next></block>
+</next></block>
+</next></block>
+</next></block>
+</next></block>
+</next></block>
+</next></block>
+</next></block>
+</next></block>
+</next></block>
+</next></block>
+</next></block>
+</next></block>
+</next></block>
+</next></block>
+</next></block>
+</next></block>
+</next></block>
+</statement>
+</block>
+</xml>
+<Extra>
+<OpModeMeta flavor="TELEOP" group="" autoTransition="" />
+<Enabled value="true" />
+</Extra>

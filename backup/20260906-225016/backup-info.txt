@@ -1,0 +1,6 @@
+﻿backup   : 20260906-225016
+adb      : C:\Users\feihong\AppData\Local\Android\Sdk\platform-tools\adb.exe
+device   : 4315Q2U9R9	device; 127.0.0.1:15555	device
+rc app   : com.qualcomm.ftcrobotcontroller versionName=11.2
+hub os   : ch_v1_box-userdebug 7.1.2 NHG47K eng.rev.20250508.132428 release-keys
+pulled ok: 4   missing: 2

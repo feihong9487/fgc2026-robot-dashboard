@@ -1,0 +1,22 @@
+--------- beginning of main
+09-05 22:37:21.956   978  1146 V Robocol : received command: CMD_SET_MATCH_NUMBER(26591) 0
+09-05 22:37:21.957   978  1146 V Robocol : received command: CMD_INIT_OP_MODE(26592) FGC2026_TeleOp_v2
+09-05 22:37:21.983   978  1375 V RobotCore: thread: ...terminating 'OpModeThread'
+09-05 22:37:21.988   978  1160 I RobotCore: Attempting to switch to OpMode FGC2026_TeleOp_v2
+09-05 22:37:21.991   978  1160 I RobotCore: ******************** START - OPMODE FGC2026_TeleOp_v2 ********************
+09-05 22:37:22.160   978  1160 D HardwareMap: Clearing which device instances have been retrieved
+09-05 22:37:22.163   978  1379 V RobotCore: thread: 'OpModeThread' starting...
+09-05 22:37:22.176   978  1174 V Robocol : sending CMD_NOTIFY_INIT_OP_MODE(22596), attempt: 0
+09-05 22:37:22.516   978  1146 V Robocol : received command: CMD_RUN_OP_MODE(26608) FGC2026_TeleOp_v2
+09-05 22:37:22.537   978  1174 V Robocol : sending CMD_NOTIFY_RUN_OP_MODE(22605), attempt: 0
+09-05 22:41:38.525   978  1146 V Robocol : received command: CMD_INIT_OP_MODE(32413) $Stop$Robot$
+09-05 22:41:38.554   978  1379 D RobotCore: User runOpModeMethod exited
+09-05 22:41:38.557   978  1379 V RobotCore: thread: ...terminating 'OpModeThread'
+09-05 22:41:38.559   978  1160 I RobotCore: Attempting to switch to OpMode $Stop$Robot$
+09-05 22:41:38.562   978  1160 I RobotCore: ******************** STOP - OPMODE /storage/emulated/0/FIRST/matchlogs/Match-0-FGC2026_TeleOp_v2.txt ********************
+09-05 22:41:38.567   978  1160 D HardwareMap: Clearing which device instances have been retrieved
+09-05 22:41:38.567   978  1384 I RobotCore: saving match logcat to /storage/emulated/0/FIRST/matchlogs/Match-0-FGC2026_TeleOp_v2.txt
+09-05 22:41:38.567   978  1384 I RobotCore: logging command line: exec logcat -d -T '9-5 22:37:21.000' -f '/storage/emulated/0/FIRST/matchlogs/Match-0-FGC2026_TeleOp_v2.txt' -n4 -v threadtime UsbRequestJNI:S UsbRequest:S art:W ThreadPool:W System:W ExtendedExtractor:W OMXClient:W MediaPlayer:W dalvikvm:W  *:V
+09-05 22:41:38.570   978  1386 V RobotCore: thread: 'OpModeThread' starting...
+09-05 22:41:38.576   978  1174 V Robocol : sending CMD_NOTIFY_INIT_OP_MODE(28418), attempt: 0
+09-05 22:41:38.577   978  1174 V Robocol : sending CMD_NOTIFY_RUN_OP_MODE(28419), attempt: 0

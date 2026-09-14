@@ -1,0 +1,23 @@
+# 統一換行處理：repo 內一律存 LF，Windows 簽出時轉 CRLF。
+# 沒有這個檔，在 Windows 上 git 會把整批 .ts/.tsx/.java 當成全檔改寫。
+* text=auto
+
+# 這些永遠是 LF，連在 Windows 上也一樣
+*.sh        text eol=lf
+*.mjs       text eol=lf
+
+# 這些永遠是 CRLF
+*.ps1       text eol=crlf
+*.bat       text eol=crlf
+*.cmd       text eol=crlf
+
+# 二進位：不做任何換行轉換
+*.png       binary
+*.jpg       binary
+*.ico       binary
+*.icns      binary
+*.jar       binary
+*.zip       binary
+*.step      binary
+*.pdf       binary
+*.blk       binary

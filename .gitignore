@@ -1,0 +1,42 @@
+# FGC 2026 根目錄 .gitignore
+# 方針：只收原始碼與自己寫的文件。build 產物、相依套件、錄影、
+# 官網下載得到的版權文件一律不進 repo。
+# dashboard/.gitignore 與 dashboard/src-tauri/.gitignore 仍然生效，
+# 這裡刻意重複一遍，避免任何一層漏掉。
+
+# ── 相依套件（npm ci 就回得來）──
+node_modules/
+
+# ── build 產物 ──
+dashboard/dist/
+dashboard/src-tauri/target/
+dashboard/src-tauri/gen/
+teamcode-v3/out/
+FGC2026-Dashboard.exe
+
+# ── 開發暫存 ──
+dashboard/screens/
+dashboard/.edge-profile*/
+dashboard/.fgc-check*.mjs
+dashboard/tune-states.html
+*.log
+
+# ── 錄影／遙測（149 MB，只留一份真機樣本讓 fake-hub 跑得起來）──
+fake-hub/fake-rec/*
+!fake-hub/fake-rec/real-B1PIT-20260906-174830.jsonl
+backup/*/fgc-rec/
+backup/*.zip
+backup/*.jsonl
+
+# ── 官方版權文件：first.global／REV 官網都下載得到，不轉散布 ──
+*.pdf
+*.step
+.gm.txt
+apriltag-official/*.zip
+
+# ── Windows／編輯器雜物 ──
+Thumbs.db
+desktop.ini
+.DS_Store
+*~
+*.tmp

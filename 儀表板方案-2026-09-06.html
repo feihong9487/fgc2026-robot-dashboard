@@ -1,0 +1,410 @@
+<title>FGC 2026 儀表板方案</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700&family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#F4F6F9; --surface:#FFFFFF; --ink:#1C2330; --muted:#5B6472; --line:#D8DEE6; --line-strong:#B9C2CE;
+  --accent:#DD6420; --accent-ink:#FFFFFF; --accent-soft:#FBEADF;
+  --ok:#2E8A57; --ok-soft:#E3F3EA; --warn:#B27A18; --warn-soft:#FBF1DA; --risk:#C23B2E; --risk-soft:#FAE3E0;
+  --code-bg:#EEF1F5;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#12161C; --surface:#1A2029; --ink:#E7EBF0; --muted:#98A2B0; --line:#2C3441; --line-strong:#3E4857;
+    --accent:#F08A45; --accent-ink:#1A1208; --accent-soft:#3A2517;
+    --ok:#5BC48A; --ok-soft:#173224; --warn:#E0B455; --warn-soft:#3A2E12; --risk:#EB7663; --risk-soft:#3F1F1B;
+    --code-bg:#232A35;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#12161C; --surface:#1A2029; --ink:#E7EBF0; --muted:#98A2B0; --line:#2C3441; --line-strong:#3E4857;
+  --accent:#F08A45; --accent-ink:#1A1208; --accent-soft:#3A2517;
+  --ok:#5BC48A; --ok-soft:#173224; --warn:#E0B455; --warn-soft:#3A2E12; --risk:#EB7663; --risk-soft:#3F1F1B;
+  --code-bg:#232A35;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;font-size:15.5px;line-height:1.75;-webkit-font-smoothing:antialiased}
+.page{max-width:820px;margin:0 auto;padding:40px 22px 96px}
+h1,h2,h3{font-family:"Noto Serif TC","Songti TC","PMingLiU",Georgia,serif;font-weight:700;line-height:1.3;text-wrap:balance;margin:0}
+h1{font-size:34px;letter-spacing:-.01em}
+h2{font-size:22px;margin-top:56px;padding-top:18px;border-top:1px solid var(--line)}
+h3{font-size:17px;margin-top:28px;font-family:"Noto Sans TC","PingFang TC",sans-serif;font-weight:700}
+p{margin:12px 0}
+.eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-family:"IBM Plex Mono",monospace;margin-bottom:12px}
+.meta{color:var(--muted);font-size:13.5px;margin-top:10px;display:flex;flex-wrap:wrap;gap:6px 18px}
+code,.mono{font-family:"IBM Plex Mono",Consolas,monospace;font-size:.92em}
+code{background:var(--code-bg);padding:1px 5px;border-radius:3px}
+pre{background:var(--code-bg);padding:14px 16px;border-radius:6px;overflow-x:auto;font-size:13px;line-height:1.55;margin:14px 0}
+pre code{background:none;padding:0}
+a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:2px}
+.verdict{margin-top:30px;border:1px solid var(--line-strong);border-left:4px solid var(--accent);background:var(--surface);border-radius:6px;padding:6px 22px 10px}
+.verdict .q{margin:16px 0 4px;font-weight:700}
+.verdict .a{margin:0 0 6px}
+.verdict .a strong{color:var(--accent)}
+table{border-collapse:collapse;width:100%;font-size:14px;margin:14px 0}
+th,td{border-top:1px solid var(--line);padding:9px 10px;text-align:left;vertical-align:top}
+th{font-weight:700;color:var(--muted);font-size:12.5px;letter-spacing:.04em;border-top:none;border-bottom:1px solid var(--line-strong)}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;font-family:"IBM Plex Mono",monospace;white-space:nowrap}
+.tablewrap{overflow-x:auto}
+.pill{display:inline-block;font-size:11.5px;font-weight:700;letter-spacing:.05em;padding:1px 8px;border-radius:999px;white-space:nowrap}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.risk{background:var(--risk-soft);color:var(--risk)}
+.pill.acc{background:var(--accent-soft);color:var(--accent)}
+ul,ol{padding-left:22px;margin:10px 0}
+li{margin:5px 0}
+li::marker{color:var(--muted)}
+figure{margin:20px 0;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px 16px 10px}
+figure svg{display:block;width:100%;height:auto;max-width:100%}
+figcaption{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.55}
+.note{border-left:3px solid var(--line-strong);padding:2px 14px;color:var(--muted);margin:14px 0;font-size:14px}
+.note.warn{border-color:var(--warn);color:var(--ink)}
+.note.risk{border-color:var(--risk);color:var(--ink)}
+.week{display:grid;grid-template-columns:110px 1fr;gap:10px 18px;margin:14px 0}
+.week .w{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted);padding-top:3px}
+.week .w b{display:block;color:var(--ink);font-size:14px;font-family:"Noto Sans TC",sans-serif}
+.week ul{margin:0}
+.kv{display:grid;grid-template-columns:150px 1fr;gap:6px 16px;font-size:14px;margin:12px 0}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0}
+.done{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:4px 18px}
+@media (max-width:560px){.week{grid-template-columns:1fr}.kv{grid-template-columns:1fr}h1{font-size:28px}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="page">
+<div class="eyebrow">FIRST Global Challenge 2026 · Igniting Innovation · 決策文件</div>
+<h1>FGC 2026 儀表板方案</h1>
+<div class="meta"><span>2026-09-06</span><span>距比賽（10/6–10/10 仁川）4 週</span><span>依 Game Manual 6/24 版、TRG 6/29 版、SDK 11.1.0 位元碼查證，經三輪獨立反駁修正</span></div>
+
+<div class="verdict">
+  <p class="q">要不要改用 Android Studio？</p>
+  <p class="a"><strong>不用。</strong>你要的兩件事（儀表板看即時狀態、C270 做 AprilTag）在 OnBot Java 裡就做得到：SDK 11.1.0 給 OnBot Java 的編譯環境已內含 NanoHTTPD、Java-WebSocket、gson、VisionPortal、AprilTagProcessor 與 <code>@WebHandlerRegistrar</code> 等 hook。反駁者已用這套 classpath 離線編過整份 teamcode 與一支探針檔。Android Studio 可以留著當編輯器，但不要用自建 APK 取代 Control Hub 上的官方 RC app。</p>
+  <p class="q">VMX 儀表板要改多少？</p>
+  <p class="a"><strong>協定層不換，加一個 FGC profile。</strong>Chart、全部訊號、控件庫共 745 行零改動；RobotClient 與 store 共 401 行小幅修改（約 70 行）；新增 4 個 FGC 分頁。「全部訊號」分頁對任何 <code>/FGC/…</code> key 零改動就能顯示、釘選波形。</p>
+  <p class="q">AprilTag 怎麼做？</p>
+  <p class="a"><strong>C270 鎖 640×480、用官方標籤庫、相機裝在 450 mm 以下、主線只做「距離→射速提示」。</strong>官方 jar 沒有座標，我已從官方 STEP 檔解出 5 個標籤的場地位姿（下表）。但 AprilTag 在正賽的邊際價值有限，Skills Challenge 的計分算術對射球不利，所以它是第 3 週的加分項，而且 9/13 前沒有標定牆就整組砍掉。</p>
+</div>
+
+<h2>一、為什麼不走 Android Studio</h2>
+<p>規則上它不是禁止：R17 的本文只要求 Control Hub OS 1.1.6、RC／DS app 11.0 以上；「should program using Blocks or OnBot Java… support will not be available」是規則後的註解方塊。真正的問題有三個。</p>
+<div class="tablewrap"><table>
+<tr><th style="width:170px">面向</th><th>Android Studio 自建 APK</th><th>OnBot Java（本方案）</th></tr>
+<tr><td>Control Hub 上跑的程式</td><td>你的 APK 取代官方 RC app。現場 REV 志工用 REV Hardware Client「Update Robot Controller」就會整包蓋掉。</td><td>官方 RC app 不動，程式碼在 <code>/sdcard/FIRST/java/src</code>，瀏覽器就能看、能改。</td></tr>
+<tr><td>檢錄</td><td>檢錄清單尚未公布（TRG Appendix E 全是 Details to be provided）。這是唯一在檢錄台上「看得見」的差異。</td><td>逐字滿足 R17 註解；被問時可打開 OnBotJava 頁面給裁判看原始碼。</td></tr>
+<tr><td>4 週工時</td><td>三位獨立評審估約 96 小時，且要維持 AS 主線與 OnBot 鏡像兩份原始碼同步。</td><td>核心路徑約 35–40 小時，剩一整週給實機測試。</td></tr>
+<tr><td>離線重建</td><td>本機 Gradle 快取沒有 AAR 原檔（<code>modules-2/files-2.1</code> 沒有 org.firstinspires.ftc），現場無網路很可能建不起來。</td><td>不需要 gradle；上傳 .java 按 Build Everything。本機還能用 OnBotJava 的 classpath 先 javac 檢查（見第四節 Day 0）。</td></tr>
+<tr><td>隊友能不能改</td><td>要裝 AS、SDK、adb。</td><td>開瀏覽器連 192.168.43.1:8080。</td></tr>
+</table></div>
+
+<h2>二、建議架構：只用 Control Hub 既有的 8080 與 8081</h2>
+<p>三位評審一致選這條路，關鍵理由是「不自己開任何 socket」。自開 port 在 OnBot Java 環境有一個我從位元碼證實的陷阱：每次 Build Everything 會換新的 ClassLoader，SDK 會把舊類別的 hook 從清單移除（<code>AnnotatedHooksClassFilter.filterOnBotJavaClassesStart → removeOldMethods</code>），舊類別開的 ServerSocket 卻還活著佔著埠，新類別看不到它、關不掉它，結果就是 <code>Address already in use</code>。用 SDK 自己管理的 8080／8081 完全避開這一類故障。</p>
+
+<figure>
+<svg viewBox="0 0 960 470" role="img" aria-label="駕駛站筆電上的 VMX 儀表板透過 Control Hub 既有的 8080 HTTP 與 8081 WebSocket 讀取遙測、寫回參數與取得 MJPEG；Driver Hub 走原本的 robocol；不新開任何 port。" font-family="Noto Sans TC, PingFang TC, sans-serif" font-size="12.5" fill="currentColor">
+  <defs>
+    <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker>
+  </defs>
+  <rect x="20" y="120" width="230" height="230" rx="6" fill="none" stroke="currentColor" stroke-width="1.2"/>
+  <text x="135" y="145" text-anchor="middle" font-weight="700">pit 筆電</text>
+  <rect x="38" y="162" width="194" height="60" rx="4" fill="none" stroke="currentColor" stroke-width="1"/>
+  <text x="135" y="185" text-anchor="middle">VMX 儀表板（FGC profile）</text>
+  <text x="135" y="204" text-anchor="middle" font-size="11.5" opacity=".75">Vite dev 或 Tauri exe</text>
+  <rect x="38" y="238" width="194" height="46" rx="4" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="4 3"/>
+  <text x="135" y="258" text-anchor="middle" font-size="11.5">RobotClient + transport shim</text>
+  <text x="135" y="274" text-anchor="middle" font-size="11.5" opacity=".75">約 60 行：namespace ↔ op</text>
+  <text x="135" y="322" text-anchor="middle" font-size="11.5" opacity=".75">錄製／回放、全部訊號、波形：不動</text>
+
+  <rect x="330" y="30" width="440" height="410" rx="6" fill="none" stroke="currentColor" stroke-width="1.2"/>
+  <text x="550" y="55" text-anchor="middle" font-weight="700">Control Hub · 官方 RC app 11.1.0（不換 APK）</text>
+
+  <rect x="350" y="76" width="400" height="58" rx="4" fill="none" stroke="#DD6420" stroke-width="1.8"/>
+  <text x="362" y="97" font-weight="700">:8080 NanoHTTPD（SDK 既有）</text>
+  <text x="362" y="116" font-size="11.5">/dash/state.json · stream.mjpg · snapshot.jpg · health · rec/</text>
+
+  <rect x="350" y="146" width="400" height="58" rx="4" fill="none" stroke="#DD6420" stroke-width="1.8"/>
+  <text x="362" y="167" font-weight="700">:8081 WebSocket（SDK 既有）· namespace "dash"</text>
+  <text x="362" y="186" font-size="11.5">hello（全量）· nt（50 ms 增量）· set（只在 PIT）· err</text>
+
+  <rect x="350" y="222" width="190" height="88" rx="4" fill="none" stroke="currentColor" stroke-width="1"/>
+  <text x="445" y="243" text-anchor="middle" font-weight="700">DashHub</text>
+  <text x="445" y="261" text-anchor="middle" font-size="11.5">latest · inbox · 委派物件</text>
+  <text x="445" y="278" text-anchor="middle" font-size="11.5">世代號 · 開關旗標</text>
+  <text x="445" y="295" text-anchor="middle" font-size="11" opacity=".75">全放 System.getProperties()</text>
+
+  <rect x="560" y="222" width="190" height="88" rx="4" fill="none" stroke="currentColor" stroke-width="1"/>
+  <text x="655" y="243" text-anchor="middle" font-weight="700">DashPublisher</text>
+  <text x="655" y="261" text-anchor="middle" font-size="11.5">50 ms diff → 逐 socket send</text>
+  <text x="655" y="278" text-anchor="middle" font-size="11.5">世代守衛 · 沒人看就不送</text>
+  <text x="655" y="295" text-anchor="middle" font-size="11" opacity=".75">MATCH：不推播，只錄影</text>
+
+  <rect x="350" y="330" width="190" height="90" rx="4" fill="none" stroke="currentColor" stroke-width="1"/>
+  <text x="445" y="351" text-anchor="middle" font-weight="700">OpMode</text>
+  <text x="445" y="369" text-anchor="middle" font-size="11.5">A1-MATCH（唯讀、不開相機）</text>
+  <text x="445" y="386" text-anchor="middle" font-size="11.5">B1-PIT extends MATCH</text>
+  <text x="445" y="404" text-anchor="middle" font-size="11" opacity=".75">init 時刷新委派 → 永遠是最新程式</text>
+
+  <rect x="560" y="330" width="190" height="90" rx="4" fill="none" stroke="currentColor" stroke-width="1"/>
+  <text x="655" y="351" text-anchor="middle" font-weight="700">TagCam</text>
+  <text x="655" y="369" text-anchor="middle" font-size="11.5">VisionPortal 640×480</text>
+  <text x="655" y="386" text-anchor="middle" font-size="11.5">AprilTagProcessor + 官方庫</text>
+  <text x="655" y="404" text-anchor="middle" font-size="11" opacity=".75">C270 · 原線直插 · ≤450 mm</text>
+
+  <line x1="445" y1="330" x2="445" y2="310" stroke="currentColor" stroke-width="1" marker-end="url(#arw)"/>
+  <line x1="655" y1="330" x2="655" y2="310" stroke="currentColor" stroke-width="1" marker-end="url(#arw)"/>
+  <line x1="540" y1="266" x2="560" y2="266" stroke="currentColor" stroke-width="1" marker-end="url(#arw)"/>
+  <line x1="655" y1="222" x2="655" y2="204" stroke="currentColor" stroke-width="1" marker-end="url(#arw)"/>
+  <line x1="445" y1="222" x2="445" y2="134" stroke="currentColor" stroke-width="1" marker-end="url(#arw)"/>
+  <text x="452" y="215" font-size="11" opacity=".8">薄殼 handler → 取委派物件</text>
+
+  <line x1="250" y1="105" x2="350" y2="105" stroke="currentColor" stroke-width="1.2" marker-end="url(#arw)"/>
+  <line x1="135" y1="120" x2="135" y2="105" stroke="currentColor" stroke-width="1.2"/>
+  <line x1="135" y1="105" x2="250" y2="105" stroke="currentColor" stroke-width="1.2"/>
+  <text x="260" y="98" font-size="11.5">GET stream.mjpg / state.json</text>
+  <line x1="250" y1="175" x2="350" y2="175" stroke="currentColor" stroke-width="1.2" marker-start="url(#arw)" marker-end="url(#arw)"/>
+  <text x="300" y="168" text-anchor="middle" font-size="11.5">subscribe "dash"</text>
+  <text x="300" y="192" text-anchor="middle" font-size="11.5">nt ↓ · set ↑</text>
+
+  <rect x="800" y="146" width="140" height="80" rx="6" fill="none" stroke="currentColor" stroke-width="1.2"/>
+  <text x="870" y="172" text-anchor="middle" font-weight="700">Driver Hub</text>
+  <text x="870" y="192" text-anchor="middle" font-size="11.5">手把 + telemetry</text>
+  <text x="870" y="209" text-anchor="middle" font-size="11.5">「READY」大字</text>
+  <line x1="770" y1="186" x2="800" y2="186" stroke="currentColor" stroke-width="1.2" marker-start="url(#arw)" marker-end="url(#arw)"/>
+  <text x="785" y="240" text-anchor="middle" font-size="11" opacity=".8">robocol（原本就有）</text>
+</svg>
+<figcaption>橘框是本方案唯一用到的兩個對外服務，兩個都是 RC app 開機就在跑的；機器人上沒有新開任何 port。比賽日在 Driver Hub 選 A1-MATCH 就好，這個模式不推播、不開相機、拒絕所有寫回，只在機器人上錄影。</figcaption>
+</figure>
+
+<h3>資料流</h3>
+<ul>
+<li><b>上行遙測</b>：OpMode 每圈呼叫 <code>DashHub.put("/FGC/Shooter/SL", v)</code>（只寫 map）。DashPublisher 每 50 ms 把有變化的 key 用 gson 組成 JSON，對自己維護的 socket 集合逐一 <code>send</code>；每 2 秒送一次全量 <code>hello</code> 當 keepalive 兼補值；沒有人訂閱就整輪跳過。</li>
+<li><b>下行寫回</b>：前端送 <code>{"namespace":"dash","type":"set","payload":"{k,v}"}</code>。handler 只把字串丟進 inbox，OpMode 執行緒 drain 後由 DashParams 做白名單、範圍夾限、MATCH 拒絕，再寫進 Constants 的 <code>volatile</code> 欄位，並回推 <code>/FGC/Param/…</code> 讓 UI 顯示機器人實際採用的值。</li>
+<li><b>影像</b>：<code>/dash/stream.mjpg</code> 用 <code>NanoHTTPD.newChunkedResponse</code> 送 <code>multipart/x-mixed-replace</code>，每格用 <code>VisionPortal.getFrameBitmap</code> 取圖，JPEG 壓縮在 pump 執行緒做（放在 Continuation 的 consumer 裡會卡住視覺管線）。機器人端發布 <code>/CameraPublisher/C270/streams = ["mjpg:http://192.168.43.1:8080/dash/stream.mjpg"]</code>，前端現成的 <code>resolveStreamUrl</code> 零改動就能找到它。瀏覽器對 chunked multipart 的行為尚未實測，所以保留 <code>/dash/snapshot.jpg</code> 單張輪詢當退路。</li>
+<li><b>前端</b>：RobotClient 連 <code>ws://192.168.43.1:8081</code>，開啟後先送 <code>{"namespace":"system","type":"subscribeToNamespace","payload":"dash"}</code>，把收到的 <code>hello/nt</code> 的 payload 解成 JSON 後餵 <code>store.applyBatch</code>。訂閱失敗 SDK 只在機器人端 log、不回錯，所以 2 秒沒收到 <code>hello</code> 就重送；3 次失敗自動切成輪詢 <code>/dash/state.json</code>。所有 <code>/dash/*</code> 一律是無自訂標頭的簡單 GET，因為 RC 的 web server 不處理 OPTIONS preflight。</li>
+</ul>
+
+<h3>五條必須照做的工程規則</h3>
+<p>這五條全部來自位元碼查證與反駁階段，每一條漏掉都會產生「看起來像網路壞了」的難查症狀。</p>
+<ol>
+<li><b>狀態放 <code>System.getProperties()</code>。</b>OnBotJava 每次 Build 換新 ClassLoader，但已註冊在 WebHandlerManager／WebSocketManager 的 handler 是舊實例。latest／inbox／錄影緩衝放自己的 static 欄位會在 Build 後凍結。放進 Properties（boot ClassLoader）就跨得過去，值只用 JDK 型別、SDK 型別與字串。</li>
+<li><b>註冊的 handler 只是薄殼，邏輯放在可替換的委派物件上。</b>狀態共享只救了資料，救不了程式碼：舊 handler 呼叫的 DashParams、DashMjpeg 仍是舊 ClassLoader 的類別。所以 <code>@WebHandlerRegistrar</code> 註冊的六條路徑與 namespace handler 一律只做一件事：從 Properties 取出一個實作 SDK 介面（<code>WebHandler</code>、<code>WebSocketNamespaceHandler</code>，都是 app ClassLoader 的型別，可跨 ClassLoader 轉型）的委派物件並呼叫它。每支 OpMode 的 init 都重新放入最新的委派物件，因為 OpMode 永遠是最新編譯結果。這樣改 DashParams／DashMjpeg 只要 Build + 重跑 OpMode，只有薄殼本身（寫一次不再動）要重開電源。</li>
+<li><b>執行緒要有世代號。</b><code>@OnCreateEventLoop</code> 每次 Restart Robot 都跑，Build 後舊 ClassLoader 的推播執行緒還活著、還在 drain 同一個 inbox，而你拿不到它的參考。Properties 裡放一個 <code>AtomicLong gen</code>，每次啟動先 <code>incrementAndGet</code>，推播／pump／錄影 flush 迴圈每圈比對世代不符就自行結束；ExecutorService 也放進 Properties，新世代先 <code>shutdownNow</code> 舊的。把活著的執行緒數發布成 <code>/FGC/Bridge/Threads</code>，不是 1 就是出事了。</li>
+<li><b>自己維護 socket 集合，不依賴 <code>broadcastToNamespace</code>。</b>在 namespace handler 的 onSubscribe／onUnsubscribe 維護一個 <code>CopyOnWriteArraySet&lt;FtcWebSocket&gt;</code>（放 Properties），推播時逐一 <code>isOpen()</code> 後 <code>send</code>，每圈包 <code>try/catch(Throwable)</code>。這同時消掉 namespace 未註冊時的 IllegalStateException、讓退路 B（8080 掛不上時）真的能推資料，也不再需要 WebSocketManager。namespace 用 <code>WebSocketNamespaceHandlerRegistry.registerNamespaceHandler</code>（public static，OnBotJava classpath 已有）註冊，包 <code>try/catch(IllegalArgumentException)</code> 防重複。</li>
+<li><b>總開關是執行期旗標，不是編譯期常數。</b><code>public static final boolean ENABLED</code> 會被 javac 常數摺疊，而且 Build 不會重跑 <code>@WebHandlerRegistrar</code>、WebHandlerManager 也沒有 unregister，所以「改常數 + Build」關不掉任何東西。改成每個 handler 進來先讀 <code>System.getProperty("fgc.dash.enabled")</code>，不是 "1" 就回 404、不推播；再寫一支 5 行的 OpMode「Z-DASH-OFF」把它設成 "0"。關閉 = Driver Hub 選一個 OpMode，5 秒，可當場示範。</li>
+</ol>
+<h3>另外四條硬體與 I/O 規則</h3>
+<ul>
+<li><b>Bulk read 開 MANUAL 模式。</b><code>DcMotorEx.getCurrent</code> 與 <code>voltageSensor.getVoltage</code> 都不在 bulk read 內，每次都是一趟阻塞的 Lynx ADC 指令。現有程式每圈已有 6 次 getVelocity／getPosition，再加電流電壓會撞上 loop ms 25 ms 的驗收線。第 1 週埋點時就對所有 LynxModule 設 <code>BulkCachingMode.MANUAL</code>、每圈開頭 <code>clearBulkCache()</code>；電流電壓改 2–5 Hz 輪流取樣；卡球偵測用 bulk read 內免費的 <code>isMotorOverCurrent</code>。</li>
+<li><b>OpMode 監聽要持強參考。</b><code>OpModeManagerImpl.listeners</code> 是 WeakReferenceSet，只 register 不持有會在 GC 後靜默消失。監聽物件放 Properties。錄影不靠 PostStop 收尾：每 10 秒 append 到帶時間戳的檔案，PostStop 只做最後 flush；比賽中拔電池最多掉 10 秒。</li>
+<li><b>MATCH 模式什麼都不推。</b>筆電留在 pit 時，pit 裡的人若還看得到即時數據再對場邊比手勢，就是 M11。MATCH 模式下 WebSocket 不推、<code>/dash/state.json</code> 回 503、MJPEG 回 503、<code>CameraStreamServer.setSource(null)</code>（Driver Hub 的預覽走 robocol，比 MJPEG 更會排擠控制訊號），只寫錄影。</li>
+<li><b>OpMode 名稱與 telemetry 全用 ASCII。</b>OnBotJava 的 javac 編碼與 Driver Hub 對 CJK／符號的渲染都沒驗證過，現場排錯時一串看不懂的字只會拖慢志工。用 A1-MATCH／B1-PIT／Z-DASH-OFF／Z-FALLBACK-v2，telemetry 用 READY／SPINUP。中文只留在儀表板前端。</li>
+</ul>
+
+<h2>三、要寫的檔案</h2>
+<h3>機器人端（OnBot Java，約 1,300 行；砍掉可選項約 1,100 行）</h3>
+<div class="tablewrap"><table>
+<tr><th>檔案</th><th class="num">行數</th><th>職責</th></tr>
+<tr><td><code>DashPing.java</code></td><td class="num">60</td><td>Day 1 煙霧測試：/dash/ping + namespace 計數器 + Build Tag。通過後留作健康檢查。</td></tr>
+<tr><td><code>DashHub.java</code></td><td class="num">130</td><td>跨 ClassLoader 共享狀態表：latest／dirty／inbox／socket 集合／委派物件／世代號／開關旗標，全在 <code>System.getProperties()</code>。</td></tr>
+<tr><td><code>DashBridge.java</code></td><td class="num">120</td><td>唯一的 SDK 掛接點，寫一次不再動：<code>@WebHandlerRegistrar</code> 註冊六條薄殼路徑；namespace 薄殼；每個薄殼先讀開關旗標再取委派物件。</td></tr>
+<tr><td><code>DashBoot.java</code></td><td class="num">80</td><td>每支 OpMode init 呼叫 <code>DashBoot.ensure()</code>：世代號 +1、放入最新委派物件、關掉舊 ExecutorService、啟動 publisher／錄影 flush。</td></tr>
+<tr><td><code>DashWs.java</code></td><td class="num">90</td><td>namespace 委派：onSubscribe 立刻回 hello 並把 socket 加進集合、onUnsubscribe 移除、onMessage 把 set 字串丟進 inbox。</td></tr>
+<tr><td><code>DashPublisher.java</code></td><td class="num">120</td><td>50 ms diff、2 s 全量、逐 socket send、世代守衛、沒人看就跳過、MATCH 不推。</td></tr>
+<tr><td><code>DashParams.java</code></td><td class="num">120</td><td>15 個可調項的白名單＋範圍，MATCH 拒絕，拒絕原因回寫 <code>/FGC/Bridge/Last Set Rejected</code>，<code>snippet()</code> 產生 Constants.java 片段，fgc-tune.json 存讀。</td></tr>
+<tr><td><code>DashRec.java</code></td><td class="num">100</td><td>同步保護的 ring buffer，每 10 秒 append 到 <code>rec-yyyyMMdd-HHmmss.jsonl</code>（格式與 RobotClient 回放一致），同時寫一份到 <code>/sdcard/FIRST/java/src/rec/</code> 讓 OnBotJava 檔案樹也能下載；<code>/dash/rec/</code> 列檔案清單。</td></tr>
+<tr><td><code>DashMjpeg.java</code></td><td class="num">150</td><td>MJPEG chunked handler、單張快照、1 條併發上限、MATCH 回 503、JPEG 壓縮在 pump 執行緒。</td></tr>
+<tr><td><code>TagCam.java</code></td><td class="num">170</td><td>VisionPortal 640×480 + AprilTagProcessor（官方庫，可選加場地座標）；decimation 可調；decisionMargin 門檻、連續 3 幀、Age 累加；整段 try/catch。</td></tr>
+<tr><td><code>Constants.java</code>（改）</td><td class="num">25</td><td>15 個非方向常數 <code>final → volatile</code>（DEADZONE、TURN_SCALE、VEL_SL、VEL_SR、IDLE_TPS、EJECT_VEL、WAIT_SPINUP、FEED_THRESHOLD、WAY_TPS、WAY_IDLE_TPS、INTAKE_COLLECT、INTAKE_SHOOT、CLIMB、HOLD、HOPPER_POWER）；<code>DIR_*</code> 維持 final。不改就調不動：javac 會把 final 常數摺疊進呼叫端。HOLD 只在進入保持時套用一次，ClimbSystem 要加一行「值變了就重套」。</td></tr>
+<tr><td><code>FGC2026_TeleOp_Match.java</code></td><td class="num">160</td><td>v2 邏輯逐行保留 + bulk cache + put 埋點 + <code>pitMode()/useCamera()</code> 掛勾（預設 false）+ Driver Hub「READY」大字。v2 原封不動留著當 Z-FALLBACK。</td></tr>
+<tr><td><code>FGC2026_TeleOp_Pit.java</code></td><td class="num">15</td><td><code>extends Match</code> 只覆寫兩個 boolean。調參版與比賽版是同一份編譯結果。</td></tr>
+<tr><td><code>DashOff.java</code></td><td class="num">10</td><td>OpMode Z-DASH-OFF：把 <code>fgc.dash.enabled</code> 設成 "0"。給裁判看的關閉路徑。</td></tr>
+<tr><td><code>AimAssist.java</code>（可砍）</td><td class="num">70</td><td>按住 L1 才把 bearing 以 P 疊加到 turn，放開完全回手動，無 tag 完全放行；<b>永遠不代按扳機</b>（G13）。</td></tr>
+<tr><td><code>tools\check.ps1</code> · <code>tools\backup.ps1</code></td><td class="num">90</td><td>本機 javac 檢查；每晚 <code>adb pull /sdcard/FIRST/{java/src, settings, ExternalLibraries, blocks}</code> + fgc-tune.json，時間戳 zip 到兩支隨身碟。</td></tr>
+</table></div>
+
+<h3>儀表板端（dashboard-app，新增約 860 行、修改約 140 行）</h3>
+<div class="tablewrap"><table>
+<tr><th>檔案</th><th class="num">行數</th><th>改動</th></tr>
+<tr><td><code>src/lib/profile.ts</code>（新）</td><td class="num">60</td><td>worldskills／fgc 兩組常數：port、host、協定、分頁、取樣率。回頭跑 VMX 機器人只要換 profile。</td></tr>
+<tr><td><code>src/lib/RobotClient.ts</code></td><td class="num">60</td><td>transport shim：subscribe 握手、payload 解包、2 秒重訂閱、輪詢退路。錄製／回放／op:set 邏輯不動。</td></tr>
+<tr><td><code>src/lib/fgcKeys.ts</code>（新）</td><td class="num">130</td><td><code>/FGC/&lt;子系統&gt;/&lt;名稱&gt;</code> 對照表、可調項定義、標籤座標表、場地尺寸。</td></tr>
+<tr><td><code>ConnectionBar.tsx</code> · <code>App.tsx</code> · <code>store.ts</code></td><td class="num">70</td><td>預設 host 192.168.43.1、MATCH/PIT 徽章與 Build Tag、TABS 改讀 profile、HISTORY_SEC 200 與 20 Hz 取樣。「等待 dash namespace」用獨立 boolean，不動 ConnState 型別。</td></tr>
+<tr><td><code>components/fgc/HealthPanel.tsx</code></td><td class="num">200</td><td>Go/No-Go 燈牆：Build Tag、電池、loop ms、Threads=1、相機、tag fps、8080/8081、錄影檔名與行數、「目前值 ≠ 最後建置值」。</td></tr>
+<tr><td><code>components/fgc/ShooterPanel.tsx</code></td><td class="num">220</td><td>SL/SR/way 波形 + 目標虛線 + 電流（2–5 Hz）+ spin-up 時間 + 四個調參框。</td></tr>
+<tr><td><code>components/fgc/TagPanel.tsx</code></td><td class="num">240</td><td>MJPEG 或 snapshot 畫面 + 偵測表 + 7×7 m 場地圖（5 個標籤含斜 30° 的兩個）+ decimation 按鈕 + 暫停串流。</td></tr>
+<tr><td><code>components/fgc/TunePanel.tsx</code></td><td class="num">190</td><td>白名單參數、送出值／回讀值雙欄、MATCH 灰化、「複製 Constants.java 片段」。</td></tr>
+</table></div>
+<p class="note">Tauri 的 CSP 目前是 <code>null</code>，跨網段 ws:// 與 http:// 都不會被擋，先不要動。TRG Appendix E 預告會有「Changing the Name of the Control Hub」一節，host 要維持可輸入，不要寫死 IP。同型面板的既有實作（VisionPanel 465 行、ConstantsPanel 402 行）比上表估計大 1.6–2 倍，第 1 週結束時用實際花費重新校準。</p>
+
+<h2>四、Day 0 到 Day 2：把未知變成已知</h2>
+<h3>Day 0（今天就能做，不需要 Control Hub）</h3>
+<ul>
+<li><b>寄信給 support@first.global</b>（第九節五題）。這是全案成本最低、前置最長、零相依的一項；Q&amp;A 文件 6/24 之後沒更新過，不能指望回覆快。</li>
+<li><b>本機編譯檢查</b>：桌面 AS 專案的 build 目錄已有 OnBotJava 用的 classpath。反駁者實測 0.7 秒編完整份 teamcode：<pre><code>javac -source 8 -target 8 -encoding UTF-8 -bootclasspath "%J%\android.jar" -cp "%J%\onbotjava-classes.jar;%J%\android.jar" -d out *.java
+:: %J% = C:\Users\feihong\Desktop\FtcRobotController-master\TeamCode\build\intermediates\assets\debug\mergeDebugAssets\java</code></pre>寫成 <code>tools\check.ps1</code>，每支 Dash*.java 先在本機編過再貼進 OnBotJava。不觸及 R17，不側載任何東西。</li>
+<li><b>假伺服器</b>：40 行 Node 腳本吐出與真機一樣的 <code>{"namespace":"dash","type":"nt","payload":"…"}</code> 信封，儀表板那 860 行可以全程離線開發。</li>
+<li><b>量相機安裝點</b>：C270 原線 1.5 m 可達範圍 × 50 cm 起始立方體（R04）= 合法安裝點集合，光心離地 ≤450 mm。套件裡沒有任何 USB 線，這條原線長度是硬約束。</li>
+<li>下載 REV Wiring Diagram（R19 的判定基準）。</li>
+</ul>
+<h3>Day 1（Control Hub 上線後 30 分鐘）</h3>
+<p>整個方案只有一個尚未在實機證實的假設：OnBotJava 編譯出來的類別，其 <code>@WebHandlerRegistrar</code> 真的會被呼叫。SDK 位元碼顯示會，但要把它變成已知。</p>
+<ol>
+<li>OnBotJava 新增 <code>DashPing.java</code>：<code>@WebHandlerRegistrar</code> 註冊 <code>/dash/ping</code> 回 <code>{"pong":時間,"tag":"v1"}</code> 並加 <code>Access-Control-Allow-Origin: *</code>；用 <code>WebSocketNamespaceHandlerRegistry.registerNamespaceHandler</code> 註冊 "dash"（onSubscribe 回 hello），起一條執行緒每秒對集合裡的 socket send 一個計數。</li>
+<li>Build Everything → <b>重開 Control Hub 電源一次</b>（Restart Robot 不會重跑 8080 的註冊）。</li>
+<li>檢查 A：瀏覽器開 <code>http://192.168.43.1:8080/dash/ping</code>。</li>
+<li>檢查 B：F12 console 貼 <pre><code>const w = new WebSocket("ws://192.168.43.1:8081");
+w.onopen = () => w.send(JSON.stringify({namespace:"system", type:"subscribeToNamespace", payload:"dash"}));
+w.onmessage = e => console.log(e.data);</code></pre> 要先印一則 hello，之後每秒一則 nt。</li>
+<li>檢查 C（委派替換）：把 tag 改成 v2，Build，跑一次任何 OpMode（init 會刷新委派），不重開機，<code>/dash/ping</code> 應顯示 v2。顯示 v1 代表薄殼沒有正確取委派。</li>
+<li>檢查 D：按 Restart Robot <b>兩次</b>，兩次都不通才算失敗（OnBotJava 重掃在背景執行緒，第一次可能跑到舊 hook）。</li>
+<li>檢查 E：Build 後不重開機直接打舊的 <code>/dash/state.json</code>，看 logcat 有沒有 NoClassDefFoundError（判定舊 dex 是否被刪）。</li>
+</ol>
+<p>判讀：A、B、C 全過 → 剩下的都只是填內容。B 不過 → 只用 8080 輪詢（前端 40 行），功能不減、延遲 100 ms。A 不過（且確實重開過電源）→ 8081 仍能推播與收 set，錄影改從 OnBotJava 檔案樹下載，只損失 MJPEG。三種結果都不需要 Android Studio。</p>
+<h3>Day 2（15 分鐘）</h3>
+<p>寫一個假影像 handler（每 100 ms 產一張純色 JPEG），Chrome 直開 <code>/dash/stream.mjpg</code> 看到連續變色才算 MJPEG 這條路通；不通就直接走 snapshot 輪詢。三份設計都把這件事當已知，其實從沒驗證過。</p>
+
+<h2>五、四週排程</h2>
+<p>順序就是優先序。反駁者用你自己同型面板的實際行數校準後，估總量若全做是 95–120 小時，一個開學中的高中生做不完。所以承諾的範圍只有 M1 + M2（約 35–40 小時），M3 只在 9/13 前有標定牆時才做。第 4 週不寫新功能。</p>
+<div class="week">
+  <div class="w"><b>第 1 週</b>9/7–9/13<br>M1 · 約 20 h<br>錄得下、放得出來</div>
+  <ul>
+    <li>Day 0–2 全部項目；teamcode 建 git；<code>backup.ps1</code> 第一次演練（zip 內必須含 <code>/sdcard/FIRST/settings</code>，9 個裝置名稱與埠位寫進 README）。</li>
+    <li>DashHub／DashBridge／DashBoot／DashWs／DashPublisher；驗證 Build 兩次不重開機仍更新、<code>/FGC/Bridge/Threads</code> 維持 1。</li>
+    <li><b>DashRec 移進第 1 週</b>：跑 2:30 → 從 8080 與 OnBotJava 檔案樹兩條路下載 jsonl → 儀表板按回放，波形重現。比賽日唯一有價值的東西就是這條。</li>
+    <li>儀表板 profile + shim；「全部訊號」看到 <code>/FGC/*</code>；Control Hub 斷電重開 5 秒內自動重連。</li>
+    <li>TeleOp Match 埋點約 30 個 key，bulk cache MANUAL；量「只有 put」與「加電流電壓」兩種 loop ms 寫進 README。</li>
+    <li><b>9/13 決策點</b>：有沒有一面把官方標籤印好、掛在 791 mm、前方 4 m 淨空的牆？沒有就砍掉 M3，第 3 週改投駕駛練習與裝填吞吐量。</li>
+  </ul>
+  <div class="w"><b>第 2 週</b>9/14–9/20<br>M2 · 約 14 h<br>調得動、關得掉</div>
+  <ul>
+    <li>Constants 改 volatile、DashParams 白名單、TunePanel；來回 &lt;200 ms；Save 後 Restart Robot 值仍在。</li>
+    <li>Pit 子類 + MATCH 強制歸零（PreInit／PostStop）；Z-DASH-OFF；關閉演練計時（終點是 <code>/dash/ping</code> 回 404，不是 Build 成功）。</li>
+    <li>HealthPanel；追信 support@first.global；依回覆調整。</li>
+    <li><b>交付</b>：比賽 OpMode 拒絕所有寫回、不推播、只錄影；可 5 秒關閉並示範。</li>
+  </ul>
+  <div class="w"><b>第 3 週</b>9/21–9/27<br>M3 · 約 16 h<br>只在有標定牆時做</div>
+  <ul>
+    <li>上傳官方 jar、TagCam（只做 ftcPose）、Driver Hub 顯示距離與建議射速。</li>
+    <li>標定：2／3／4／5／6 m × 正對／左 30°／右 30°，每組 10 筆；decimation 掃 1／2／3；寫下「640×480 的可信距離上限是 X 公尺」。</li>
+    <li>MJPEG（或 snapshot）+ 最小 TagPanel + ShooterPanel。</li>
+    <li>可選且順序固定：AimAssist（只轉向，不代按扳機）→ robotPose（誤差 &lt;15 cm 才採用）。不做 Skills 自動射球（見第六節）。</li>
+    <li><b>9/27 開發凍結。</b></li>
+  </ul>
+  <div class="w"><b>第 4 週</b>9/28–10/2<br>單機可靠度</div>
+  <ul>
+    <li>沒有場地就不叫模擬賽：連續 10 次、每次 2:30 滿油門操作（急停、射擊、爬升動作），零掉線、loop ms p95 &lt;25 ms、電池從滿電跑到 11.5 V 行為不變；每次從錄影檔回放檢討。</li>
+    <li>軟復原演練：只刪 <code>/sdcard/FIRST/java/src</code> 與 <code>settings</code>，從隨身碟 40 分鐘內回到可比賽。<b>不要 factory reset</b> 唯一一台比賽主機（R17 版本刷錯就是 not allowed to compete）。</li>
+    <li>10/1 前跑一次「筆電完全不碰」的完整流程；定版 Constants；Tauri 打包 exe；印 checklist 與 SSID 卡。</li>
+  </ul>
+  <div class="w"><b>10/3–10/5</b>打包與出發</div>
+  <ul>
+    <li>拆電池、電池放手提行李（TRG Appendix E）、機器人打包；10/5 抵達當晚跑「第 0 次備份」。</li>
+    <li>10/6 Registration 與 Robot Inspection 同一天，Control Hub 改名／5 GHz 很可能就在檢錄流程裡由志工執行：<b>任何人碰 Control Hub 設定之前，先跑完 backup.ps1</b>。</li>
+  </ul>
+</div>
+
+<h2>六、AprilTag 計畫</h2>
+<h3>硬體與規則</h3>
+<ul>
+<li>C270 在 BOM（REV-39-1598）內，合法，但最終機器人上只能 1 台（R10 數量限制），備品可買不可同時裝。</li>
+<li>不能加 USB 延長線或 hub 的依據是 R10／R11（只能用套件內元件，BOM 沒有任何 USB 線）；R13 管的是不剪線、不拆接頭、不改電子件。1.5 m 原線直插 Control Hub USB-A，餘線用套件束帶固定。</li>
+<li>R19 要求依 REV Wiring Diagram 佈線，該圖不在三份 PDF 內，是否畫了相機接法要另外確認（見去函問題）。</li>
+<li><b>相機光心離地毯 ≤450 mm。</b>R04 要求開賽時整台機器人在 50×50×50 cm 內，S01 讓它同樣適用 Skills。標籤中心在 791 mm，Δz 約 340 mm，2 m 處仰角 9.7°、3 m 6.5°、4 m 4.9°，對姿態解算影響很小；量到的實際高度記成 <code>CAM_Z_MM</code>。</li>
+</ul>
+<h3>你的機構：前射後吸，相機正置在 shooter 前方正中間</h3>
+<ul>
+<li><b>相機軸線就是射擊軸線</b>：<code>ftcPose.bearing</code> 直接等於瞄準誤差，<code>setCameraPose</code> 不需要 yaw 偏移，只要量相機光心相對機器人中心的 x／y／z（mm）。AimAssist 與射距提示都少一層換算。</li>
+<li><b>車頭方向</b>：現有 TeleOp 開局預設「吸取端為前」，射擊時掉頭面向 SU，相機這時正對標籤，與設計吻合；儀表板的 <code>/FGC/Drive/Reversed</code> 要一起顯示，回放時才分得出「當時相機朝哪」。</li>
+<li><b>鏡頭在射線正下方</b>：每顆球出膛都會掃過畫面上緣，偵測會短暫中斷，靠「連續 3 幀」與 Age 累加吸收，不要把單幀消失當成沒看到標籤。鏡頭要低於球道且加防護，避免回彈球直接打到 C270（它不能換、不能修，R13）。</li>
+<li><b>R04 現在就量</b>：機構已裝完，今天用捲尺量相機光心離地高度與 50 cm 立方體是否包得住，結果寫進 <code>CAM_Z_MM</code>；不合格改的是支架不是程式。</li>
+<li><b>排程受益</b>：機構完成代表第 1 週的實機驗證（推搖桿、扣 R2 看轉速）不再被組裝卡住，第 3 週原本留給機構延誤的緩衝可以還給 AprilTag 標定。</li>
+</ul>
+<h3>軟體設定</h3>
+<ul>
+<li><b>解析度鎖 640×480</b>：SDK 內建校正只有這組（fx=fy=822.317，cx=319.495，cy=242.502）。不要呼叫 <code>setLensIntrinsics</code>，啟動後 logcat 不能出現 "User did not provide a camera calibration"。代價要說清楚：160 mm 標籤在 d 公尺處畫面寬約 822×0.16/d 像素，2 m≈66 px、4 m≈33 px、6.3 m（對面出發點到標籤）≈21 px 已在偵測門檻。640×480 的實際可信距離大約 4.5–5 m，第 3 週要實測寫下來；若不夠，用棋盤格手動校正 1280×720 再 <code>setLensIntrinsics</code>（半天），640×480 當回退。</li>
+<li><b>官方標籤庫</b>：<code>IgnitingInnovationAprilTagLibrary-1.0.jar</code>（單一類別、不與 RC app 重名）用 OnBotJava 的 Upload Files 上傳，<code>global.first.IgnitingInnovationGameDatabase.getIgnitingInnovationTagLibrary()</code>。它只有 ID／名稱／160 mm，沒有座標，<code>robotPose</code> 會是 null。要場地座標時用六參數 <code>addTag(id, name, 0.160, VectorF, METER, Quaternion)</code> 把下表餵進去再 <code>setCameraPose</code>。</li>
+<li><b>decimation 做成 <code>/FGC/Tune/TAG_DECIMATION</code> 即時可調</b>，在 pit 掃 1／2／3，取「偵測率 &gt;90% 且 fps &gt;15」的最大值。預設 3 會把 4 m 砍到約 11 px 抓不到。</li>
+<li><b>過濾</b>：decisionMargin &lt;30 丟棄、同一 id 連續 3 幀才採信、每個 id 發布 Age 秒（沒看到讓 Age 累加，不要讓數值消失被誤讀成距離 0）。</li>
+</ul>
+<h3>標籤場地座標（由官方 FG26_F.step 解算，±6 mm）</h3>
+<p>座標系：場地中心為原點，+X 指藍方 ALLIANCE STATION，+Y 指 SUPPRESSION UNIT／EXTINGUISHER，Z 為離地毯高度；yaw 為法線在 XY 平面自 +X 逆時針角。場地 7000×7000 mm，護欄外緣 7400。</p>
+<div class="tablewrap"><table>
+<tr><th class="num">ID</th><th>名稱</th><th class="num">X mm</th><th class="num">Y mm</th><th class="num">Z mm</th><th class="num">yaw</th><th>備註</th></tr>
+<tr><td class="num">100</td><td>Red Side - Facing Drivers</td><td class="num">−1674</td><td class="num">+3152</td><td class="num">791</td><td class="num">210°</td><td>紅 SU 側面，外斜 30°</td></tr>
+<tr><td class="num">101</td><td>Red Side - Facing Audience</td><td class="num">−975</td><td class="num">+2790</td><td class="num">791</td><td class="num">270°</td><td>紅 SU 正面</td></tr>
+<tr><td class="num">102</td><td>Center - Facing Audience</td><td class="num">0</td><td class="num">+2787</td><td class="num">791</td><td class="num">270°</td><td>EXTINGUISHER 正面</td></tr>
+<tr><td class="num">103</td><td>Blue Side - Facing Audience</td><td class="num">+975</td><td class="num">+2790</td><td class="num">791</td><td class="num">270°</td><td>藍 SU 正面</td></tr>
+<tr><td class="num">104</td><td>Blue Side - Facing Drivers</td><td class="num">+1674</td><td class="num">+3152</td><td class="num">791</td><td class="num">330°</td><td>藍 SU 側面，外斜 30°</td></tr>
+</table></div>
+<p>五個標籤都是 36h11、黑框外緣 160 mm（含白邊 200 mm）。列印務必 100% 縮放，印完用尺量<b>黑框外緣</b>，量整張圖樣會得到 200 mm 而誤判。側面兩片不與正面共平面，機器人只有靠近己方站側才看得到。</p>
+<h3>用途，誠實排序</h3>
+<ol>
+<li><b>遙控時的射距提示</b>：range → 建議射速插值表，送到 Driver Hub telemetry（DS 是唯一合法的場上顯示裝置），要不要採用由駕駛決定。這是 AprilTag 在正賽唯一乾淨的用法。</li>
+<li><b>AimAssist（可選）</b>：按住 L1 才把 bearing 以 P 疊加到 turn，放開完全回手動。<b>永遠不代按扳機。</b>G13：故意把球射向機器人、人或場外是 RED CARD；同聯盟三台機器人共用一個 SU，隊友常在射線上。VEL_SL／VEL_SR 的 clamp 上限要用幾何（SU 頂 2009 mm、頂棚外伸 400 mm）算出不越頂的物理上限，並訓練「隊友在射線上就不射」。</li>
+<li><b>Skills Challenge 不用 AprilTag。</b>計分 = 分數 ÷ 秒；CLIMB 四檔 50／110／130／150 分，球只有 1／5／2 分，場上只 staged 六顆球（S07，最多 36 分），G06 不能預裝。純爬到 ZONE 3 若 15 秒是每秒 10 分，加射六球多花 60 秒反而掉到每秒 2.5 分。Skills 的最佳解是直衝 BRACE 爬升，S05 允許遙控，練過的駕駛比自動更快更穩。原本規劃的 SkillsAuto 刪除，時間改投爬升機構可靠度。</li>
+<li><b>不做</b>：MATCH 中的全自動瞄準。正賽是 500 顆球、每顆 1 分、CLIMB 是乘數的吞吐量遊戲，決定分數的是裝填與投放速度。</li>
+</ol>
+<h3>標定驗收</h3>
+<p>2.0 m 處 range 誤差 &lt;10 cm、標準差 &lt;3 cm；正對時 |bearing| &lt;3°；fps ≥10。誤差隨距離線性放大 = 標籤印錯尺寸；固定偏移 = 相機安裝面到光心的距離沒扣。bearing 先確認符號再調任何 P 增益。開串流前後看 <code>VisionPortal.getFps()</code>，掉超過 20% 就降規格（loop ms 抓不到視覺執行緒的退化）。</p>
+
+<h2>七、比賽日模式</h2>
+<p>核心設計：比賽日的儀表板是「錄影機 + 賽後回放器」。MATCH 期間機器人不推播、不開相機、拒絕所有寫回，只在自己身上錄影；筆電留在 pit，賽後回 pit 下載回放。</p>
+<div class="tablewrap"><table>
+<tr><th style="width:150px">規則</th><th>風險</th><th>對策</th></tr>
+<tr><td>M06 場邊不得複雜設定<br><span class="pill risk">WHITE CARD</span></td><td>到場邊才開機、連 Wi-Fi、等串流。</td><td>橋接器隨 RC app 常駐，場邊唯一動作是 Driver Hub 選 A1-MATCH。筆電不進場邊。Control Hub 改名後在 pit 重存 Wi-Fi profile。</td></tr>
+<tr><td>M11 場外教練式通訊<br><span class="pill warn">YELLOW CARD</span></td><td>pit 裡的人看即時數據再對場邊比手勢。</td><td>MATCH 模式根本不推播，pit 裡看不到即時數據；比賽中真正需要的判斷（READY、距離、建議射速）放在 Driver Hub telemetry。</td></tr>
+<tr><td>M01／M09 第二控制路徑<br><span class="pill risk">最高 RED CARD</span></td><td>儀表板的 set 讓筆電變成第二個操作介面。</td><td>Match 是基底類別，pitMode 寫死 false；PreInit／PostStop 強制歸零；MATCH 拒絕所有 set。可當場示範拖滑桿無效。</td></tr>
+<tr><td>G13 射向機器人／場外<br><span class="pill risk">RED CARD</span></td><td>輔助對準後駕駛照按扳機。</td><td>AimAssist 只轉向；射速 clamp 用幾何算上限；駕駛規矩「隊友在射線上就不射」。</td></tr>
+<tr><td>R14 一套控制系統</td><td>筆電被視為第二套。</td><td>文義只限 ROBOT 上的 Control Hub／Expansion Hub／電池；仍列入去函確認。</td></tr>
+<tr><td>檢錄清單未公布</td><td>公布後新增條件；志工要求關閉。</td><td>被問才答、答案必須是真的：A4 說明留在工具箱，不主動遞。關閉路徑三層：不連筆電（0 秒）／Z-DASH-OFF（5 秒，可示範 <code>/dash/ping</code> 回 404）／選 Z-FALLBACK-v2（完全沒有橋接器的原版）。A4 上不寫任何沒用碼表量過的數字。</td></tr>
+<tr><td>R18 五晚留 pit（10/6–10/10）</td><td>程式或硬體組態被動；志工在檢錄時重設 Hub。</td><td>10/5 或 10/6 進 pit 前跑第 0 次備份；之後每晚一次到兩支隨身碟；<code>settings</code> 是硬體組態，9 個裝置重建要 20 分鐘且最容易錯。</td></tr>
+<tr><td>5GHz／改名（TRG 待補）</td><td>SSID 與密碼改了，筆電連不上；影像擠掉 robocol。</td><td>SSID／密碼／IP 實體小卡；筆電網卡支援 5GHz 第一天確認。MATCH 關 MJPEG 也關 Driver Hub 預覽（它走 robocol）。pit 練習分三種情境量 Driver Hub ping：全關／只開 DS 預覽／只開 MJPEG。</td></tr>
+</table></div>
+
+<h2>八、風險表</h2>
+<div class="tablewrap"><table>
+<tr><th>風險</th><th style="width:70px">可能性</th><th>對策</th></tr>
+<tr><td>訂閱時 namespace 還沒註冊，SDK 不回錯，前端看起來連上卻沒資料。</td><td><span class="pill risk">高</span></td><td>onSubscribe 立刻回 hello；前端 2 秒沒收到就重送；頂欄顯示「等待 dash namespace」而不是綠燈。</td></tr>
+<tr><td>Build 後 handler 邏輯凍結在舊 ClassLoader（症狀像「改了 clamp 沒生效」）。</td><td><span class="pill risk">高（不做委派必然發生）</span></td><td>薄殼 + 委派物件放 Properties，OpMode init 刷新；Day 1 檢查 C 專門驗這件事。</td></tr>
+<tr><td>Build 後舊推播執行緒還活著，值亂跳、set 時靈時不靈。</td><td><span class="pill risk">高（不做世代守衛必然發生）</span></td><td>世代號 + shutdownNow 舊 executor；HealthPanel 顯示 Threads，不是 1 就出事。</td></tr>
+<tr><td>改 DashBridge 忘了重開機，誤判成「這條路不通」。</td><td><span class="pill warn">中</span></td><td>DashBridge 寫一次不再動；文件寫死「改 DashBridge → 重開 Control Hub」；Restart Robot 一律按兩次。</td></tr>
+<tr><td>電流電壓每圈讀取撞上 loop ms 25 ms 驗收線，第 4 週才發現。</td><td><span class="pill risk">高</span></td><td>Bulk cache MANUAL；電流電壓 2–5 Hz；isMotorOverCurrent 做卡球；第 1 週就量對照。</td></tr>
+<tr><td>OpMode 監聽被 GC 回收，比賽日錄影不產生。</td><td><span class="pill warn">中</span></td><td>監聽物件持強參考；錄影每 10 秒 flush，不靠 PostStop；HealthPanel 顯示錄影行數在動。</td></tr>
+<tr><td>MJPEG 吃 CPU 或頻寬，手感變鈍或視覺 fps 掉一半。</td><td><span class="pill risk">高（若不設限）</span></td><td>10 fps／q40／1 條；壓縮在 pump 執行緒；MATCH 回 503；同時看 loop ms 與 VisionPortal.getFps()。</td></tr>
+<tr><td>瀏覽器對 chunked multipart 顯示不穩。</td><td><span class="pill warn">未實測</span></td><td>Day 2 驗；snapshot.jpg 輪詢退路。</td></tr>
+<tr><td>C270 USB 枚舉失敗或線被扯動，連帶 OpMode 崩潰。</td><td><span class="pill warn">中</span></td><td>TagCam 整段 try/catch；「先插相機再上電」；比賽 OpMode 預設不開相機。</td></tr>
+<tr><td>參數只活在 RAM，比賽跑的是沒人有原始碼的數字。</td><td><span class="pill warn">中</span></td><td>唯一真相是編譯進去的 Constants.java：「複製片段」＋「目前值 ≠ 最後建置值」燈＋Build Tag。</td></tr>
+<tr><td>4 週被段考或機構組裝吃掉。</td><td><span class="pill risk">高</span></td><td>只承諾 M1＋M2（約 35–40 h）；M3 以 9/13 有無標定牆決定；第 1 週結束用實際工時重估。</td></tr>
+<tr><td>R19 線路圖沒畫相機接法，檢錄員開放解讀。</td><td><span class="pill warn">中</span></td><td>Day 0 取得該圖；列入去函；後果是「賽前修正」不是 DQ。</td></tr>
+</table></div>
+
+<h2>九、去函 support@first.global 的五個問題（今天寄）</h2>
+<p>Q&amp;A 文件 6/24 之後沒更新，PROGRAMMING 段落是空的。今天就寄，同時準備一份 10/6 Registration 時當面問 Pit Admin 的口頭版本。設計本身不依賴任何書面答覆。</p>
+<ol>
+<li>隊伍筆電在 pit 內經 Wi-Fi 連自家 Control Hub，讀取 RC app 內建網頁伺服器（8080）與內建 WebSocket（8081）的<b>唯讀</b>遙測，未安裝額外伺服器、未修改 RC app。是否可接受？是否會被視為 R14 的第二套控制系統？</li>
+<li>依 M03 的 DRIVE TEAM 成員（例如 CAPTAIN），MATCH 進行中是否可在 ALLIANCE STATION 內用隊伍筆電觀看純唯讀的遙測？若不可，M11 的界線是否僅限「場外人員→DRIVE TEAM」的通訊？</li>
+<li>依 R19，Logitech C270 接 Control Hub USB-A 是否符合 REV Wiring Diagram？請提供該圖最新連結。</li>
+<li>將官方 IgnitingInnovationAprilTagLibrary-1.0.jar 上傳到 OnBotJava ExternalLibraries，是否仍視為 OnBot Java 開發？</li>
+<li>TRG Appendix E 的「Verify Your Devices Support 5GHz」與「Changing the Name of the Control Hub」具體要求為何、由誰在何時執行？</li>
+</ol>
+
+<h2>十、被否決的兩個方案</h2>
+<p><b>方案 A：OnBot Java 自開 ws:5800 伺服器（VMX 協定原封不動）。</b>前端幾乎零改動很誘人，但自開 socket 在 OnBotJava 環境會遇到上面證實的 ClassLoader 孤兒問題，<code>setReuseAddr</code> 救不了「舊 listener 還活著」。它的 OpMode 子類設計、機器人端錄影、比賽日教義都被本方案吸收。</p>
+<p><b>方案 B：Android Studio 主線 + ftc-dashboard + OnBot 鏡像。</b>第一天就有波形，AprilTag 深度最好（decimation 算術、標定 SOP、AimAssist 都被吸收）。但自建 APK 取代官方 RC app 是唯一在檢錄台上看得見的差異，三位評審估 96 小時，且本機 Gradle 快取沒有 AAR 原檔，離線重建不可靠。</p>
+
+<h2>附錄</h2>
+<h3>反駁階段改掉的東西</h3>
+<ul>
+<li><b>致命</b>：「ENABLED=false + Build 三分鐘關閉」不成立（常數摺疊、無 unregister）→ 執行期旗標 + Z-DASH-OFF OpMode。相機裝 791 mm 違反 R04 → ≤450 mm。Skills 用 AprilTag 射球是負分 → 刪 SkillsAuto，Skills 純爬升。</li>
+<li><b>重大</b>：handler 程式碼凍結 → 薄殼委派；殭屍執行緒 → 世代號；監聽弱參考 → 強參考 + 定時 flush；getCurrent 阻塞 I/O → bulk cache；Continuation 內壓縮卡視覺執行緒 → pump 執行緒；DS 預覽走 robocol → MATCH 也關；G13 → AimAssist 不代按扳機；賽期到 10/10 五晚；退路 B 拿不到 WebSocketManager → 自維護 socket 集合；DashRec 移進第 1 週；去函改今天；模擬賽改單機可靠度；不 factory reset。</li>
+<li><b>次要</b>：HOLD 不即時；R13 引用改 R10/R11；ASCII 名稱；只用簡單 GET；零改動地基是 745 行不是 1,146；640×480 距離上限要實測。</li>
+</ul>
+<h3>今天已完成的事</h3>
+<div class="done">
+<dl class="kv">
+<dt>GitHub 同步</dt><dd><code>C:\VMX Robot\Worldskills-Mobile-Robot-main</code> 已轉成 <code>HAO-TING0611/Worldskills-Mobile-Robot</code> 的正式 git checkout（HEAD 9853a7c，9/5 20:05）。本地 27 個不同檔案全是舊版快照，無獨有修改被覆蓋。之後 <code>git pull</code> 即可。</dd>
+<dt>AprilTag 官方檔</dt><dd><code>C:\Users\feihong\Desktop\FGC2026\apriltag-official\</code>：jar、OnBot Java 與 Blocks 範例、A4／Letter 印刷檔、README（含上表座標）。</dd>
+<dt>驗證方法</dt><dd>6 個驗證代理（規則逐行、SDK AAR 位元碼 javap、ftc-dashboard 原始碼、OnBotJava README 與 assets、VMX 儀表板逐檔、STEP／圖紙解算）→ 3 套獨立設計 → 3 位評審 → 整合 → 3 位反駁者（含用 OnBotJava classpath 離線編譯探針檔）。文中每個「已驗證」都有位元碼或條文出處。</dd>
+<dt>尚未實測</dt><dd>Control Hub 今天不在線。Day 1 的五個檢查點是本方案唯一的實機未知。</dd>
+</dl>
+</div>
+</div>
