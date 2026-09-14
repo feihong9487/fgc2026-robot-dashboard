@@ -48,6 +48,7 @@ export const DEFAULT_BAND_ROWS: readonly BandRow[] = [
   { key: K.hopperCmd, label: "Hopper", mode: "auto" }, // CRServo 指令值，機器人端是字串
   { key: K.gpRT, label: "RT", mode: "level" },
   { key: K.driveReversed, label: "車頭", mode: "bool" },
+  { key: K.driveClimbMode, label: "爬升模式", mode: "bool" },
 ];
 
 const GAP_SEC = 1.0;

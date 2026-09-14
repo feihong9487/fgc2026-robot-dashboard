@@ -104,9 +104,9 @@ console.log("\n[2] sampleWindow min/max decimation");
 
 // ── 3. 白名單：必須逐字對應 DashParams.java ──────────────────────────
 
-console.log("\n[3] 21 項白名單（DashParams.java NAMES/MIN/MAX）");
+console.log("\n[3] 23 項白名單（DashParams.java NAMES/MIN/MAX）");
 {
-  ok(TUNABLES.length === 21, "白名單項數", `= ${TUNABLES.length}`);
+  ok(TUNABLES.length === 23, "白名單項數", `= ${TUNABLES.length}`);
   ok(isTunableKey(tuneKey("VEL_SL")), "/FGC/Tune/VEL_SL 可寫");
   ok(!isTunableKey("/FGC/Param/VEL_SL"), "/FGC/Param/VEL_SL 不可寫（那是回讀欄）");
   ok(!isTunableKey("VEL_SL"), "只給名稱不算（必須是完整的 /FGC/Tune/ key）");

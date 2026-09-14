@@ -161,7 +161,7 @@ Mode 未知 / 尚未收到 hello / ws 斷線       →  MATCH   ← 預設鎖住
 | 13 | **MatchClock** 色碼倒數 | `/FGC/Status/Match s` | 2:30 倒數 + 進度條，藍→綠→黃（剩餘 = 爬升耗時 +5 s）→紅（剩餘 = 爬升耗時）。門檻存 localStorage。**起算點必須用機器人端的 `Match s`，前端不可自己按碼表** | Elastic Match Time | 90 |
 | 14 | **BallRhythm** 球節奏 | `/FGC/Shooter/SpinupMs` + 事件抽取的 dip | 本輪已射顆數畫成一排圓點（●●●●●○○）+ 上一顆間隔秒 + 本次 spin-up ms（括號內中位/最大）。`IDLE_TPS=0`（`Constants.java:32`）表示每次 COLLECT 都把飛輪停死，spin-up 就是「按下 R2 到第一顆球出膛」的死時間，是 500 顆球吞吐量遊戲裡最貴的固定成本 | driver-first + AdvantageScope Statistics | 100 |
 | 15 | **GamepadStrip** 按鍵燈條 | `/FGC/Gamepad/*` 十顆 | DRIVE 是 8 顆橫排燈（即時）；REPLAY 是時序帶。RT/LT 送類比值並畫 0.5 門檻線（對應 `FGC2026_TeleOp_Match.java` 的判定）才看得出「按到一半」。教練站在駕駛後面時，這是判斷「機器人壞了 vs 駕駛沒按」的唯一即時證據 | AdvantageScope Joysticks | 100 |
-| 16 | **HopperCmdStrip** 開迴路誠實標示 | `/FGC/Hopper/Cmd` | 只顯示「指令」，標題明寫「CRServo 無回授，此為指令值」，灰底無圖示，視覺上刻意與有回授的 ClimbLadder 區隔。`HopperSystem` 用 CRServo，介面沒有 `getPosition`——若畫成「開/關狀態圖示」使用者會當回授，卡球時反而找錯方向 | driver-first（誠實優先） | 60 |
+| 16 | **HopperCmdStrip** 開迴路誠實標示 | `/FGC/Hopper/Cmd`、`/FGC/Hopper/Deploy`、`/FGC/Hopper/OpenDeg` | 只顯示「指令」，標題明寫「CRServo 無回授，此為指令值」，灰底無圖示，視覺上刻意與有回授的 ClimbLadder 區隔。`HopperSystem` 用 CRServo，介面沒有 `getPosition`——若畫成「開/關狀態圖示」使用者會當回授，卡球時反而找錯方向。第二行小字顯示 open 定位伺服的放下狀態（STOWED/DEPLOYED/MISSING，仍是指令值） | driver-first（誠實優先） | 60 |
 | 17 | **AlertRail / Toast** | ws `notify` type + 前端自產 | DRIVE 右下 rail 最多 3 條（ERROR 不消失、WARN 8 s、INFO 4 s）；PIT 右上 toast + 可捲事件日誌。ERROR 附 WebAudio 兩短嗶（駕駛眼睛在場上不在螢幕），**MATCH 絕不出聲也不顯示**。通知同時寫進 log 成為第九類事件 | Elastic Notifications | 130 |
 
 ### 3.3 射手 / 參數分頁

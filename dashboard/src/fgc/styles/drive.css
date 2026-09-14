@@ -129,6 +129,18 @@
 .ribbon-cell.on .rc-main { font-weight: var(--fw-bold); }
 .ribbon-cell .rc-sub { font-size: var(--fs-xs); color: inherit; }
 .ribbon-cell.on .rc-sub { color: var(--text-dim); }
+/* 爬升模式：整條膠囊換成一句話。左側 3 px 直條用 --warn（黃）——
+   這是「機器人正在做一件不可逆的事」的提示色，不是錯誤紅。 */
+.ribbon-climb {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 0.25);
+  padding: calc(var(--u) * 0.75) calc(var(--u) * 1.5);
+  background: var(--surface-3);
+  border-left: 3px solid var(--warn);
+}
+.ribbon-climb .rcl-main { font-size: var(--fs-lg); font-weight: var(--fw-bold); color: var(--text); line-height: var(--lh-num); }
+.ribbon-climb .rcl-sub  { font-size: var(--fs-xs); color: var(--text-dim); }
 .ribbon-cell.collect.on { border-bottom-color: var(--state-collect); }
 .ribbon-cell.shoot.on { border-bottom-color: var(--state-shoot); }
 .ribbon-cell.eject.on { border-bottom-color: var(--state-eject); }
@@ -273,6 +285,20 @@
 }
 .hop-cmd { font-size: var(--fs-lg); font-weight: var(--fw-bold); color: var(--text); line-height: var(--lh-num); }
 .hop-raw { font-size: var(--fs-xs); margin-left: auto; }
+/* 第二行：open 定位伺服（放下球倉）的指令狀態。同一個凹槽語言、更小字；
+   MISSING = 硬體組態沒有 "open"，用 --warn 提醒維修區，但仍是文字不是圖示。 */
+.hop-deploy {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 1.25);
+  padding: calc(var(--u) * 0.5) calc(var(--u) * 1.5);
+  background: var(--surface-3);
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+}
+.hop-deploy-label { white-space: nowrap; }
+.hop-deploy-val   { color: var(--text); font-weight: var(--fw-bold); }
+.hop-deploy.missing .hop-deploy-val { color: var(--warn); }
 
 /* ── #17 AlertRail ──
    一條 rail，不是三張卡。每列只有左邊 3 px 的直條著色，其餘全是文字。

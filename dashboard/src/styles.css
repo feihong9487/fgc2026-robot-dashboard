@@ -1274,3 +1274,43 @@ html, body, #root {
 /* 分頁列與齒輪永遠不收縮，也永遠排在最後——它們是「還能不能操作這台儀表板」。 */
 .fgc-tabs,
 .fgc-gear { flex: 0 0 auto; }
+
+/* ═══ 琉璃感（玻璃擬態）2026-09：只在 dark（pit／一般）主題套用 ═══════════════
+   field / lockdown 是比賽現場「隔一段距離讀數」的高對比模式，刻意維持扁平、不套玻璃
+   （玻璃的半透明與模糊會犧牲遠距可讀性）。整段可整組刪除即回到原本外觀。
+   token 與作法對齊 VMX 面板：72%→53% 半透明玻璃 + backdrop-blur + 亮邊 + 頂邊高光 +
+   背景色光暈（青／藍／紫，透過玻璃透出來被模糊成流光）。 */
+:root {
+  --glass-bg: linear-gradient(150deg, rgba(52, 66, 96, 0.53) 0%, rgba(22, 30, 48, 0.51) 100%);
+  --glass-blur: blur(22px) saturate(1.7);
+  --glass-border: rgba(190, 205, 230, 0.30);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.36), 0 8px 26px -6px rgba(0, 0, 0, 0.55);
+  --edge-hi: inset 0 1px 0 rgba(255, 255, 255, 0.11);
+}
+/* 背景色光暈（玻璃要有東西可透）。只在 dark 主題；field/lockdown 維持純深底。 */
+:root[data-theme="dark"] body {
+  background-image:
+    radial-gradient(820px 520px at 8% -6%, rgba(45, 212, 191, 0.20), transparent 58%),
+    radial-gradient(920px 620px at 104% -2%, rgba(56, 189, 248, 0.20), transparent 55%),
+    radial-gradient(760px 640px at 48% 116%, rgba(167, 139, 250, 0.18), transparent 60%),
+    radial-gradient(600px 500px at 88% 108%, rgba(244, 114, 182, 0.12), transparent 60%),
+    linear-gradient(180deg, #121f36 0%, #0b1120 58%);
+  background-attachment: fixed;
+}
+/* 主卡片 panel-shell：改成磨砂玻璃（覆蓋原本 background: var(--surface-2)）。 */
+:root[data-theme="dark"] .panel-shell {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-card), var(--edge-hi);
+}
+:root[data-theme="dark"] .panel-shell.writable { border-color: var(--glass-border); }
+/* 頂欄 fgc-bar 也玻璃化。 */
+:root[data-theme="dark"] .fgc-bar {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border-bottom: 1px solid var(--glass-border);
+  box-shadow: var(--edge-hi);
+}

@@ -26,27 +26,37 @@ const SUB: Record<string, string> = {
   EJECT: "排出",
 };
 
-const STATE_KEYS = [K.driveState];
+const STATE_KEYS = [K.driveState, K.driveClimbMode];
 
 export function StateRibbon() {
   // 狀態機一秒最多變幾次，走 React 完全撐得住——只有這種低頻的才進 React。
   useLogKeys(STATE_KEYS);
   const cur = liveLog.latestStr(K.driveState, "");
+  // 爬升模式（DPad Right）：狀態機被壓在 COLLECT 但 shooter/intake 全停，
+  // 三格不能照常亮，否則駕駛會以為 intake 在轉。整條換成一句話。
+  const climb = liveLog.latestBool(K.driveClimbMode, false);
 
   return (
     <PanelShell title="狀態機" flush className="drive-ribbon">
-      <div className="ribbon-row">
-        {DRIVE_STATES.map((s) => (
-          <div
-            key={s}
-            className={`ribbon-cell ${s.toLowerCase()}${s === cur ? " on" : ""}`}
-            aria-current={s === cur ? "true" : undefined}
-          >
-            <span className="rc-main">{LABEL[s]}</span>
-            <span className="rc-sub">{SUB[s]}</span>
-          </div>
-        ))}
-      </div>
+      {climb ? (
+        <div className="ribbon-climb" role="status">
+          <span className="rcl-main">CLIMB MODE</span>
+          <span className="rcl-sub">只剩底盤與爬升；shooter / intake / 倉門全停。再按 DPad Right 退出</span>
+        </div>
+      ) : (
+        <div className="ribbon-row">
+          {DRIVE_STATES.map((s) => (
+            <div
+              key={s}
+              className={`ribbon-cell ${s.toLowerCase()}${s === cur ? " on" : ""}`}
+              aria-current={s === cur ? "true" : undefined}
+            >
+              <span className="rc-main">{LABEL[s]}</span>
+              <span className="rc-sub">{SUB[s]}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </PanelShell>
   );
 }

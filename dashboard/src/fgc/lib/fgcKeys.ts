@@ -46,6 +46,7 @@ export const K = {
   driveForward: "/FGC/Drive/Forward",
   driveTurn: "/FGC/Drive/Turn",
   driveReversed: "/FGC/Drive/Reversed",
+  driveClimbMode: "/FGC/Drive/ClimbMode", // DPad Right 切換：只剩底盤與爬升能動
 
   // /FGC/Shooter/*
   sl: "/FGC/Shooter/SL",
@@ -70,6 +71,8 @@ export const K = {
 
   // /FGC/Hopper/*（CRServo，無回授，只有指令值）
   hopperCmd: "/FGC/Hopper/Cmd",
+  hopperDeploy: "/FGC/Hopper/Deploy",   // "open" 定位伺服的指令狀態：STOWED / DEPLOYED / MISSING（無回授）
+  hopperOpenDeg: "/FGC/Hopper/OpenDeg", // 上一次送出的角度（deg）
 
   // /FGC/Gamepad/*
   gpLY: "/FGC/Gamepad/LY",
@@ -83,6 +86,7 @@ export const K = {
   gpR1: "/FGC/Gamepad/R1",
   gpDUp: "/FGC/Gamepad/DUp",
   gpDDown: "/FGC/Gamepad/DDown",
+  gpDRight: "/FGC/Gamepad/DRight",
 
   // /FGC/Vision/*（TagCam.java:97-110）
   visionCount: "/FGC/Vision/Count",
@@ -197,6 +201,8 @@ export const TUNABLES: readonly Tunable[] = [
   { name: "HOLD",           kind: "num",  min: 0, max: 1,    step: 0.05,  unit: "",    group: "爬升", coachRisk: false, def: 0.6 },
 
   { name: "HOPPER_POWER",   kind: "num",  min: 0, max: 1,    step: 0.05,  unit: "",    group: "球倉", coachRisk: false, def: 1 },
+  { name: "OPEN_STOW_DEG",   kind: "num",  min: 0, max: 270,  step: 5,     unit: "deg", group: "球倉", coachRisk: false, def: 0 },
+  { name: "OPEN_DEPLOY_DEG", kind: "num",  min: 0, max: 270,  step: 5,     unit: "deg", group: "球倉", coachRisk: false, def: 120 },
 
   { name: "TAG_DECIMATION", kind: "num",  min: 1, max: 8,    step: 1,     unit: "",    group: "視覺", coachRisk: false, def: 2 },
   { name: "TAG_MIN_MARGIN", kind: "num",  min: 0, max: 200,  step: 5,     unit: "",    group: "視覺", coachRisk: false, def: 30 },

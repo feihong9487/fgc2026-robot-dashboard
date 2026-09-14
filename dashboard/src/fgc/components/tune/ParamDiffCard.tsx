@@ -1,6 +1,6 @@
 // ParamDiffCard（§3.3 #26）：目前值 vs 編譯值 + 三顆保住成果的鍵。
 //
-// 這是防止「白調一天」的唯一機制。21 個參數都是 public static volatile，只活在
+// 這是防止「白調一天」的唯一機制。23 個參數都是 public static volatile，只活在
 // RAM 裡：Restart Robot、換電池、重新 Build 全都會讓它們回到 Constants.java 裡的
 // 編譯值，而畫面上不會有任何提示。所以要嘛把值存回機器人的 fgc-tune.json
 // （下次開機自動載回），要嘛把 Constants 片段貼回原始碼——兩條路都在這張卡上。

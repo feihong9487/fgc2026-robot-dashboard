@@ -289,7 +289,7 @@ function num(v: number): string {
 /**
  * Constants 片段。機器人端已經把片段組好放在 /FGC/Param/_Snippet（DashParams.java:229），
  * 有就直接用它——那是機器人自己說的話，比前端拼的可信。
- * 沒有（舊 build / 這份 log 沒錄到）才依 21 項白名單的 /FGC/Param/* 回讀值重組，並標明來源。
+ * 沒有（舊 build / 這份 log 沒錄到）才依 23 項白名單的 /FGC/Param/* 回讀值重組，並標明來源。
  */
 export function toConstantsSnippet(log: LogStore, t: number, allowKey?: (k: string) => boolean): string {
   // 機器人端組好的整份 _Snippet 含 AIM_KP 這類 coachRisk 參數，閘關著時不可以整包吐出來
