@@ -1,6 +1,6 @@
 # FGC 2026 · Igniting Innovation · 程式與儀表板總覽
 
-更新：2026-09-06。隊伍 Control Hub：SSID `FTC-Nvlv`（密碼 `password`）、RC 11.2／OS 1.1.6、硬體組態 `FGC2026`、鏡頭 `Webcam 1`。
+更新：2026-09-06。隊伍 Control Hub：RC 11.2／OS 1.1.6、硬體組態 `FGC2026`、鏡頭 `Webcam 1`。
 
 ## 資料夾
 
